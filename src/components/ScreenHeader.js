@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useMemo } from 'react';
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -8,19 +8,32 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { colors } from '../constants/theme';
 
 export default function ScreenHeader({ title, subtitle, onBack, rightAction }) {
   const { userInfo, logout, isLoading } = useContext(AuthContext);
+  const navigation = useNavigation();
+  const handleBack = useMemo(() => {
+    if (onBack) {
+      return onBack;
+    }
+
+    if (navigation?.canGoBack?.()) {
+      return () => navigation.goBack();
+    }
+
+    return null;
+  }, [navigation, onBack]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <View style={styles.topRow}>
-          {onBack ? (
-            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+          {handleBack ? (
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
               <Text style={styles.backText}>← Back</Text>
             </TouchableOpacity>
           ) : (

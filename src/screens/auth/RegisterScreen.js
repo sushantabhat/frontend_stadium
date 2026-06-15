@@ -53,6 +53,10 @@ export default function RegisterScreen({ navigation }) {
         </View>
 
         <View style={commonStyles.formSection}>
+          <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()}>
+            <Text style={styles.backLinkText}>← Back to Sign In</Text>
+          </TouchableOpacity>
+
           <Text style={commonStyles.inputLabel}>Full Name</Text>
           <TextInput
             style={commonStyles.inputField}
@@ -112,6 +116,15 @@ export default function RegisterScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  backLink: {
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
+  backLinkText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   loginLink: {
     marginTop: 20,
     alignItems: 'center',

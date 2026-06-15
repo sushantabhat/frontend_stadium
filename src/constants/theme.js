@@ -1,4 +1,4 @@
-export const colors = {
+const palette = {
   background: '#0F172A',
   surface: '#1E293B',
   border: '#334155',
@@ -9,6 +9,11 @@ export const colors = {
   danger: '#EF4444',
   success: '#22C55E',
   warning: '#F59E0B',
+};
+
+export const colors = {
+  ...palette,
+  cardBackground: palette.surface,
 };
 
 export const commonStyles = {
