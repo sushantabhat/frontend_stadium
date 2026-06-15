@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useEffect, useMemo, useState } from 
 import * as authService from '../services/authService';
 import { setAuthToken } from '../services/api';
 import { clearSession, loadSession, saveSession } from '../utils/storage';
+import { canSwitchToRole, getAllowedRoles } from '../constants/roleNavigation';
 
 export const AuthContext = createContext(null);
 
@@ -11,12 +12,24 @@ export function AuthProvider({ children }) {
   const [userToken, setUserToken] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
 
-  const applySession = useCallback(async (token, user) => {
+  const normalizeUser = useCallback((user, activeRole) => {
+    const availableRoles = getAllowedRoles(user);
+    const resolvedRole = activeRole && availableRoles.includes(activeRole) ? activeRole : user?.role;
+
+    return {
+      ...user,
+      role: resolvedRole,
+      availableRoles,
+    };
+  }, []);
+
+  const applySession = useCallback(async (token, user, activeRole) => {
+    const normalizedUser = normalizeUser(user, activeRole || user?.role);
     setAuthToken(token);
     setUserToken(token);
-    setUserInfo(user);
-    await saveSession(token, user);
-  }, []);
+    setUserInfo(normalizedUser);
+    await saveSession(token, normalizedUser);
+  }, [normalizeUser]);
 
   const clearAuthState = useCallback(async () => {
     setAuthToken(null);
@@ -35,7 +48,7 @@ export function AuthProvider({ children }) {
 
         setAuthToken(session.token);
         const user = await authService.fetchCurrentUser();
-        await applySession(session.token, user);
+        await applySession(session.token, user, session.activeRole);
       } catch {
         await clearAuthState();
       } finally {
@@ -87,17 +100,34 @@ export function AuthProvider({ children }) {
     }
   }, [clearAuthState]);
 
+  const switchRole = useCallback(
+    async (nextRole) => {
+      if (!canSwitchToRole(userInfo, nextRole)) {
+        throw new Error('Role switch is not allowed');
+      }
+
+      const nextUser = {
+        ...userInfo,
+        role: nextRole,
+      };
+
+      await applySession(userToken, nextUser, nextRole);
+    },
+    [applySession, userInfo, userToken]
+  );
+
   const value = useMemo(
     () => ({
       login,
       register,
       logout,
+      switchRole,
       isLoading,
       isBootstrapping,
       userToken,
       userInfo,
     }),
-    [login, register, logout, isLoading, isBootstrapping, userToken, userInfo]
+    [login, register, logout, switchRole, isLoading, isBootstrapping, userToken, userInfo]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
