@@ -3,7 +3,6 @@ import { colors } from '../constants/theme';
 export const adminDashboardContent = {
   greeting: 'Welcome back',
   subtitle: 'Stadium Administration Panel',
-  avatar: '👤',
   metrics: [
     { icon: '🎯', value: '12', label: 'Active Matches', accentColor: colors.primaryLight },
     { icon: '💰', value: '₹2.5L', label: 'Revenue', accentColor: '#00D9FF' },
@@ -45,7 +44,6 @@ export const adminDashboardContent = {
 export const staffDashboardContent = {
   greeting: 'Hi',
   subtitle: 'Stadium Operations',
-  avatar: '👷',
   metrics: [
     { icon: '🎟️', value: '247', label: 'Entries Today', accentColor: colors.primaryLight },
     { icon: '⏰', value: '8:00 - 6:00', label: 'Current Shift', accentColor: '#00D9FF' },
@@ -94,7 +92,6 @@ export const staffDashboardContent = {
 export const fanDashboardContent = {
   greeting: 'Welcome',
   subtitle: 'Smart Stadium Ticketing',
-  avatar: '🎟️',
   metrics: [
     { icon: '🎫', value: '3', label: 'My Tickets', accentColor: colors.primaryLight },
     { icon: '💰', value: '₹4,500', label: 'Total Spent', accentColor: '#FF6B6B' },
@@ -161,7 +158,6 @@ export function bindDashboardContent(content, navigation) {
   return {
     greeting: content.greeting,
     subtitle: content.subtitle,
-    avatar: content.avatar,
     metrics: content.metrics,
     primaryAction: content.primaryAction
       ? {

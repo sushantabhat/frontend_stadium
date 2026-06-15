@@ -1,6 +1,5 @@
 import React, { useContext, useMemo } from 'react';
 import {
-  ActivityIndicator,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -11,9 +10,10 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { colors } from '../constants/theme';
+import ProfileMenuButton from './profile/ProfileMenuButton';
 
 export default function ScreenHeader({ title, subtitle, onBack, rightAction }) {
-  const { userInfo, logout, isLoading } = useContext(AuthContext);
+  const { userInfo } = useContext(AuthContext);
   const navigation = useNavigation();
   const handleBack = useMemo(() => {
     if (onBack) {
@@ -40,13 +40,7 @@ export default function ScreenHeader({ title, subtitle, onBack, rightAction }) {
             <View style={styles.backPlaceholder} />
           )}
 
-          <TouchableOpacity onPress={logout} disabled={isLoading}>
-            {isLoading ? (
-              <ActivityIndicator color={colors.primaryLight} size="small" />
-            ) : (
-              <Text style={styles.logoutText}>Sign Out</Text>
-            )}
-          </TouchableOpacity>
+          <ProfileMenuButton compact />
         </View>
 
         <Text style={styles.title}>{title}</Text>
@@ -87,11 +81,6 @@ const styles = StyleSheet.create({
   backText: {
     color: colors.primaryLight,
     fontSize: 15,
-    fontWeight: '600',
-  },
-  logoutText: {
-    color: colors.danger,
-    fontSize: 14,
     fontWeight: '600',
   },
   title: {

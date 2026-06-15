@@ -13,11 +13,11 @@ import { colors, commonStyles } from '../../constants/theme';
 import DashboardActionCard from './DashboardActionCard';
 import DashboardFeatureCard from './DashboardFeatureCard';
 import DashboardMetricCard from './DashboardMetricCard';
+import ProfileMenuButton from '../profile/ProfileMenuButton';
 
 export default function DashboardScreen({
   greeting,
   subtitle,
-  avatar,
   metrics,
   primaryAction,
   sectionTitle,
@@ -36,9 +36,7 @@ export default function DashboardScreen({
             <Text style={styles.greeting}>{greeting}, {userInfo?.name || 'User'}</Text>
             <Text style={styles.subtitle}>{subtitle}</Text>
           </View>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{avatar}</Text>
-          </View>
+          <ProfileMenuButton />
         </View>
 
         <View style={styles.metricsContainer}>
@@ -111,19 +109,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: colors.textSecondary,
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: `${colors.primaryLight}20`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.primaryLight,
-  },
-  avatarText: {
-    fontSize: 28,
   },
   metricsContainer: {
     paddingHorizontal: 16,

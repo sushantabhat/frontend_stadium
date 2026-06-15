@@ -20,8 +20,11 @@ import FanDashboardScreen from '../screens/home/FanDashboardScreen';
 import MyTicketsScreen from '../screens/home/MyTicketsScreen';
 import WishlistScreen from '../screens/home/WishlistScreen';
 import FanProfileScreen from '../screens/home/FanProfileScreen';
+import ProfileScreen from '../screens/common/ProfileScreen';
+import SettingsScreen from '../screens/common/SettingsScreen';
 import { ROLES } from '../constants/config';
 import { colors } from '../constants/theme';
+import { getDashboardRoute } from '../constants/roleNavigation';
 
 const AuthStack = createStackNavigator();
 const UserStack = createStackNavigator();
@@ -51,6 +54,8 @@ function UserNavigator() {
       <UserStack.Screen name="MyTickets" component={MyTicketsScreen} />
       <UserStack.Screen name="Wishlist" component={WishlistScreen} />
       <UserStack.Screen name="FanProfile" component={FanProfileScreen} />
+      <UserStack.Screen name="Profile" component={ProfileScreen} />
+      <UserStack.Screen name="Settings" component={SettingsScreen} />
     </UserStack.Navigator>
   );
 }
@@ -65,6 +70,8 @@ function AdminNavigator() {
       <AdminStack.Screen name="Statistics" component={StatisticsScreen} />
       <AdminStack.Screen name="UserManagement" component={UserManagementScreen} />
       <AdminStack.Screen name="AdminSettings" component={AdminSettingsScreen} />
+      <AdminStack.Screen name="Profile" component={ProfileScreen} />
+      <AdminStack.Screen name="Settings" component={SettingsScreen} />
     </AdminStack.Navigator>
   );
 }
@@ -77,6 +84,8 @@ function StaffNavigator() {
       <StaffStack.Screen name="MyShifts" component={MyShiftsScreen} />
       <StaffStack.Screen name="DailyReport" component={DailyReportScreen} />
       <StaffStack.Screen name="TicketVerify" component={TicketVerifyScreen} />
+      <StaffStack.Screen name="Profile" component={ProfileScreen} />
+      <StaffStack.Screen name="Settings" component={SettingsScreen} />
     </StaffStack.Navigator>
   );
 }
@@ -98,15 +107,7 @@ function RoleNavigator() {
 export function useInitialRoute() {
   const { userInfo } = useContext(AuthContext);
 
-  switch (userInfo?.role) {
-    case ROLES.ADMIN:
-      return 'AdminDashboard';
-    case ROLES.STAFF:
-      return 'StaffDashboard';
-    case ROLES.USER:
-    default:
-      return 'FanDashboard';
-  }
+  return getDashboardRoute(userInfo?.role);
 }
 
 export default function AppNavigator() {

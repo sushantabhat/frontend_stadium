@@ -13,7 +13,6 @@ import { AuthContext } from '../../context/AuthContext';
 import { colors } from '../../constants/theme';
 import {
   canSwitchToRole,
-  getDashboardRoute,
   getRoleDisplayName,
   getSwitchableRoles,
 } from '../../constants/roleNavigation';
@@ -40,7 +39,6 @@ export default function ProfileMenuButton({ compact = false }) {
 
     closeMenu();
     await switchRole(role);
-    navigation.navigate(getDashboardRoute(role));
   };
 
   return (
