@@ -47,7 +47,7 @@ function AuthNavigator() {
 
 function UserNavigator() {
   return (
-    <UserStack.Navigator screenOptions={screenOptions}>
+    <UserStack.Navigator initialRouteName="FanDashboard" screenOptions={screenOptions}>
       <UserStack.Screen name="FanDashboard" component={FanDashboardScreen} />
       <UserStack.Screen name="MatchList" component={MatchListScreen} />
       <UserStack.Screen name="MatchDetail" component={MatchDetailScreen} />
@@ -62,7 +62,7 @@ function UserNavigator() {
 
 function AdminNavigator() {
   return (
-    <AdminStack.Navigator screenOptions={screenOptions}>
+    <AdminStack.Navigator initialRouteName="AdminDashboard" screenOptions={screenOptions}>
       <AdminStack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
       <AdminStack.Screen name="AdminMatchList" component={AdminMatchListScreen} />
       <AdminStack.Screen name="CreateMatch" component={CreateMatchScreen} />
@@ -78,9 +78,9 @@ function AdminNavigator() {
 
 function StaffNavigator() {
   return (
-    <StaffStack.Navigator screenOptions={screenOptions}>
-      <StaffStack.Screen name="StaffDashboard" component={StaffDashboardScreen} />
+    <StaffStack.Navigator initialRouteName="GateScanner" screenOptions={screenOptions}>
       <StaffStack.Screen name="GateScanner" component={GateScannerScreen} />
+      <StaffStack.Screen name="StaffDashboard" component={StaffDashboardScreen} />
       <StaffStack.Screen name="MyShifts" component={MyShiftsScreen} />
       <StaffStack.Screen name="DailyReport" component={DailyReportScreen} />
       <StaffStack.Screen name="TicketVerify" component={TicketVerifyScreen} />

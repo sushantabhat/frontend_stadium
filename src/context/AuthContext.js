@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useEffect, useMemo, useState } from 
 import * as authService from '../services/authService';
 import { setAuthToken } from '../services/api';
 import { clearSession, loadSession, saveSession } from '../utils/storage';
-import { canSwitchToRole, getAllowedRoles } from '../constants/roleNavigation';
+import { getAllowedRoles } from '../constants/roleNavigation';
 
 export const AuthContext = createContext(null);
 
@@ -100,34 +100,17 @@ export function AuthProvider({ children }) {
     }
   }, [clearAuthState]);
 
-  const switchRole = useCallback(
-    async (nextRole) => {
-      if (!canSwitchToRole(userInfo, nextRole)) {
-        throw new Error('Role switch is not allowed');
-      }
-
-      const nextUser = {
-        ...userInfo,
-        role: nextRole,
-      };
-
-      await applySession(userToken, nextUser, nextRole);
-    },
-    [applySession, userInfo, userToken]
-  );
-
   const value = useMemo(
     () => ({
       login,
       register,
       logout,
-      switchRole,
       isLoading,
       isBootstrapping,
       userToken,
       userInfo,
     }),
-    [login, register, logout, switchRole, isLoading, isBootstrapping, userToken, userInfo]
+    [login, register, logout, isLoading, isBootstrapping, userToken, userInfo]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

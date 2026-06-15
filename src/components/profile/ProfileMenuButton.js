@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -11,18 +11,12 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors } from '../../constants/theme';
-import {
-  canSwitchToRole,
-  getRoleDisplayName,
-  getSwitchableRoles,
-} from '../../constants/roleNavigation';
+import { getRoleDisplayName } from '../../constants/roleNavigation';
 
 export default function ProfileMenuButton({ compact = false }) {
   const navigation = useNavigation();
-  const { userInfo, isLoading, logout, switchRole } = useContext(AuthContext);
+  const { userInfo, isLoading, logout } = useContext(AuthContext);
   const [isVisible, setIsVisible] = useState(false);
-
-  const switchableRoles = useMemo(() => getSwitchableRoles(userInfo), [userInfo]);
 
   const closeMenu = () => setIsVisible(false);
   const openMenu = () => setIsVisible(true);
@@ -30,15 +24,6 @@ export default function ProfileMenuButton({ compact = false }) {
   const handleNavigate = (routeName) => {
     closeMenu();
     navigation.navigate(routeName);
-  };
-
-  const handleSwitchRole = async (role) => {
-    if (!canSwitchToRole(userInfo, role)) {
-      return;
-    }
-
-    closeMenu();
-    await switchRole(role);
   };
 
   return (
@@ -75,23 +60,6 @@ export default function ProfileMenuButton({ compact = false }) {
                 loading={isLoading}
               />
             </View>
-
-            {switchableRoles.length > 0 ? (
-              <View style={styles.switchSection}>
-                <Text style={styles.sectionLabel}>Switch Dashboard</Text>
-                <View style={styles.switchRow}>
-                  {switchableRoles.map((role) => (
-                    <TouchableOpacity
-                      key={role}
-                      style={styles.switchChip}
-                      onPress={() => handleSwitchRole(role)}
-                    >
-                      <Text style={styles.switchChipText}>{getRoleDisplayName(role)}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            ) : null}
           </Pressable>
         </Pressable>
       </Modal>
@@ -209,36 +177,5 @@ const styles = StyleSheet.create({
   },
   destructiveText: {
     color: colors.danger,
-  },
-  switchSection: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: 16,
-  },
-  sectionLabel: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 10,
-    letterSpacing: 0.6,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  switchChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  switchChipText: {
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '600',
   },
 });
