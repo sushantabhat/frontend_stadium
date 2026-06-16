@@ -11,10 +11,11 @@ import ScreenHeader from '../../components/ScreenHeader';
 import { colors, commonStyles } from '../../constants/theme';
 
 export default function TicketVerifyScreen({ route, navigation }) {
-  const { status, message, ticket, ticketCode } = route.params;
+  const { status, message, ticket, ticketCode, fraudPrediction } = route.params;
 
   const isSuccess = status === 'success';
   const isDuplicate = status === 'fraud_duplicate';
+  const isBehavioral = status === 'fraud_behavioral';
 
   let alertColor = colors.success;
   let statusText = 'TICKET APPROVED';
@@ -24,6 +25,10 @@ export default function TicketVerifyScreen({ route, navigation }) {
     alertColor = colors.danger;
     statusText = 'FRAUD ALERT: DUPLICATE';
     badgeEmoji = '🚨';
+  } else if (isBehavioral) {
+    alertColor = colors.warning;
+    statusText = 'BEHAVIORAL ANOMALY DETECTED';
+    badgeEmoji = '⚠️';
   } else if (status === 'fraud_invalid') {
     alertColor = colors.warning;
     statusText = 'INVALID TICKET';
@@ -53,22 +58,30 @@ export default function TicketVerifyScreen({ route, navigation }) {
             <Text style={styles.cardHeader}>ATTENDEE METRIC</Text>
             <View style={styles.detailRow}>
               <Text style={styles.label}>Name</Text>
-              <Text style={styles.value}>{ticket.userName}</Text>
+              <Text style={styles.value}>{ticket.user?.name || ticket.userName || 'N/A'}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.label}>Seat Assignment</Text>
               <Text style={styles.value}>
-                {ticket.seatLabel} ({ticket.category.toUpperCase()})
+                {ticket.seat?.seatLabel || ticket.seatLabel || 'N/A'} ({(ticket.seat?.category || ticket.category || 'general').toUpperCase()})
               </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.label}>Fixture</Text>
-              <Text style={styles.value}>{ticket.matchTitle}</Text>
+              <Text style={styles.value}>{ticket.match?.title || ticket.matchTitle || 'N/A'}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.label}>Ticket Code</Text>
               <Text style={styles.codeValue}>{ticket.ticketCode}</Text>
             </View>
+            {fraudPrediction && (
+              <View style={styles.detailRow}>
+                <Text style={styles.label}>AI Risk Assessment</Text>
+                <Text style={[styles.value, { color: colors.success, fontWeight: '800' }]}>
+                  {fraudPrediction.classification === 'safe' ? 'CLEAN' : fraudPrediction.classification.toUpperCase()}
+                </Text>
+              </View>
+            )}
           </View>
         ) : (
           <View style={styles.detailsCard}>
@@ -80,13 +93,24 @@ export default function TicketVerifyScreen({ route, navigation }) {
             <View style={styles.detailRow}>
               <Text style={styles.label}>Audit Classification</Text>
               <Text style={[styles.value, { color: colors.danger, fontWeight: '800' }]}>
-                {isDuplicate ? 'AI Flags: Repeated Entry Threat' : 'AI Flags: Counterfeit Signature'}
+                {isDuplicate ? 'AI Flags: Repeated Entry Threat' : 
+                 isBehavioral ? 'AI Flags: Behavioral Anomaly' : 'AI Flags: Counterfeit Signature'}
               </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.label}>Security Action</Text>
-              <Text style={styles.value}>Deny stadium gates entry.</Text>
+              <Text style={styles.value}>
+                {isBehavioral ? 'Flag for manual review' : 'Deny stadium gates entry.'}
+              </Text>
             </View>
+            {isBehavioral && (
+              <View style={styles.detailRow}>
+                <Text style={styles.label}>Risk Level</Text>
+                <Text style={[styles.value, { color: colors.warning }]}>
+                  Medium-High (Behavioral Pattern Detected)
+                </Text>
+              </View>
+            )}
           </View>
         )}
 

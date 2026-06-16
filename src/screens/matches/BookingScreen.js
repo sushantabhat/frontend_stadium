@@ -152,6 +152,28 @@ export default function BookingScreen({ route, navigation }) {
               <Text style={styles.highlight}>{multiplier}x</Text> is recommended, but your locked seats
               have been secured at their initial lock pricing!
             </Text>
+            {pricingSuggestions?.factors && (
+              <View style={styles.pricingFactors}>
+                <Text style={styles.factorTitle}>Pricing Factors:</Text>
+                {pricingSuggestions.factors.demandLevel && (
+                  <Text style={styles.factorItem}>• Demand: {pricingSuggestions.factors.demandLevel}</Text>
+                )}
+                {pricingSuggestions.factors.urgency && (
+                  <Text style={styles.factorItem}>• Timing: {pricingSuggestions.factors.urgency}</Text>
+                )}
+                {pricingSuggestions.factors.dayFactor && (
+                  <Text style={styles.factorItem}>• {pricingSuggestions.factors.dayFactor}</Text>
+                )}
+                {pricingSuggestions.factors.matchDaySurge && (
+                  <Text style={styles.factorItem}>• Match day surge applied</Text>
+                )}
+              </View>
+            )}
+            {pricingSuggestions?.confidence && (
+              <Text style={styles.confidenceText}>
+                Confidence: {(pricingSuggestions.confidence * 100).toFixed(0)}%
+              </Text>
+            )}
           </View>
         ) : null}
 
@@ -296,6 +318,29 @@ const styles = StyleSheet.create({
   highlight: {
     color: colors.textPrimary,
     fontWeight: '800',
+  },
+  pricingFactors: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: `${colors.info}30`,
+  },
+  factorTitle: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  factorItem: {
+    color: colors.textMuted,
+    fontSize: 11,
+    lineHeight: 18,
+  },
+  confidenceText: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontStyle: 'italic',
+    marginTop: 8,
   },
   billRow: {
     flexDirection: 'row',

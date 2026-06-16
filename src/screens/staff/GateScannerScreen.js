@@ -4,6 +4,7 @@ import {
   Alert,
   FlatList,
   SafeAreaView,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -57,6 +58,7 @@ export default function GateScannerScreen({ navigation }) {
         status: 'success',
         message: response.message,
         ticket: response.ticket,
+        fraudPrediction: response.fraudPrediction,
       });
       setTicketCode('');
     } catch (error) {
@@ -65,8 +67,16 @@ export default function GateScannerScreen({ navigation }) {
 
       // Duplicate scan (409 Conflict) -> Red Fraud warning
       // Invalid ticket (404 Not Found) -> Red Invalid warning
+      // Behavioral anomaly (403 Forbidden) -> Yellow warning
+      let screenStatus = 'fraud_invalid';
+      if (status === 409) {
+        screenStatus = 'fraud_duplicate';
+      } else if (status === 403) {
+        screenStatus = 'fraud_behavioral';
+      }
+
       navigation.navigate('TicketVerify', {
-        status: status === 409 ? 'fraud_duplicate' : 'fraud_invalid',
+        status: screenStatus,
         message: errMsg,
         ticketCode: code,
       });

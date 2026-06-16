@@ -13,7 +13,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import { API_BASE_URL } from '../../constants/config';
 import { colors, commonStyles } from '../../constants/theme';
 import { fetchMatchById, fetchMatchSeats } from '../../services/matchService';
-import { lockSeats, unlockSeats } from '../../services/bookingService';
+import { lockSeats } from '../../services/bookingService';
 import { fetchSmartSeatRecommendations } from '../../services/aiService';
 
 export default function SeatSelectionScreen({ route, navigation }) {
@@ -120,12 +120,21 @@ export default function SeatSelectionScreen({ route, navigation }) {
         seatLabel: r.seatLabel,
         price: r.price,
         category: r.category,
+        score: r.score,
+        explanation: r.explanation,
       }));
 
       setSelectedSeats(formattedRecs);
+
+      // Build detailed message with explanations
+      const seatDetails = formattedRecs.map((s) => {
+        const explanation = s.explanation || 'Good seat selection';
+        return `${s.seatLabel} - ${explanation}`;
+      }).join('\n');
+
       Alert.alert(
         'AI Recommended Seats',
-        `We selected the best seats for you: ${formattedRecs.map((s) => s.seatLabel).join(', ')}`
+        `We selected the best seats for you:\n\n${seatDetails}`
       );
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch AI seat recommendations');

@@ -89,12 +89,25 @@ export default function FanDashboardScreen({ navigation }) {
               >
                 <View style={styles.matchTopRow}>
                   <Text style={styles.matchTag}>{match.reason || 'AI PICK'}</Text>
+                  <View style={styles.scoreBadge}>
+                    <Text style={styles.scoreText}>Score: {match.score}</Text>
+                  </View>
                   <Text style={styles.matchArrow}>›</Text>
                 </View>
                 <Text style={styles.matchTitle}>{match.title}</Text>
                 <Text style={styles.matchMeta}>
                   📍 {match.venue} • 🗓 {formatMatchDate(match.matchDate)}
                 </Text>
+                {match.stats && (
+                  <Text style={styles.matchStats}>
+                    {match.stats.available}/{match.stats.total} seats available
+                  </Text>
+                )}
+                {match.allReasons && match.allReasons.length > 1 && (
+                  <Text style={styles.matchInsight}>
+                    💡 {match.allReasons.slice(1, 3).join(' • ')}
+                  </Text>
+                )}
               </TouchableOpacity>
             ))
           )}
@@ -272,6 +285,30 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
     lineHeight: 20,
+  },
+  matchStats: {
+    color: colors.primaryLight,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  matchInsight: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontStyle: 'italic',
+    marginTop: 6,
+    lineHeight: 16,
+  },
+  scoreBadge: {
+    backgroundColor: `${colors.primary}30`,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  scoreText: {
+    color: colors.primaryLight,
+    fontSize: 10,
+    fontWeight: '700',
   },
   bottomCard: {
     backgroundColor: colors.surface,
