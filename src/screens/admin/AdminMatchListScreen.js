@@ -3,6 +3,8 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
+  SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -47,7 +49,8 @@ export default function AdminMatchListScreen({ navigation }) {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <ScreenHeader
         title="Manage Matches"
         subtitle="Create events and monitor seat inventory"
@@ -70,7 +73,7 @@ export default function AdminMatchListScreen({ navigation }) {
       ) : (
         <FlatList
           data={matches}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl
@@ -86,15 +89,19 @@ export default function AdminMatchListScreen({ navigation }) {
               message="Create your first cricket match to start selling tickets."
             />
           }
-          renderItem={({ item }) => (
-            <MatchCard
-              match={item}
-              onPress={() => navigation.navigate('AdminMatchDetail', { matchId: item.id })}
-            />
+          renderItem={({ item, index }) => (
+            <View style={styles.matchItem}>
+              <MatchCard
+                match={item}
+                variant="horizontal"
+                tintIndex={index}
+                onPress={() => navigation.navigate('AdminMatchDetail', { matchId: item._id })}
+              />
+            </View>
           )}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -106,6 +113,9 @@ const styles = StyleSheet.create({
   list: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 1.5,
+  },
+  matchItem: {
+    marginBottom: spacing.md,
   },
   center: {
     flex: 1,

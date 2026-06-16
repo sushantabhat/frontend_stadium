@@ -212,7 +212,7 @@ export default function MatchDetailScreen({ route, navigation }) {
         {!isAdmin && match.status !== 'cancelled' ? (
           <GradientButton
             title="Select & Book Seats →"
-            onPress={() => navigation.navigate('SeatSelection', { matchId: match.id })}
+            onPress={() => navigation.navigate('SeatSelection', { matchId: match._id })}
             style={{ flex: 1 }}
           />
         ) : isAdmin && match.status !== 'cancelled' ? (
