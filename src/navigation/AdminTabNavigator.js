@@ -23,7 +23,7 @@ const ProfileStack = createStackNavigator();
 const screenOptions = { headerShown: false, cardStyle: { backgroundColor: colors.background } };
 
 function TabIcon({ label, focused }) {
-  const icons = { Dashboard: '📊', Matches: '⚽', Users: '👥', Profile: '👤' };
+  const icons = { Dashboard: '📊', Matches: '⚽', Users: '👥', Account: '👤' };
   return (
     <View style={tabStyles.iconWrap}>
       <Text style={[tabStyles.icon, focused && tabStyles.iconFocused]}>{icons[label] || '•'}</Text>
@@ -35,8 +35,8 @@ function TabIcon({ label, focused }) {
 function DashboardNavigator() {
   return (
     <DashStack.Navigator screenOptions={screenOptions}>
-      <DashStack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
-      <DashStack.Screen name="Statistics" component={StatisticsScreen} />
+      <DashStack.Screen name="AdminDash" component={AdminDashboardScreen} />
+      <DashStack.Screen name="AdminStatistics" component={StatisticsScreen} />
       <DashStack.Screen name="AdminSettings" component={AdminSettingsScreen} />
     </DashStack.Navigator>
   );
@@ -46,8 +46,8 @@ function MatchesNavigator() {
   return (
     <MatchesStack.Navigator screenOptions={screenOptions}>
       <MatchesStack.Screen name="AdminMatchList" component={AdminMatchListScreen} />
-      <MatchesStack.Screen name="CreateMatch" component={CreateMatchScreen} />
-      <MatchesStack.Screen name="MatchDetail" component={MatchDetailScreen} />
+      <MatchesStack.Screen name="AdminCreateMatch" component={CreateMatchScreen} />
+      <MatchesStack.Screen name="AdminMatchDetail" component={MatchDetailScreen} />
     </MatchesStack.Navigator>
   );
 }
@@ -55,7 +55,7 @@ function MatchesNavigator() {
 function UsersNavigator() {
   return (
     <UsersStack.Navigator screenOptions={screenOptions}>
-      <UsersStack.Screen name="UserManagement" component={UserManagementScreen} />
+      <UsersStack.Screen name="AdminUserManagement" component={UserManagementScreen} />
     </UsersStack.Navigator>
   );
 }
@@ -63,7 +63,7 @@ function UsersNavigator() {
 function ProfileNavigator() {
   return (
     <ProfileStack.Navigator screenOptions={screenOptions}>
-      <ProfileStack.Screen name="Profile" component={ProfileScreen} />
+      <ProfileStack.Screen name="AdminProfile" component={ProfileScreen} />
       <ProfileStack.Screen name="Settings" component={SettingsScreen} />
     </ProfileStack.Navigator>
   );
@@ -84,7 +84,7 @@ export default function AdminTabNavigator() {
       <Tab.Screen name="Dashboard" component={DashboardNavigator} />
       <Tab.Screen name="Matches" component={MatchesNavigator} />
       <Tab.Screen name="Users" component={UsersNavigator} />
-      <Tab.Screen name="Profile" component={ProfileNavigator} />
+      <Tab.Screen name="Account" component={ProfileNavigator} />
     </Tab.Navigator>
   );
 }

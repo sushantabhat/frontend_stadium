@@ -23,7 +23,7 @@ const ProfileStack = createStackNavigator();
 const screenOptions = { headerShown: false, cardStyle: { backgroundColor: colors.background } };
 
 function TabIcon({ label, focused }) {
-  const icons = { Home: '🏠', Browse: '🔍', 'My Tickets': '🎫', Profile: '👤' };
+  const icons = { Home: '🏠', Browse: '🔍', 'My Tickets': '🎫', Account: '👤' };
   return (
     <View style={tabStyles.iconWrap}>
       <Text style={[tabStyles.icon, focused && tabStyles.iconFocused]}>{icons[label] || '•'}</Text>
@@ -88,7 +88,7 @@ export default function FanTabNavigator() {
       <Tab.Screen name="Home" component={HomeNavigator} />
       <Tab.Screen name="Browse" component={BrowseNavigator} />
       <Tab.Screen name="My Tickets" component={TicketsNavigator} />
-      <Tab.Screen name="Profile" component={ProfileNavigator} />
+      <Tab.Screen name="Account" component={ProfileNavigator} />
     </Tab.Navigator>
   );
 }

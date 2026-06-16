@@ -21,7 +21,7 @@ const ProfileStack = createStackNavigator();
 const screenOptions = { headerShown: false, cardStyle: { backgroundColor: colors.background } };
 
 function TabIcon({ label, focused }) {
-  const icons = { Scanner: '📸', Dashboard: '📊', Tools: '🔧', Profile: '👤' };
+  const icons = { Scanner: '📸', Dashboard: '📊', Tools: '🔧', Account: '👤' };
   return (
     <View style={tabStyles.iconWrap}>
       <Text style={[tabStyles.icon, focused && tabStyles.iconFocused]}>{icons[label] || '•'}</Text>
@@ -43,6 +43,8 @@ function DashboardNavigator() {
   return (
     <DashStack.Navigator screenOptions={screenOptions}>
       <DashStack.Screen name="StaffDashboard" component={StaffDashboardScreen} />
+      <DashStack.Screen name="TicketVerify" component={TicketVerifyScreen} />
+      <DashStack.Screen name="MyShifts" component={MyShiftsScreen} />
       <DashStack.Screen name="DailyReport" component={DailyReportScreen} />
     </DashStack.Navigator>
   );
@@ -82,7 +84,7 @@ export default function StaffTabNavigator() {
       <Tab.Screen name="Scanner" component={ScannerNavigator} />
       <Tab.Screen name="Dashboard" component={DashboardNavigator} />
       <Tab.Screen name="Tools" component={ToolsNavigator} />
-      <Tab.Screen name="Profile" component={ProfileNavigator} />
+      <Tab.Screen name="Account" component={ProfileNavigator} />
     </Tab.Navigator>
   );
 }

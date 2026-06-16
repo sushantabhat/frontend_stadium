@@ -8,11 +8,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { fetchAdminAnalytics } from '../../services/adminService';
 import { fetchMatches } from '../../services/matchService';
+import StatCard from '../../components/StatCard';
 
 export default function AdminDashboardScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
@@ -62,27 +64,16 @@ export default function AdminDashboardScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Operations Overview</Text>
           <View style={styles.kpiRow}>
-            <View style={[styles.kpiCard, styles.kpiLarge]}>
-              <View style={styles.kpiIconWrap}>
+            <View style={styles.kpiLarge}>
+              <LinearGradient colors={[`${colors.primary}25`, `${colors.primary}08`]} style={styles.kpiGradient}>
                 <Text style={styles.kpiIcon}>🏏</Text>
-              </View>
-              <Text style={styles.kpiValue}>{isLoading ? '—' : String(metrics.liveMatches)}</Text>
-              <Text style={styles.kpiLabel}>Live Matches</Text>
-              <View style={[styles.kpiTrend, { backgroundColor: colors.successSurface }]}>
-                <Text style={[styles.kpiTrendText, { color: colors.successLight }]}>Active</Text>
-              </View>
+                <Text style={styles.kpiValue}>{isLoading ? '—' : String(metrics.liveMatches)}</Text>
+                <Text style={styles.kpiLabel}>Live Matches</Text>
+              </LinearGradient>
             </View>
             <View style={styles.kpiStack}>
-              <View style={styles.kpiCard}>
-                <Text style={styles.kpiValueSmall}>{isLoading ? '—' : String(metrics.bookedSeats)}</Text>
-                <Text style={styles.kpiLabelSmall}>Booked Seats</Text>
-              </View>
-              <View style={styles.kpiCard}>
-                <Text style={[styles.kpiValueSmall, { color: metrics.fraudCount > 0 ? colors.dangerLight : colors.textPrimary }]}>
-                  {isLoading ? '—' : String(metrics.fraudCount)}
-                </Text>
-                <Text style={styles.kpiLabelSmall}>Fraud Alerts</Text>
-              </View>
+              <StatCard icon="🎫" label="Seats Sold" value={isLoading ? '—' : String(metrics.bookedSeats)} color={colors.success} />
+              <StatCard icon="🛡️" label="Fraud Alerts" value={isLoading ? '—' : String(metrics.fraudCount)} color={metrics.fraudCount > 0 ? colors.danger : colors.textPrimary} />
             </View>
           </View>
         </View>
@@ -95,7 +86,7 @@ export default function AdminDashboardScreen({ navigation }) {
               { icon: '⚽', label: 'Manage\nMatches', route: 'Matches', color: colors.primary },
               { icon: '📈', label: 'Analytics\n& Stats', route: 'Dashboard', color: colors.success },
               { icon: '👥', label: 'User\nManagement', route: 'Users', color: colors.warning },
-              { icon: '⚙️', label: 'System\nSettings', route: 'Dashboard', color: '#A78BFA' },
+              { icon: '⚙️', label: 'System\nSettings', route: 'Dashboard', color: colors.info },
             ].map((a) => (
               <TouchableOpacity
                 key={a.label}
@@ -103,10 +94,13 @@ export default function AdminDashboardScreen({ navigation }) {
                 onPress={() => navigation.navigate(a.route)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.actionIconWrap, { backgroundColor: `${a.color}18` }]}>
+                <LinearGradient
+                  colors={[`${a.color}20`, `${a.color}08`]}
+                  style={styles.actionGradient}
+                >
                   <Text style={styles.actionIcon}>{a.icon}</Text>
-                </View>
-                <Text style={styles.actionLabel}>{a.label}</Text>
+                  <Text style={styles.actionLabel}>{a.label}</Text>
+                </LinearGradient>
               </TouchableOpacity>
             ))}
           </View>
@@ -123,9 +117,7 @@ export default function AdminDashboardScreen({ navigation }) {
               { icon: '🔐', text: 'Security scan completed', time: '08:45 today', color: colors.info },
             ].map((item, idx) => (
               <View key={idx} style={styles.feedItem}>
-                <View style={[styles.feedIconWrap, { backgroundColor: `${item.color}18` }]}>
-                  <Text style={styles.feedIcon}>{item.icon}</Text>
-                </View>
+                <View style={[styles.feedDot, { backgroundColor: item.color }]} />
                 <View style={styles.feedInfo}>
                   <Text style={styles.feedText}>{item.text}</Text>
                   <Text style={styles.feedTime}>{item.time}</Text>
@@ -146,193 +138,53 @@ const styles = StyleSheet.create({
   scroll: { paddingTop: spacing.md },
 
   topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.xl,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    paddingHorizontal: spacing.xl, marginBottom: spacing.xl,
   },
-  adminPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
+  adminPill: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
   adminDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary },
-  adminText: {
-    color: colors.primary,
-    fontSize: typography.tiny.fontSize,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-  },
-  greeting: {
-    color: colors.textPrimary,
-    fontSize: typography.h1.fontSize,
-    fontWeight: typography.h1.fontWeight,
-  },
-  tagline: {
-    color: colors.textMuted,
-    fontSize: typography.caption.fontSize,
-    marginTop: spacing.xxs,
-  },
+  adminText: { color: colors.primary, fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
+  greeting: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '800' },
+  tagline: { color: colors.textMuted, fontSize: typography.caption.fontSize, marginTop: spacing.xxs },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primarySurface,
-    borderWidth: 1.5,
-    borderColor: `${colors.primary}40`,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primarySurface,
+    borderWidth: 1.5, borderColor: `${colors.primary}40`, alignItems: 'center', justifyContent: 'center',
   },
-  avatarText: {
-    color: colors.primaryLight,
-    fontSize: typography.captionMedium.fontSize,
-    fontWeight: '800',
-  },
+  avatarText: { color: colors.primaryLight, fontSize: typography.captionMedium.fontSize, fontWeight: '800' },
 
-  // Sections
-  section: {
-    marginBottom: spacing.xl,
-    paddingHorizontal: spacing.xl,
-  },
-  sectionTitle: {
-    color: colors.textPrimary,
-    fontSize: typography.h3.fontSize,
-    fontWeight: typography.h3.fontWeight,
-    marginBottom: spacing.md,
-  },
+  section: { marginBottom: spacing.xl, paddingHorizontal: spacing.xl },
+  sectionTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '700', marginBottom: spacing.md },
 
   // KPI
-  kpiRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
+  kpiRow: { flexDirection: 'row', gap: spacing.md },
+  kpiLarge: { flex: 1, borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
+  kpiGradient: {
+    padding: spacing.xl, alignItems: 'flex-start', justifyContent: 'center', minHeight: 140,
   },
-  kpiLarge: {
-    flex: 1,
-    backgroundColor: colors.primarySurface,
-    borderColor: `${colors.primary}30`,
-  },
-  kpiStack: {
-    flex: 1,
-    gap: spacing.md,
-  },
-  kpiCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-  },
-  kpiIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.md,
-    backgroundColor: 'rgba(99,102,241,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  kpiIcon: { fontSize: 20 },
-  kpiValue: {
-    color: colors.primaryLight,
-    fontSize: 28,
-    fontWeight: '900',
-    marginBottom: spacing.xxs,
-  },
-  kpiLabel: {
-    color: colors.textMuted,
-    fontSize: typography.small.fontSize,
-    marginBottom: spacing.sm,
-  },
-  kpiTrend: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xxs + 1,
-    borderRadius: radii.full,
-  },
-  kpiTrendText: {
-    fontSize: typography.tiny.fontSize,
-    fontWeight: '700',
-  },
-  kpiValueSmall: {
-    color: colors.textPrimary,
-    fontSize: typography.h2.fontSize,
-    fontWeight: '900',
-    marginBottom: spacing.xxs,
-  },
-  kpiLabelSmall: {
-    color: colors.textMuted,
-    fontSize: typography.small.fontSize,
-  },
+  kpiIcon: { fontSize: 24, marginBottom: spacing.md },
+  kpiValue: { color: colors.primaryLight, fontSize: 32, fontWeight: '900', marginBottom: spacing.xxs },
+  kpiLabel: { color: colors.textMuted, fontSize: typography.small.fontSize },
+  kpiStack: { flex: 1, gap: spacing.md },
 
   // Actions
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  actionCard: {
-    width: '47%',
-    backgroundColor: colors.surface,
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    alignItems: 'center',
-  },
-  actionIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: radii.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  actionIcon: { fontSize: 22 },
-  actionLabel: {
-    color: colors.textSecondary,
-    fontSize: typography.small.fontSize,
-    fontWeight: '700',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  actionCard: { width: '47%', borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
+  actionGradient: { padding: spacing.xl, alignItems: 'center', gap: spacing.sm },
+  actionIcon: { fontSize: 24 },
+  actionLabel: { color: colors.textSecondary, fontSize: typography.small.fontSize, fontWeight: '700', textAlign: 'center', lineHeight: 18 },
 
   // Feed
   feedCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
+    backgroundColor: colors.surface, borderRadius: radii.xl,
+    borderWidth: 1, borderColor: colors.border, overflow: 'hidden',
   },
   feedItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-    gap: spacing.md,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
+    borderBottomWidth: 1, borderBottomColor: colors.borderSubtle, gap: spacing.md,
   },
-  feedIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  feedIcon: { fontSize: 16 },
+  feedDot: { width: 8, height: 8, borderRadius: 4 },
   feedInfo: { flex: 1 },
-  feedText: {
-    color: colors.textPrimary,
-    fontSize: typography.captionMedium.fontSize,
-    fontWeight: '600',
-  },
-  feedTime: {
-    color: colors.textMuted,
-    fontSize: typography.tiny.fontSize,
-    marginTop: 2,
-  },
+  feedText: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '600' },
+  feedTime: { color: colors.textMuted, fontSize: 9, marginTop: 2 },
 });

@@ -1,55 +1,62 @@
 import { StyleSheet } from 'react-native';
 
 const palette = {
-  background: '#0A0E1A',
-  backgroundDeep: '#060912',
-  surface: '#121829',
-  surfaceElevated: '#1A2238',
-  surfaceHighlight: '#212B45',
-  border: '#1E2A42',
-  borderLight: '#2A3654',
-  borderSubtle: '#161F33',
+  background: '#0F111A',
+  backgroundDeep: '#080A12',
+  surface: '#1A1D2A',
+  surfaceElevated: '#222638',
+  surfaceHighlight: '#2C3048',
+  border: '#2A2E3E',
+  borderLight: '#363B50',
+  borderSubtle: '#1E2130',
 
-  textPrimary: '#F1F5F9',
-  textSecondary: '#94A3B8',
-  textMuted: '#64748B',
-  textInverse: '#0A0E1A',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#B0B8C8',
+  textMuted: '#6B7280',
+  textInverse: '#0F111A',
 
-  primary: '#6366F1',
-  primaryLight: '#818CF8',
-  primaryDark: '#4F46E5',
-  primaryGlow: 'rgba(99, 102, 241, 0.15)',
-  primarySurface: 'rgba(99, 102, 241, 0.08)',
+  primary: '#6C5CE7',
+  primaryLight: '#A29BFE',
+  primaryDark: '#4834D4',
+  primaryGlow: 'rgba(108, 92, 231, 0.25)',
+  primarySurface: 'rgba(108, 92, 231, 0.10)',
 
-  accent: '#F472B6',
-  accentLight: '#F9A8D4',
+  accent: '#FFD700',
+  accentLight: '#FFE44D',
+  accentDark: '#E6C200',
+  accentSurface: 'rgba(255, 215, 0, 0.10)',
 
-  danger: '#EF4444',
-  dangerLight: '#FCA5A5',
-  dangerSurface: 'rgba(239, 68, 68, 0.12)',
+  danger: '#FF3B30',
+  dangerLight: '#FF6B61',
+  dangerSurface: 'rgba(255, 59, 48, 0.12)',
 
-  success: '#10B981',
-  successLight: '#6EE7B7',
-  successSurface: 'rgba(16, 185, 129, 0.12)',
+  success: '#00C853',
+  successLight: '#69F0AE',
+  successSurface: 'rgba(0, 200, 83, 0.12)',
 
-  warning: '#F59E0B',
-  warningLight: '#FCD34D',
-  warningSurface: 'rgba(245, 158, 11, 0.12)',
+  warning: '#FFB300',
+  warningLight: '#FFD54F',
+  warningSurface: 'rgba(255, 179, 0, 0.12)',
 
-  info: '#06B6D4',
-  infoLight: '#67E8F9',
-  infoSurface: 'rgba(6, 182, 212, 0.12)',
+  info: '#00B0FF',
+  infoLight: '#40C4FF',
+  infoSurface: 'rgba(0, 176, 255, 0.12)',
 
-  vip: '#FBBF24',
-  vipSurface: 'rgba(251, 191, 36, 0.12)',
-  premium: '#A78BFA',
-  premiumSurface: 'rgba(167, 139, 250, 0.12)',
-  general: '#60A5FA',
-  generalSurface: 'rgba(96, 165, 250, 0.12)',
+  vip: '#FFD700',
+  vipSurface: 'rgba(255, 215, 0, 0.12)',
+  premium: '#6C5CE7',
+  premiumSurface: 'rgba(108, 92, 231, 0.12)',
+  general: '#78909C',
+  generalSurface: 'rgba(120, 144, 156, 0.12)',
 
-  gradientStart: '#6366F1',
-  gradientEnd: '#8B5CF6',
-  gradientAccent: '#EC4899',
+  gradientStart: '#6C5CE7',
+  gradientEnd: '#4834D4',
+  gradientAccent: '#FFD700',
+  gradientHero: ['#0B1C3D', '#1A1D2A'],
+  gradientCard: ['#1A1D2A', '#222638'],
+  gradientPurple: ['#6C5CE7', '#4834D4'],
+  gradientGold: ['#FFD700', '#E6C200'],
+  gradientLive: ['#FF3B30', '#FF6B61'],
 };
 
 export const colors = palette;
@@ -64,6 +71,7 @@ export const spacing = {
   xxl: 24,
   xxxl: 32,
   huge: 40,
+  xxh: 48,
 };
 
 export const radii = {
@@ -150,34 +158,48 @@ export const shadows = {
   sm: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 2,
   },
   md: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   lg: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.35,
     shadowRadius: 16,
     elevation: 8,
   },
   xl: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.4,
     shadowRadius: 24,
     elevation: 12,
   },
   primary: {
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  accent: {
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  gold: {
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 6,
@@ -194,12 +216,10 @@ export const commonStyles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.xxl,
   },
-
   screenPadding: {
     paddingHorizontal: spacing.lg,
   },
 
-  // Card styles
   card: {
     backgroundColor: colors.surface,
     borderRadius: radii.xl,
@@ -217,7 +237,6 @@ export const commonStyles = StyleSheet.create({
     ...shadows.lg,
   },
 
-  // Section styles
   sectionHeader: {
     marginBottom: spacing.md,
   },
@@ -233,7 +252,6 @@ export const commonStyles = StyleSheet.create({
     marginTop: spacing.xxs,
   },
 
-  // Form styles
   formSection: {
     backgroundColor: colors.surface,
     padding: spacing.xxl,
@@ -262,7 +280,6 @@ export const commonStyles = StyleSheet.create({
     borderColor: colors.border,
   },
 
-  // Button styles
   primaryButton: {
     backgroundColor: colors.primary,
     paddingVertical: spacing.lg,
@@ -308,7 +325,6 @@ export const commonStyles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Text styles
   linkText: {
     color: colors.textSecondary,
     fontSize: typography.body.fontSize,
@@ -318,7 +334,6 @@ export const commonStyles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Brand styles
   brandMark: {
     width: 72,
     height: 72,
@@ -347,7 +362,6 @@ export const commonStyles = StyleSheet.create({
     lineHeight: typography.body.lineHeight,
   },
 
-  // Badge styles
   badge: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,

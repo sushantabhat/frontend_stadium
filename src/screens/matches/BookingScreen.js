@@ -2,19 +2,20 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  ScrollView,
 } from 'react-native';
-import ScreenHeader from '../../components/ScreenHeader';
+import { LinearGradient } from 'expo-linear-gradient';
 import BookingProgress from '../../components/BookingProgress';
-import { colors, spacing, radii, typography, shadows, commonStyles } from '../../constants/theme';
+import GradientButton from '../../components/GradientButton';
+import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchMatchById } from '../../services/matchService';
 import { confirmBooking, unlockSeats } from '../../services/bookingService';
 import { fetchDynamicPricingSuggestions } from '../../services/aiService';
-import { formatMatchDate } from '../../utils/date';
 
 export default function BookingScreen({ route, navigation }) {
   const { matchId, selectedSeats } = route.params;
@@ -24,85 +25,113 @@ export default function BookingScreen({ route, navigation }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPaying, setIsPaying] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
+  const [bookedTicket, setBookedTicket] = useState(null);
 
   useEffect(() => {
     async function loadData() {
       try {
         const matchData = await fetchMatchById(matchId);
         setMatch(matchData);
-
         try {
-          const suggestionsData = await fetchDynamicPricingSuggestions(matchId);
-          setPricingSuggestions(suggestionsData);
+          const suggestions = await fetchDynamicPricingSuggestions(matchId);
+          setPricingSuggestions(suggestions);
         } catch {
           setPricingSuggestions(null);
         }
       } catch {
-        Alert.alert('Error', 'Failed to retrieve match checkout details');
+        Alert.alert('Error', 'Failed to load checkout details');
       } finally {
         setIsLoading(false);
       }
     }
-
     loadData();
-
-    return () => {
-      if (!isBooked) {
-        const seatIds = selectedSeats.map((s) => s.id);
-        unlockSeats(matchId, seatIds).catch((err) =>
-          console.log('Failed to release seats lock:', err.message)
-        );
-      }
-    };
-  }, [matchId, selectedSeats, isBooked]);
+  }, [matchId]);
 
   const totalAmount = useMemo(() => {
-    return selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
-  }, [selectedSeats]);
+    if (!match || !selectedSeats) return 0;
+    return selectedSeats.reduce((sum, seat) => {
+      const basePrice = match.pricing?.[seat.category] || 0;
+      const multiplier = pricingSuggestions?.multiplier || 1.0;
+      return sum + basePrice * multiplier;
+    }, 0);
+  }, [match, selectedSeats, pricingSuggestions]);
 
   const handleCheckout = async () => {
     setIsPaying(true);
-    const seatIds = selectedSeats.map((s) => s.id);
     try {
-      await confirmBooking(matchId, seatIds);
+      const seatIds = selectedSeats.map(s => s.id || s._id);
+      const result = await confirmBooking(matchId, seatIds);
       setIsBooked(true);
-
-      Alert.alert(
-        'Success 🏏',
-        'Your tickets have been booked successfully. You can find them in the "My Tickets" tab.',
-        [
-          {
-            text: 'View Tickets',
-            onPress: () => {
-              navigation.reset({
-                index: 0,
-                routes: [
-                  { name: 'FanDashboard' },
-                  { name: 'MyTickets' },
-                ],
-              });
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      Alert.alert('Checkout Failed', error.response?.data?.message || 'Payment processing failed');
+      setBookedTicket(result.ticket || result);
+    } catch (err) {
+      Alert.alert('Booking failed', err.response?.data?.message || err.message);
     } finally {
       setIsPaying(false);
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
+    try {
+      const seatIds = selectedSeats.map(s => s.id || s._id);
+      await unlockSeats(matchId, seatIds);
+    } catch {
+      // silent
+    }
     navigation.goBack();
+  };
+
+  const handleDone = () => {
+    navigation.popToTop();
   };
 
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title="Checkout" onBack={handleCancel} />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primaryLight} />
-        </View>
+        <BookingProgress currentStep="review" />
+        <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+      </View>
+    );
+  }
+
+  // Booked success state
+  if (isBooked) {
+    const ticket = bookedTicket || {};
+    const qrUrl = ticket.ticketCode
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(ticket.ticketCode)}&color=FFFFFF&bgcolor=6C5CE7`
+      : null;
+
+    return (
+      <View style={styles.container}>
+        <BookingProgress currentStep="done" />
+        <ScrollView contentContainerStyle={styles.successScroll}>
+          <View style={styles.successCard}>
+            <LinearGradient colors={colors.gradientPurple} style={styles.successGradient}>
+              <Text style={styles.successIcon}>✅</Text>
+              <Text style={styles.successTitle}>Booking Confirmed!</Text>
+              <Text style={styles.successSubtitle}>Your tickets are ready</Text>
+
+              {qrUrl && (
+                <View style={styles.qrSection}>
+                  <View style={styles.qrBox}>
+                    <Image source={{ uri: qrUrl }} style={styles.qrImage} />
+                  </View>
+                  <Text style={styles.qrHint}>📱 Show this QR at the entry gate</Text>
+                </View>
+              )}
+
+              <View style={styles.dividerDashed} />
+
+              <View style={styles.ticketDetails}>
+                <Text style={styles.detailLabel}>TICKET CODE</Text>
+                <Text style={styles.detailValue}>{ticket.ticketCode || 'N/A'}</Text>
+                <Text style={[styles.detailLabel, { marginTop: spacing.md }]}>SEATS</Text>
+                <Text style={styles.detailValue}>{selectedSeats.map(s => s.seatLabel).join(', ')}</Text>
+              </View>
+            </LinearGradient>
+          </View>
+
+          <GradientButton title="Done" onPress={handleDone} style={{ marginHorizontal: spacing.xl, marginTop: spacing.xl }} />
+        </ScrollView>
       </View>
     );
   }
@@ -112,297 +141,158 @@ export default function BookingScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <BookingProgress currentStep={isBooked ? 'done' : 'pay'} />
-      <ScreenHeader title="Confirm Booking" onBack={handleCancel} />
-
+      <BookingProgress currentStep="pay" />
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Event Details */}
         <View style={styles.card}>
-          <Text style={styles.cardHeader}>EVENT DETAILS</Text>
-          <Text style={styles.matchTitle}>{match?.title}</Text>
-          <Text style={styles.matchMeta}>📍 {match?.venue}</Text>
-          <Text style={styles.matchMeta}>🗓 {match ? formatMatchDate(match.matchDate) : ''}</Text>
+          <LinearGradient colors={[`${colors.primary}18`, `${colors.primary}05`]} style={styles.cardGradient}>
+            <Text style={styles.cardHeader}>EVENT DETAILS</Text>
+            <Text style={styles.matchTitle}>{match?.title}</Text>
+            <Text style={styles.matchMeta}>📍 {match?.venue}</Text>
+            {match?.matchDate && (
+              <Text style={styles.matchMeta}>📅 {new Date(match.matchDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {new Date(match.matchDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</Text>
+            )}
+          </LinearGradient>
         </View>
 
+        {/* Selected Seats */}
         <View style={styles.card}>
-          <Text style={styles.cardHeader}>SELECTED SEATS</Text>
-          {selectedSeats.map((seat) => (
-            <View key={seat.id} style={styles.seatRow}>
-              <View style={styles.seatBadge}>
-                <Text style={styles.seatLabel}>{seat.seatLabel}</Text>
+          <Text style={styles.cardHeader}>SELECTED SEATS ({selectedSeats.length})</Text>
+          {selectedSeats.map((seat, idx) => {
+            const basePrice = match?.pricing?.[seat.category] || 0;
+            const price = basePrice * multiplier;
+            return (
+              <View key={idx} style={styles.seatRow}>
+                <View style={styles.seatInfo}>
+                  <Text style={styles.seatLabel}>{seat.seatLabel}</Text>
+                  <Text style={styles.seatCategory}>{(seat.category || 'general').toUpperCase()}</Text>
+                </View>
+                <Text style={styles.seatPrice}>₹{Math.round(price)}</Text>
               </View>
-              <Text style={styles.seatCategory}>
-                {seat.category.toUpperCase()}
-              </Text>
-              <Text style={styles.seatPrice}>₹{seat.price}</Text>
+            );
+          })}
+        </View>
+
+        {/* Pricing Summary */}
+        {multiplier !== 1.0 && (
+          <View style={styles.demandCard}>
+            <Text style={styles.demandIcon}>📈</Text>
+            <View style={styles.demandInfo}>
+              <Text style={styles.demandTitle}>Dynamic Pricing Active</Text>
+              <Text style={styles.demandDesc}>High demand: {demandLevel} ({multiplier}x multiplier)</Text>
             </View>
-          ))}
-        </View>
+          </View>
+        )}
 
-        {multiplier > 1.0 ? (
-          <View style={styles.aiAlert}>
-            <Text style={styles.aiAlertTitle}>📈 AI Pricing Alert: {demandLevel} Demand</Text>
-            <Text style={styles.aiAlertText}>
-              Stadium seat occupancy is currently trending. A demand pricing multiplier of{' '}
-              <Text style={styles.highlight}>{multiplier}x</Text> is recommended, but your locked seats
-              have been secured at their initial lock pricing!
-            </Text>
-            {pricingSuggestions?.factors && (
-              <View style={styles.pricingFactors}>
-                <Text style={styles.factorTitle}>Pricing Factors:</Text>
-                {pricingSuggestions.factors.demandLevel && (
-                  <Text style={styles.factorItem}>• Demand: {pricingSuggestions.factors.demandLevel}</Text>
-                )}
-                {pricingSuggestions.factors.urgency && (
-                  <Text style={styles.factorItem}>• Timing: {pricingSuggestions.factors.urgency}</Text>
-                )}
-                {pricingSuggestions.factors.dayFactor && (
-                  <Text style={styles.factorItem}>• {pricingSuggestions.factors.dayFactor}</Text>
-                )}
-                {pricingSuggestions.factors.matchDaySurge && (
-                  <Text style={styles.factorItem}>• Match day surge applied</Text>
-                )}
-              </View>
-            )}
-            {pricingSuggestions?.confidence && (
-              <Text style={styles.confidenceText}>
-                Confidence: {(pricingSuggestions.confidence * 100).toFixed(0)}%
-              </Text>
-            )}
-          </View>
-        ) : null}
-
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>PAYMENT BREAKDOWN</Text>
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Tickets Cost</Text>
-            <Text style={styles.billValue}>₹{totalAmount}</Text>
-          </View>
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Convenience Fee</Text>
-            <Text style={styles.billValue}>₹0</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.billRow}>
+        {/* Total */}
+        <View style={styles.totalCard}>
+          <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>₹{totalAmount}</Text>
+            <Text style={styles.totalValue}>₹{Math.round(totalAmount)}</Text>
           </View>
         </View>
 
-        <View style={styles.warningBox}>
-          <Text style={styles.warningText}>
-            🔒 Seats are reserved for you for 5 minutes. If you go back or close the app, your holds
-            will be released.
-          </Text>
-        </View>
+        <View style={{ height: spacing.xxl }} />
       </ScrollView>
 
-      <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} disabled={isPaying}>
+      {/* Sticky CTA */}
+      <View style={styles.stickyCta}>
+        <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} activeOpacity={0.7}>
           <Text style={styles.cancelBtnText}>Cancel</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[commonStyles.primaryButton, styles.payBtn]}
+        <GradientButton
+          title={isPaying ? 'Processing...' : `Pay ₹${Math.round(totalAmount)}`}
           onPress={handleCheckout}
           disabled={isPaying}
-          activeOpacity={0.8}
-        >
-          {isPaying ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={commonStyles.primaryButtonText}>Pay Now</Text>
-          )}
-        </TouchableOpacity>
+          style={{ flex: 1 }}
+        />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: 100,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  content: { padding: spacing.xl, paddingBottom: spacing.xxxl },
+
+  // Cards
   card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.lg,
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
-    ...shadows.md,
+    backgroundColor: colors.surface, borderRadius: radii.xl,
+    borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg, overflow: 'hidden',
   },
+  cardGradient: { padding: spacing.xl },
   cardHeader: {
-    color: colors.textMuted,
-    ...typography.small,
-    letterSpacing: 1.2,
-    marginBottom: spacing.lg,
+    color: colors.textMuted, fontSize: 9, fontWeight: '800',
+    letterSpacing: 1.5, marginBottom: spacing.md,
   },
   matchTitle: {
-    color: colors.textPrimary,
-    ...typography.h3,
-    marginBottom: spacing.sm,
+    color: colors.textPrimary, fontSize: typography.h3.fontSize,
+    fontWeight: '800', marginBottom: spacing.sm,
   },
-  matchMeta: {
-    color: colors.textSecondary,
-    ...typography.caption,
-    marginBottom: spacing.xs,
-  },
+  matchMeta: { color: colors.textSecondary, fontSize: typography.caption.fontSize, marginBottom: spacing.xs },
+
+  // Seats
   seatRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderColor: `${colors.border}50`,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.borderSubtle,
   },
-  seatBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs + 2,
-    borderRadius: radii.sm,
+  seatInfo: { flex: 1 },
+  seatLabel: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
+  seatCategory: { color: colors.textMuted, fontSize: 9, fontWeight: '600', marginTop: 2 },
+  seatPrice: { color: colors.accent, fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
+
+  // Demand
+  demandCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.warningSurface,
+    borderRadius: radii.lg, padding: spacing.lg, marginBottom: spacing.lg,
+    borderWidth: 1, borderColor: `${colors.warning}30`, gap: spacing.md,
   },
-  seatLabel: {
-    color: '#FFFFFF',
-    ...typography.tiny,
-    letterSpacing: 0,
+  demandIcon: { fontSize: 20 },
+  demandInfo: { flex: 1 },
+  demandTitle: { color: colors.warningLight, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
+  demandDesc: { color: colors.textMuted, fontSize: typography.small.fontSize, marginTop: 2 },
+
+  // Total
+  totalCard: {
+    backgroundColor: colors.surface, borderRadius: radii.xl,
+    padding: spacing.xl, borderWidth: 1, borderColor: colors.border,
   },
-  seatCategory: {
-    color: colors.textSecondary,
-    ...typography.captionMedium,
-    flex: 1,
-    marginLeft: spacing.lg,
-  },
-  seatPrice: {
-    color: colors.textPrimary,
-    ...typography.bodyMedium,
-  },
-  aiAlert: {
-    backgroundColor: `${colors.info}15`,
-    borderColor: colors.info,
-    borderWidth: 1,
-    borderRadius: radii.lg,
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
-  },
-  aiAlertTitle: {
-    color: colors.info,
-    ...typography.small,
-    letterSpacing: 0,
-    textTransform: 'none',
-    marginBottom: spacing.xs,
-  },
-  aiAlertText: {
-    color: colors.textSecondary,
-    ...typography.caption,
-    lineHeight: typography.caption.lineHeight + 4,
-  },
-  highlight: {
-    color: colors.textPrimary,
-    fontWeight: '800',
-  },
-  pricingFactors: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: `${colors.info}30`,
-  },
-  factorTitle: {
-    color: colors.textSecondary,
-    ...typography.tiny,
-    letterSpacing: 0,
-    textTransform: 'none',
-    marginBottom: spacing.xs,
-  },
-  factorItem: {
-    color: colors.textMuted,
-    ...typography.tiny,
-    lineHeight: typography.tiny.lineHeight + 4,
-    letterSpacing: 0,
-    textTransform: 'none',
-  },
-  confidenceText: {
-    color: colors.textMuted,
-    fontSize: typography.tiny.fontSize - 1,
-    fontStyle: 'italic',
-    marginTop: spacing.sm,
-  },
-  billRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.xs,
-  },
-  billLabel: {
-    color: colors.textSecondary,
-    ...typography.caption,
-  },
-  billValue: {
-    color: colors.textPrimary,
-    ...typography.bodyMedium,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.md,
-  },
-  totalLabel: {
-    color: colors.textPrimary,
-    ...typography.body,
-    fontWeight: '800',
-  },
-  totalValue: {
-    color: colors.primaryLight,
-    ...typography.h3,
-  },
-  warningBox: {
-    paddingHorizontal: spacing.lg,
-  },
-  warningText: {
-    color: colors.textMuted,
-    ...typography.small,
-    textAlign: 'center',
-    letterSpacing: 0,
-    textTransform: 'none',
-    lineHeight: typography.small.lineHeight + 4,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-    flexDirection: 'row',
-    gap: spacing.lg,
-    ...shadows.lg,
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  totalLabel: { color: colors.textSecondary, fontSize: typography.bodyMedium.fontSize, fontWeight: '600' },
+  totalValue: { color: colors.accent, fontSize: typography.h2.fontSize, fontWeight: '900' },
+
+  // Sticky CTA
+  stickyCta: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.borderSubtle,
+    paddingHorizontal: spacing.xl, paddingVertical: spacing.lg, paddingBottom: spacing.xxxl,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
   },
   cancelBtn: {
-    flex: 1,
-    height: 48,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceElevated,
+    paddingVertical: spacing.lg + 2, paddingHorizontal: spacing.xl,
+    borderRadius: radii.lg, borderWidth: 1.5, borderColor: colors.border,
+    alignItems: 'center', justifyContent: 'center',
   },
-  cancelBtnText: {
-    color: colors.textPrimary,
-    ...typography.bodyMedium,
+  cancelBtnText: { color: colors.textMuted, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
+
+  // Success
+  successScroll: { padding: spacing.xl, paddingTop: spacing.xxl },
+  successCard: { borderRadius: radii.xxl, overflow: 'hidden', ...shadows.lg },
+  successGradient: { padding: spacing.xxl, alignItems: 'center' },
+  successIcon: { fontSize: 48, marginBottom: spacing.lg },
+  successTitle: { color: '#FFF', fontSize: typography.h2.fontSize, fontWeight: '800', marginBottom: spacing.xs },
+  successSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: typography.caption.fontSize, marginBottom: spacing.xl },
+  qrSection: { alignItems: 'center', marginBottom: spacing.xl },
+  qrBox: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.sm },
+  qrImage: { width: 140, height: 140, borderRadius: radii.md },
+  qrHint: { color: 'rgba(255,255,255,0.6)', fontSize: typography.small.fontSize },
+  dividerDashed: {
+    height: 1, borderStyle: 'dashed', borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    marginVertical: spacing.xl, width: '100%',
   },
-  payBtn: {
-    flex: 2,
-    marginTop: 0,
-  },
+  ticketDetails: { width: '100%' },
+  detailLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.xs },
+  detailValue: { color: '#FFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
 });

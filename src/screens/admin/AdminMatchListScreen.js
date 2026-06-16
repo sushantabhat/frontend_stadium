@@ -54,7 +54,7 @@ export default function AdminMatchListScreen({ navigation }) {
         rightAction={
           <TouchableOpacity
             style={styles.createButton}
-            onPress={() => navigation.navigate('CreateMatch')}
+            onPress={() => navigation.navigate('AdminCreateMatch')}
           >
             <Text style={styles.createButtonText}>+ Create Match</Text>
           </TouchableOpacity>
@@ -89,7 +89,7 @@ export default function AdminMatchListScreen({ navigation }) {
           renderItem={({ item }) => (
             <MatchCard
               match={item}
-              onPress={() => navigation.navigate('MatchDetail', { matchId: item.id })}
+              onPress={() => navigation.navigate('AdminMatchDetail', { matchId: item.id })}
             />
           )}
         />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '../constants/theme';
+import { colors, spacing } from '../constants/theme';
 
 const steps = [
   { key: 'select', label: 'Select' },
@@ -66,61 +66,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSubtle,
   },
-  stepWrap: {
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
+  stepWrap: { alignItems: 'center', gap: spacing.xs },
   dot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 28, height: 28, borderRadius: 14,
     backgroundColor: colors.surfaceElevated,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 2, borderColor: colors.border,
+    alignItems: 'center', justifyContent: 'center',
   },
-  dotCompleted: {
-    backgroundColor: colors.success,
-    borderColor: colors.success,
-  },
-  dotActive: {
-    backgroundColor: colors.primarySurface,
-    borderColor: colors.primary,
-  },
-  dotNumber: {
-    color: colors.textMuted,
-    fontSize: typography.tiny.fontSize,
-    fontWeight: '700',
-  },
-  dotNumberActive: {
-    color: colors.primaryLight,
-  },
-  checkMark: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  stepLabel: {
-    color: colors.textMuted,
-    fontSize: typography.tiny.fontSize,
-    fontWeight: '600',
-  },
-  stepLabelCompleted: {
-    color: colors.success,
-  },
-  stepLabelActive: {
-    color: colors.primaryLight,
-    fontWeight: '700',
-  },
+  dotCompleted: { backgroundColor: colors.success, borderColor: colors.success },
+  dotActive: { backgroundColor: colors.primarySurface, borderColor: colors.primary },
+  dotNumber: { color: colors.textMuted, fontSize: 10, fontWeight: '700' },
+  dotNumberActive: { color: colors.primaryLight },
+  checkMark: { color: '#FFF', fontSize: 12, fontWeight: '800' },
+  stepLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '600' },
+  stepLabelCompleted: { color: colors.success },
+  stepLabelActive: { color: colors.primaryLight, fontWeight: '700' },
   line: {
-    flex: 1,
-    height: 2,
-    backgroundColor: colors.border,
-    marginHorizontal: spacing.xs,
-    marginBottom: spacing.lg + spacing.xs,
+    flex: 1, height: 2, backgroundColor: colors.border,
+    marginHorizontal: spacing.xs, marginBottom: spacing.lg + spacing.xs,
   },
-  lineCompleted: {
-    backgroundColor: colors.success,
-  },
+  lineCompleted: { backgroundColor: colors.success },
 });

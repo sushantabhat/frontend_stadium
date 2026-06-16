@@ -11,7 +11,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 
 export default function TicketVerifyScreen({ route, navigation }) {
-  const { status, message, ticket, ticketCode, fraudPrediction } = route.params;
+  const { status, message, ticket, ticketCode, fraudPrediction } = route.params || {};
 
   const isSuccess = status === 'success';
   const isDuplicate = status === 'fraud_duplicate';

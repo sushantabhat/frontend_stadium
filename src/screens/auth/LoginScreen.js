@@ -12,8 +12,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { AuthContext } from '../../context/AuthContext';
-import { colors, spacing, radii, typography, shadows, commonStyles } from '../../constants/theme';
+import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
+
+const DEMO_ACCOUNTS = [
+  { label: 'Admin', email: 'admin@stadium.com', password: 'admin123', icon: '👑', color: colors.accent },
+  { label: 'Staff', email: 'staff@stadium.com', password: 'staff123', icon: '🛡️', color: colors.info },
+  { label: 'Fan', email: 'fan@stadium.com', password: 'fan123', icon: '🎟️', color: colors.primary },
+];
 
 export default function LoginScreen({ navigation }) {
   const { login, isLoading } = useContext(AuthContext);
@@ -33,172 +40,154 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={commonStyles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.innerContainer}
+        style={styles.flex}
       >
-        <ScrollViewWrapper>
-          {/* Brand Header */}
-          <View style={styles.brandSection}>
-            <View style={styles.brandMark}>
-              <Text style={styles.brandEmoji}>🏟️</Text>
-            </View>
-            <Text style={styles.brandTitle}>SMART{'\n'}STADIUM</Text>
-            <Text style={styles.brandSubtitle}>
-              Secure access for fans, staff, and administrators
-            </Text>
-          </View>
-
-          {/* Login Form */}
-          <View style={styles.formCard}>
-            <View style={styles.formHeader}>
-              <View>
-                <Text style={styles.formTitle}>Welcome back</Text>
-                <Text style={styles.formDesc}>Sign in to your account</Text>
+        <LinearGradient
+          colors={[`${colors.primaryDark}40`, `${colors.background}`, colors.background]}
+          style={styles.flex}
+        >
+          <View style={styles.scroll} contentContainerStyle={{ flexGrow: 1 }}>
+            {/* Brand */}
+            <View style={styles.brandSection}>
+              <View style={styles.brandMark}>
+                <LinearGradient
+                  colors={colors.gradientPurple}
+                  style={styles.brandMarkGradient}
+                >
+                  <Text style={styles.brandEmoji}>🏟️</Text>
+                </LinearGradient>
               </View>
-              <View style={styles.protectedBadge}>
-                <Text style={styles.protectedBadgeText}>🔐 SECURE</Text>
+              <Text style={styles.brandTitle}>SMART{'\n'}STADIUM</Text>
+              <Text style={styles.brandSubtitle}>Premium sports ticketing experience</Text>
+            </View>
+
+            {/* Form */}
+            <View style={styles.formCard}>
+              <Text style={styles.formTitle}>Welcome Back</Text>
+              <Text style={styles.formDesc}>Sign in to continue</Text>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>EMAIL</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="you@example.com"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  value={email}
+                  onChangeText={setEmail}
+                />
               </View>
-            </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>EMAIL ADDRESS</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="you@example.com"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={email}
-                onChangeText={setEmail}
-              />
-            </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>PASSWORD</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your password"
+                  placeholderTextColor={colors.textMuted}
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                />
+              </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>PASSWORD</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-            </View>
-
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={handleLogin}
-              disabled={isLoading}
-              activeOpacity={0.8}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.loginButtonText}>Sign In →</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.registerLink}
-              onPress={() => navigation.navigate('Register')}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.registerText}>
-                Don&apos;t have an account?{' '}
-                <Text style={styles.registerHighlight}>Create one</Text>
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.footerText}>
-            Your role is assigned by the system administrator
-          </Text>
-
-          <View style={styles.demoCard}>
-            <Text style={styles.demoTitle}>⚡ Quick Login (Dev Only)</Text>
-            {[
-              { label: 'Admin', email: 'admin@stadium.com', password: 'admin123', color: '#EF4444' },
-              { label: 'Staff', email: 'staff@stadium.com', password: 'staff123', color: colors.warningLight },
-              { label: 'Fan', email: 'fan@stadium.com', password: 'fan123', color: colors.primaryLight },
-            ].map((cred) => (
               <TouchableOpacity
-                key={cred.label}
-                style={styles.demoRow}
-                onPress={() => { setEmail(cred.email); setPassword(cred.password); }}
+                style={styles.loginBtn}
+                onPress={handleLogin}
+                disabled={isLoading}
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={colors.gradientPurple}
+                  style={styles.loginBtnGradient}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="#FFF" />
+                  ) : (
+                    <Text style={styles.loginBtnText}>Sign In →</Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Register')}
+                style={styles.registerLink}
                 activeOpacity={0.7}
               >
-                <View style={[styles.demoDot, { backgroundColor: cred.color }]} />
-                <View style={styles.demoInfo}>
-                  <Text style={styles.demoLabel}>{cred.label}</Text>
-                  <Text style={styles.demoCred}>{cred.email} / {cred.password}</Text>
-                </View>
-                <Text style={styles.demoFill}>Tap to fill →</Text>
+                <Text style={styles.registerText}>
+                  Don&apos;t have an account? <Text style={styles.registerHighlight}>Create one</Text>
+                </Text>
               </TouchableOpacity>
-            ))}
+            </View>
+
+            {/* Demo Accounts */}
+            <View style={styles.demoSection}>
+              <Text style={styles.demoTitle}>Quick Access (Dev)</Text>
+              <View style={styles.demoRow}>
+                {DEMO_ACCOUNTS.map((a) => (
+                  <TouchableOpacity
+                    key={a.label}
+                    style={styles.demoCard}
+                    onPress={() => { setEmail(a.email); setPassword(a.password); }}
+                    activeOpacity={0.7}
+                  >
+                    <LinearGradient
+                      colors={[`${a.color}25`, `${a.color}08`]}
+                      style={styles.demoGradient}
+                    >
+                      <Text style={styles.demoIcon}>{a.icon}</Text>
+                      <Text style={styles.demoLabel}>{a.label}</Text>
+                      <Text style={styles.demoEmail}>{a.email.split('@')[0]}</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
           </View>
-        </ScrollViewWrapper>
+        </LinearGradient>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-function ScrollViewWrapper({ children }) {
-  const { ScrollView } = require('react-native');
-  return (
-    <ScrollView
-      contentContainerStyle={{ flexGrow: 1 }}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
-      {children}
-    </ScrollView>
-  );
-}
-
 const styles = StyleSheet.create({
-  innerContainer: {
-    flex: 1,
-  },
-  brandSection: {
-    alignItems: 'center',
-    paddingTop: spacing.huge + 8,
-    paddingBottom: spacing.xxxl,
-    paddingHorizontal: spacing.xxl,
-  },
-  brandMark: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: colors.primarySurface,
-    borderWidth: 1.5,
-    borderColor: `${colors.primary}25`,
+  container: { flex: 1, backgroundColor: colors.background },
+  flex: { flex: 1 },
+  scroll: { flex: 1, justifyContent: 'center' },
+
+  // Brand
+  brandSection: { alignItems: 'center', marginBottom: spacing.xxl },
+  brandMark: { marginBottom: spacing.xl },
+  brandMarkGradient: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xl,
+    ...shadows.primary,
   },
-  brandEmoji: {
-    fontSize: 40,
-  },
+  brandEmoji: { fontSize: 36 },
   brandTitle: {
+    color: colors.textPrimary,
     fontSize: 32,
     fontWeight: '900',
-    color: colors.textPrimary,
     textAlign: 'center',
-    letterSpacing: 2,
+    letterSpacing: 3,
     lineHeight: 38,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   brandSubtitle: {
-    fontSize: typography.body.fontSize,
     color: colors.textMuted,
+    fontSize: typography.caption.fontSize,
     textAlign: 'center',
-    lineHeight: 22,
-    maxWidth: 260,
   },
+
+  // Form
   formCard: {
     backgroundColor: colors.surface,
     marginHorizontal: spacing.xl,
@@ -208,43 +197,23 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     ...shadows.lg,
   },
-  formHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.xxl,
-  },
   formTitle: {
     color: colors.textPrimary,
     fontSize: typography.h2.fontSize,
-    fontWeight: typography.h2.fontWeight,
+    fontWeight: '800',
+    marginBottom: spacing.xxs,
   },
   formDesc: {
     color: colors.textMuted,
     fontSize: typography.caption.fontSize,
-    marginTop: spacing.xxs,
+    marginBottom: spacing.xxl,
   },
-  protectedBadge: {
-    backgroundColor: colors.successSurface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: `${colors.success}30`,
-  },
-  protectedBadgeText: {
-    color: colors.successLight,
-    fontSize: typography.tiny.fontSize,
-    fontWeight: '700',
-  },
-  inputGroup: {
-    marginBottom: spacing.lg,
-  },
+  inputGroup: { marginBottom: spacing.lg },
   inputLabel: {
     color: colors.textMuted,
     fontSize: typography.label.fontSize,
-    fontWeight: typography.label.fontWeight,
-    letterSpacing: typography.label.letterSpacing,
+    fontWeight: '700',
+    letterSpacing: 1,
     marginBottom: spacing.sm,
   },
   input: {
@@ -257,18 +226,20 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
   },
-  loginButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.lg,
+  loginBtn: {
     borderRadius: radii.lg,
-    alignItems: 'center',
+    overflow: 'hidden',
     marginTop: spacing.sm,
-    minHeight: 54,
-    justifyContent: 'center',
     ...shadows.primary,
   },
-  loginButtonText: {
-    color: '#FFFFFF',
+  loginBtnGradient: {
+    paddingVertical: spacing.lg + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 54,
+  },
+  loginBtnText: {
+    color: '#FFF',
     fontSize: typography.bodyMedium.fontSize,
     fontWeight: '800',
     letterSpacing: 0.3,
@@ -277,67 +248,47 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     alignItems: 'center',
   },
-  registerText: {
-    color: colors.textMuted,
-    fontSize: typography.caption.fontSize,
-  },
-  registerHighlight: {
-    color: colors.primaryLight,
-    fontWeight: '700',
-  },
-  footerText: {
-    color: colors.textMuted,
-    fontSize: typography.small.fontSize,
-    textAlign: 'center',
+  registerText: { color: colors.textMuted, fontSize: typography.caption.fontSize },
+  registerHighlight: { color: colors.primaryLight, fontWeight: '700' },
+
+  // Demo
+  demoSection: {
+    paddingHorizontal: spacing.xl,
     marginTop: spacing.xxl,
-    marginBottom: spacing.lg,
-    opacity: 0.7,
-  },
-  demoCard: {
-    backgroundColor: colors.surface,
-    marginHorizontal: spacing.xl,
-    borderRadius: radii.xl,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: `${colors.warning}40`,
-    marginTop: spacing.sm,
   },
   demoTitle: {
-    color: colors.warningLight,
-    fontSize: typography.captionMedium.fontSize,
+    color: colors.accent,
+    fontSize: typography.tiny.fontSize,
     fontWeight: '800',
-    marginBottom: spacing.md,
+    letterSpacing: 1.5,
     textAlign: 'center',
+    marginBottom: spacing.md,
   },
   demoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm + 2,
-    borderBottomWidth: 1,
-    borderColor: colors.borderSubtle,
+    gap: spacing.sm,
   },
-  demoDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: spacing.sm,
-  },
-  demoInfo: {
+  demoCard: {
     flex: 1,
+    borderRadius: radii.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
+  demoGradient: {
+    padding: spacing.md,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  demoIcon: { fontSize: 18 },
   demoLabel: {
     color: colors.textPrimary,
     fontSize: typography.small.fontSize,
     fontWeight: '700',
   },
-  demoCred: {
+  demoEmail: {
     color: colors.textMuted,
-    fontSize: typography.tiny.fontSize,
-    marginTop: 1,
-  },
-  demoFill: {
-    color: colors.primaryLight,
-    fontSize: typography.tiny.fontSize,
-    fontWeight: '600',
+    fontSize: 9,
+    fontWeight: '500',
   },
 });

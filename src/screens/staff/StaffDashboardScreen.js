@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 
 const todayStats = [
@@ -35,7 +36,7 @@ export default function StaffDashboardScreen({ navigation }) {
             <Text style={styles.roleText}>STAFF</Text>
           </View>
           <Text style={styles.title}>Gate Operations</Text>
-          <Text style={styles.subtitle}>Real-time scan monitoring and ticket verification</Text>
+          <Text style={styles.subtitle}>Real-time scan monitoring</Text>
         </View>
 
         {/* Scanner CTA */}
@@ -44,14 +45,19 @@ export default function StaffDashboardScreen({ navigation }) {
           onPress={() => navigation.navigate('Scanner')}
           activeOpacity={0.85}
         >
-          <View style={styles.scannerIconWrap}>
-            <Text style={styles.scannerIcon}>📸</Text>
-          </View>
-          <View style={styles.scannerInfo}>
-            <Text style={styles.scannerTitle}>Open Scanner</Text>
-            <Text style={styles.scannerDesc}>Scan QR codes for gate entry</Text>
-          </View>
-          <Text style={styles.scannerArrow}>→</Text>
+          <LinearGradient
+            colors={colors.gradientPurple}
+            style={styles.scannerGradient}
+          >
+            <View style={styles.scannerIconWrap}>
+              <Text style={styles.scannerIcon}>📸</Text>
+            </View>
+            <View style={styles.scannerInfo}>
+              <Text style={styles.scannerTitle}>Open Scanner</Text>
+              <Text style={styles.scannerDesc}>Scan QR codes for gate entry</Text>
+            </View>
+            <Text style={styles.scannerArrow}>→</Text>
+          </LinearGradient>
         </TouchableOpacity>
 
         {/* Stats */}
@@ -74,7 +80,7 @@ export default function StaffDashboardScreen({ navigation }) {
           <View style={styles.toolsRow}>
             {[
               { icon: '🔍', label: 'Verify\nTicket', route: 'TicketVerify', color: colors.info },
-              { icon: '🕒', label: 'My\nShifts', route: 'My Shifts', color: colors.warning },
+              { icon: '🕒', label: 'My\nShifts', route: 'MyShifts', color: colors.warning },
               { icon: '📊', label: 'Daily\nReport', route: 'DailyReport', color: colors.accent },
             ].map((t) => (
               <TouchableOpacity
@@ -83,10 +89,13 @@ export default function StaffDashboardScreen({ navigation }) {
                 onPress={() => navigation.navigate(t.route)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.toolIconWrap, { backgroundColor: `${t.color}18` }]}>
+                <LinearGradient
+                  colors={[`${t.color}20`, `${t.color}08`]}
+                  style={styles.toolGradient}
+                >
                   <Text style={styles.toolIcon}>{t.icon}</Text>
-                </View>
-                <Text style={styles.toolLabel}>{t.label}</Text>
+                  <Text style={styles.toolLabel}>{t.label}</Text>
+                </LinearGradient>
               </TouchableOpacity>
             ))}
           </View>
@@ -94,24 +103,19 @@ export default function StaffDashboardScreen({ navigation }) {
 
         {/* Recent Scans */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Scans</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Dashboard')}>
-              <Text style={styles.seeAll}>See All →</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.sectionTitle}>Recent Scans</Text>
           <View style={styles.scanList}>
             {recentScans.map((scan, idx) => (
               <View key={idx} style={styles.scanItem}>
-                <View style={styles.scanDot} />
+                <View style={[styles.scanDot, scan.status === 'valid' ? styles.dotValid : styles.dotManual]} />
                 <View style={styles.scanInfo}>
                   <Text style={styles.scanName}>{scan.name}</Text>
                   <Text style={styles.scanSeat}>{scan.seat}</Text>
                 </View>
                 <View style={styles.scanRight}>
                   <Text style={styles.scanTime}>{scan.time}</Text>
-                  <View style={[styles.statusBadge, scan.status === 'valid' ? styles.statusValid : styles.statusManual]}>
-                    <Text style={[styles.statusText, scan.status === 'valid' ? styles.statusTextValid : styles.statusTextManual]}>
+                  <View style={[styles.statusBadge, scan.status === 'valid' ? styles.badgeValid : styles.badgeManual]}>
+                    <Text style={[styles.badgeText, scan.status === 'valid' ? styles.badgeTextValid : styles.badgeTextManual]}>
                       {scan.status === 'valid' ? '✓ Valid' : '⚠ Manual'}
                     </Text>
                   </View>
@@ -131,205 +135,80 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingTop: spacing.md },
 
-  header: {
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.xl,
-  },
-  rolePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  roleDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.success,
-  },
-  roleText: {
-    color: colors.success,
-    fontSize: typography.tiny.fontSize,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-  },
-  title: {
-    color: colors.textPrimary,
-    fontSize: typography.h1.fontSize,
-    fontWeight: typography.h1.fontWeight,
-  },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: typography.caption.fontSize,
-    marginTop: spacing.xs,
-    maxWidth: 300,
-  },
+  header: { paddingHorizontal: spacing.xl, marginBottom: spacing.xl },
+  rolePill: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  roleDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success },
+  roleText: { color: colors.success, fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
+  title: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '800' },
+  subtitle: { color: colors.textMuted, fontSize: typography.caption.fontSize, marginTop: spacing.xs },
 
   // Scanner CTA
-  scannerCta: {
-    marginHorizontal: spacing.xl,
-    marginBottom: spacing.xl,
+  scannerCta: { marginHorizontal: spacing.xl, marginBottom: spacing.xl, borderRadius: radii.xl, overflow: 'hidden', ...shadows.primary },
+  scannerGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: radii.xl,
     padding: spacing.xl,
     gap: spacing.lg,
-    ...shadows.primary,
   },
   scannerIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: radii.lg,
+    width: 56, height: 56, borderRadius: radii.lg,
     backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
   scannerIcon: { fontSize: 28 },
   scannerInfo: { flex: 1 },
-  scannerTitle: {
-    color: '#FFF',
-    fontSize: typography.bodyMedium.fontSize,
-    fontWeight: '800',
-    marginBottom: spacing.xxs,
-  },
-  scannerDesc: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: typography.small.fontSize,
-  },
-  scannerArrow: {
-    color: '#FFF',
-    fontSize: 22,
-    fontWeight: '700',
-  },
+  scannerTitle: { color: '#FFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800', marginBottom: spacing.xxs },
+  scannerDesc: { color: 'rgba(255,255,255,0.75)', fontSize: typography.small.fontSize },
+  scannerArrow: { color: '#FFF', fontSize: 22, fontWeight: '700' },
 
   // Sections
-  section: {
-    marginBottom: spacing.xl,
-    paddingHorizontal: spacing.xl,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
+  section: { marginBottom: spacing.xl, paddingHorizontal: spacing.xl },
   sectionTitle: {
     color: colors.textPrimary,
     fontSize: typography.h3.fontSize,
-    fontWeight: typography.h3.fontWeight,
-    marginBottom: spacing.md,
-  },
-  seeAll: {
-    color: colors.primaryLight,
-    fontSize: typography.small.fontSize,
     fontWeight: '700',
+    marginBottom: spacing.md,
   },
 
   // Stats
-  statsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
+  statsRow: { flexDirection: 'row', gap: spacing.md },
   statCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    alignItems: 'center',
+    flex: 1, backgroundColor: colors.surface, borderRadius: radii.lg,
+    borderWidth: 1, borderColor: colors.border, padding: spacing.lg, alignItems: 'center',
   },
   statIcon: { fontSize: 18, marginBottom: spacing.sm },
-  statValue: {
-    fontSize: typography.h2.fontSize,
-    fontWeight: '900',
-    marginBottom: spacing.xxs,
-  },
-  statLabel: {
-    color: colors.textMuted,
-    fontSize: typography.tiny.fontSize,
-    fontWeight: '600',
-  },
+  statValue: { fontSize: typography.h2.fontSize, fontWeight: '900', marginBottom: spacing.xxs },
+  statLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '600' },
 
   // Tools
-  toolsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  toolCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    alignItems: 'center',
-  },
-  toolIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
+  toolsRow: { flexDirection: 'row', gap: spacing.md },
+  toolCard: { flex: 1, borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
+  toolGradient: { padding: spacing.lg, alignItems: 'center', gap: spacing.sm },
   toolIcon: { fontSize: 20 },
-  toolLabel: {
-    color: colors.textSecondary,
-    fontSize: typography.tiny.fontSize,
-    fontWeight: '700',
-    textAlign: 'center',
-    lineHeight: 16,
-  },
+  toolLabel: { color: colors.textSecondary, fontSize: 10, fontWeight: '700', textAlign: 'center', lineHeight: 16 },
 
-  // Recent scans
+  // Scans
   scanList: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
+    backgroundColor: colors.surface, borderRadius: radii.xl,
+    borderWidth: 1, borderColor: colors.border, overflow: 'hidden',
   },
   scanItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-    gap: spacing.md,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
+    borderBottomWidth: 1, borderBottomColor: colors.borderSubtle, gap: spacing.md,
   },
-  scanDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-  },
+  scanDot: { width: 8, height: 8, borderRadius: 4 },
+  dotValid: { backgroundColor: colors.success },
+  dotManual: { backgroundColor: colors.warning },
   scanInfo: { flex: 1 },
-  scanName: {
-    color: colors.textPrimary,
-    fontSize: typography.captionMedium.fontSize,
-    fontWeight: '700',
-  },
-  scanSeat: {
-    color: colors.textMuted,
-    fontSize: typography.tiny.fontSize,
-    marginTop: 2,
-  },
+  scanName: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
+  scanSeat: { color: colors.textMuted, fontSize: 9, marginTop: 2 },
   scanRight: { alignItems: 'flex-end', gap: spacing.xxs },
-  scanTime: {
-    color: colors.textMuted,
-    fontSize: typography.tiny.fontSize - 1,
-  },
-  statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs + 1,
-    borderRadius: radii.full,
-  },
-  statusValid: { backgroundColor: colors.successSurface },
-  statusManual: { backgroundColor: colors.warningSurface },
-  statusText: { fontSize: typography.tiny.fontSize - 1, fontWeight: '700' },
-  statusTextValid: { color: colors.successLight },
-  statusTextManual: { color: colors.warningLight },
+  scanTime: { color: colors.textMuted, fontSize: 9 },
+  statusBadge: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs + 1, borderRadius: radii.full },
+  badgeValid: { backgroundColor: colors.successSurface },
+  badgeManual: { backgroundColor: colors.warningSurface },
+  badgeText: { fontSize: 9, fontWeight: '700' },
+  badgeTextValid: { color: colors.successLight },
+  badgeTextManual: { color: colors.warningLight },
 });

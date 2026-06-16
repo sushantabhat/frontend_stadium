@@ -1,15 +1,13 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, radii, typography } from '../constants/theme';
+import { colors, spacing, typography } from '../constants/theme';
 
-export default function EmptyState({ icon = '🏏', title, message }) {
+export default function EmptyState({ icon, title, description, actionText, onAction }) {
   return (
     <View style={styles.container}>
-      <View style={styles.iconWrap}>
-        <Text style={styles.icon}>{icon}</Text>
-      </View>
-      <Text style={styles.title}>{title}</Text>
-      {message ? <Text style={styles.message}>{message}</Text> : null}
+      {icon && <Text style={styles.icon}>{icon}</Text>}
+      {title && <Text style={styles.title}>{title}</Text>}
+      {description && <Text style={styles.description}>{description}</Text>}
     </View>
   );
 }
@@ -17,36 +15,21 @@ export default function EmptyState({ icon = '🏏', title, message }) {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.huge + 8,
-    paddingHorizontal: spacing.xxxl,
+    paddingVertical: spacing.huge,
+    paddingHorizontal: spacing.xxl,
   },
-  iconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: radii.xxl,
-    backgroundColor: colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xl,
-  },
-  icon: {
-    fontSize: 36,
-  },
+  icon: { fontSize: 48, marginBottom: spacing.lg },
   title: {
     color: colors.textPrimary,
     fontSize: typography.h3.fontSize,
-    fontWeight: typography.h3.fontWeight,
+    fontWeight: '700',
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
-  message: {
+  description: {
     color: colors.textMuted,
     fontSize: typography.caption.fontSize,
     textAlign: 'center',
-    lineHeight: typography.caption.lineHeight + 4,
-    maxWidth: 280,
+    lineHeight: 20,
   },
 });
