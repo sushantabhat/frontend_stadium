@@ -1,13 +1,6 @@
 import React from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ScreenHeader from '../../components/ScreenHeader';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 
@@ -44,14 +37,14 @@ export default function AdminSettingsScreen() {
       <StatusBar barStyle="light-content" />
       <ScreenHeader title="Settings" subtitle="System configuration" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {SETTINGS_SECTIONS.map((section, sIdx) => (
-          <View key={sIdx} style={styles.section}>
+        {SETTINGS_SECTIONS.map((section) => (
+          <View key={section.title} style={styles.section}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
             <View style={styles.card}>
-              {section.items.map((item, iIdx) => (
+              {section.items.map((item, itemIdx) => (
                 <TouchableOpacity
-                  key={iIdx}
-                  style={[styles.item, iIdx < section.items.length - 1 && styles.itemBorder]}
+                  key={item.label}
+                  style={[styles.item, itemIdx < section.items.length - 1 && styles.itemBorder]}
                   activeOpacity={0.7}
                 >
                   <View style={styles.itemLeft}>

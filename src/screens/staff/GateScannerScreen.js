@@ -1,17 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenHeader from '../../components/ScreenHeader';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
@@ -85,30 +74,6 @@ export default function GateScannerScreen({ navigation }) {
     }
   };
 
-  const renderHistoryItem = ({ item }) => {
-    return (
-      <View style={styles.historyRow}>
-        <View style={styles.historyLeft}>
-          <Text style={styles.historyUser}>{item.user?.name || 'Fan'}</Text>
-          <Text style={styles.historySeat}>
-            {item.seat?.seatLabel} ({item.seat?.category.toUpperCase()})
-          </Text>
-        </View>
-        <View style={styles.historyRight}>
-          <Text style={styles.historyTime}>
-            {new Date(item.entryTime || item.createdAt).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
-          <View style={styles.successBadge}>
-            <Text style={styles.successBadgeText}>APPROVED</Text>
-          </View>
-        </View>
-      </View>
-    );
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -166,13 +131,29 @@ export default function GateScannerScreen({ navigation }) {
           ) : scanHistory.length === 0 ? (
             <Text style={styles.emptyHistory}>No scan records compiled in this shift.</Text>
           ) : (
-            <FlatList
-              data={scanHistory}
-              renderItem={renderHistoryItem}
-              keyExtractor={(item) => item._id}
-              scrollEnabled={false}
-              contentContainerStyle={styles.historyList}
-            />
+            <View style={styles.historyList}>
+              {scanHistory.map((item) => (
+                <View key={item._id} style={styles.historyRow}>
+                  <View style={styles.historyLeft}>
+                    <Text style={styles.historyUser}>{item.user?.name || 'Fan'}</Text>
+                    <Text style={styles.historySeat}>
+                      {item.seat?.seatLabel} ({item.seat?.category.toUpperCase()})
+                    </Text>
+                  </View>
+                  <View style={styles.historyRight}>
+                    <Text style={styles.historyTime}>
+                      {new Date(item.entryTime || item.createdAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Text>
+                    <View style={styles.successBadge}>
+                      <Text style={styles.successBadgeText}>APPROVED</Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
           )}
         </View>
       </ScrollView>

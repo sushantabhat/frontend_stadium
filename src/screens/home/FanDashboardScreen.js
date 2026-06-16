@@ -1,17 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  Dimensions,
-} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography } from '../../constants/theme';
@@ -94,18 +83,14 @@ export default function FanDashboardScreen({ navigation }) {
 
         {/* Quick actions — scrollable */}
         <View style={styles.section}>
-          <FlatList
-            data={[
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillsList}>
+            {[
               { icon: '🔍', label: 'Browse Matches', route: 'Browse' },
               { icon: '🎫', label: 'My Tickets', route: 'My Tickets' },
               { icon: '❤️', label: 'Wishlist', route: 'Wishlist' },
-            ]}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.pillsList}
-            keyExtractor={(item) => item.label}
-            renderItem={({ item }) => (
+            ].map((item) => (
               <TouchableOpacity
+                key={item.label}
                 style={styles.pill}
                 onPress={() => navigation.navigate(item.route)}
                 activeOpacity={0.7}
@@ -113,8 +98,8 @@ export default function FanDashboardScreen({ navigation }) {
                 <Text style={styles.pillIcon}>{item.icon}</Text>
                 <Text style={styles.pillLabel}>{item.label}</Text>
               </TouchableOpacity>
-            )}
-          />
+            ))}
+          </ScrollView>
         </View>
 
         {/* Loading */}
@@ -158,14 +143,9 @@ export default function FanDashboardScreen({ navigation }) {
                 <Text style={styles.seeAll}>See All →</Text>
               </TouchableOpacity>
             </View>
-            <FlatList
-              data={upcomingMatches.slice(0, 6)}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalList}
-              keyExtractor={(item) => item._id || item.id}
-              renderItem={({ item, index }) => (
-                <View style={styles.horizontalCard}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
+              {upcomingMatches.slice(0, 6).map((item, index) => (
+                <View key={item._id || item.id} style={styles.horizontalCard}>
                   <MatchCard
                     match={item}
                     variant="horizontal"
@@ -173,8 +153,8 @@ export default function FanDashboardScreen({ navigation }) {
                     onPress={() => navigation.navigate('MatchDetail', { matchId: item._id || item.id })}
                   />
                 </View>
-              )}
-            />
+              ))}
+            </ScrollView>
           </View>
         )}
 

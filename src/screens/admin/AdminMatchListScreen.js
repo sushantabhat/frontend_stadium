@@ -1,15 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, FlatList, RefreshControl, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenHeader from '../../components/ScreenHeader';
 import MatchCard from '../../components/MatchCard';
@@ -73,7 +64,7 @@ export default function AdminMatchListScreen({ navigation }) {
       ) : (
         <FlatList
           data={matches}
-          keyExtractor={(item) => item._id}
+          keyExtractor={(item) => item._id || String(item.id)}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl

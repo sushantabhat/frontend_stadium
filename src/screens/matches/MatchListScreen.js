@@ -1,13 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, FlatList, RefreshControl, StatusBar, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing } from '../../constants/theme';
 import { fetchMatches } from '../../services/matchService';

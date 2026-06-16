@@ -1,5 +1,6 @@
 import React from 'react';
-import { SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, typography } from '../../constants/theme';
 
 export default function SettingsScreen() {

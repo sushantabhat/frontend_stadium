@@ -1,18 +1,16 @@
 import React, { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, FlatList, Image, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchMyTickets } from '../../services/ticketService';
+
+const CATEGORY_THEMES = {
+  vip: { gradient: ['#FFD700', '#E6A800'], label: 'VIP' },
+  premium: { gradient: [colors.primary, '#5A4BD1'], label: 'PREMIUM' },
+  general: { gradient: ['#6B7B8D', '#4A5568'], label: 'GENERAL' },
+};
 
 export default function MyTicketsScreen({ navigation }) {
   const [tickets, setTickets] = useState([]);
@@ -20,39 +18,36 @@ export default function MyTicketsScreen({ navigation }) {
 
   const loadTickets = useCallback(async () => {
     setIsLoading(true);
-    try {
-      const data = await fetchMyTickets();
-      setTickets(data);
-    } catch {
-      // handle quietly
-    } finally {
-      setIsLoading(false);
-    }
+    try { setTickets(await fetchMyTickets()); } catch {} finally { setIsLoading(false); }
   }, []);
 
   useFocusEffect(useCallback(() => { loadTickets(); }, [loadTickets]));
 
   const upcoming = tickets.filter(t => !t.scanned);
 
-  const renderTicket = ({ item }) => {
+  const renderTicket = ({ item, index }) => {
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(item.ticketCode)}&color=FFFFFF&bgcolor=6C5CE7`;
-    const category = (item.seat?.category || 'general').toUpperCase();
+    const category = (item.seat?.category || 'general').toLowerCase();
+    const theme = CATEGORY_THEMES[category] || CATEGORY_THEMES.general;
+    const matchDate = item.match?.matchDate ? new Date(item.match.matchDate) : null;
 
     return (
       <View style={styles.ticketWrapper}>
+        {/* Category accent stripe */}
+        <LinearGradient colors={theme.gradient} style={styles.accentStripe} />
+
         <LinearGradient
-          colors={[colors.gradientStart, colors.gradientEnd]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          colors={[`${colors.gradientStart}F0`, `${colors.gradientEnd}F0`]}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.ticketCard}
         >
-          {/* Top */}
+          {/* Top Section */}
           <View style={styles.ticketTop}>
-            <View style={styles.ticketBrand}>
+            <View style={styles.ticketBrandRow}>
               <Text style={styles.ticketBrandText}>SMART STADIUM</Text>
-            </View>
-            <View style={[styles.catBadge, category === 'VIP' && styles.catBadgeVip]}>
-              <Text style={[styles.catText, category === 'VIP' && styles.catTextVip]}>{category}</Text>
+              <View style={[styles.catBadge, { backgroundColor: `${theme.gradient[0]}30` }]}>
+                <Text style={[styles.catText, { color: theme.gradient[0] }]}>{theme.label}</Text>
+              </View>
             </View>
           </View>
 
@@ -60,36 +55,59 @@ export default function MyTicketsScreen({ navigation }) {
 
           <View style={styles.teamsRow}>
             <Text style={styles.teamText}>{item.match?.teamA || 'TBA'}</Text>
-            <Text style={styles.vsText}>VS</Text>
+            <View style={styles.vsBadge}>
+              <Text style={styles.vsText}>VS</Text>
+            </View>
             <Text style={styles.teamText}>{item.match?.teamB || 'TBA'}</Text>
           </View>
 
-          <View style={styles.dividerDashed} />
+          {/* Date/Time */}
+          {matchDate && (
+            <View style={styles.dateTimeRow}>
+              <Text style={styles.dateTimeText}>
+                📅 {matchDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </Text>
+              <Text style={styles.dateTimeText}>
+                ⏰ {matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+              </Text>
+            </View>
+          )}
 
-          {/* Details */}
-          <View style={styles.detailsRow}>
-            <View style={styles.detailCol}>
-              <Text style={styles.detailLabel}>SEAT</Text>
-              <Text style={styles.detailValue}>{item.seat?.seatLabel || 'N/A'}</Text>
-            </View>
-            <View style={styles.detailCol}>
-              <Text style={styles.detailLabel}>PRICE</Text>
-              <Text style={styles.detailValue}>₹{item.seat?.price || '—'}</Text>
-            </View>
-            <View style={styles.detailCol}>
-              <Text style={styles.detailLabel}>VENUE</Text>
-              <Text style={styles.detailValue} numberOfLines={1}>{item.match?.venue || '—'}</Text>
-            </View>
+          {/* Perforated Divider */}
+          <View style={styles.perforatedContainer}>
+            <View style={styles.perforatedLine} />
           </View>
 
-          <View style={styles.dividerDashed} />
+          {/* Details Grid */}
+          <View style={styles.detailsGrid}>
+            {[
+              { label: 'SEAT', value: item.seat?.seatLabel || 'N/A' },
+              { label: 'PRICE', value: `₹${item.seat?.price || '—'}` },
+              { label: 'VENUE', value: item.match?.venue || '—', flex: true },
+            ].map((d) => (
+              <View key={d.label} style={[styles.detailCell, d.flex && { flex: 1.5 }]}>
+                <Text style={styles.detailLabel}>{d.label}</Text>
+                <Text style={styles.detailValue} numberOfLines={1}>{d.value}</Text>
+              </View>
+            ))}
+          </View>
 
-          {/* QR */}
+          {/* Perforated Divider */}
+          <View style={styles.perforatedContainer}>
+            <View style={styles.perforatedLine} />
+          </View>
+
+          {/* QR Section */}
           <View style={styles.qrSection}>
             <View style={styles.qrBox}>
               <Image source={{ uri: qrUrl }} style={styles.qrImage} />
+              <View style={[styles.qrCorner, styles.qrCornerTL]} />
+              <View style={[styles.qrCorner, styles.qrCornerTR]} />
+              <View style={[styles.qrCorner, styles.qrCornerBL]} />
+              <View style={[styles.qrCorner, styles.qrCornerBR]} />
             </View>
-            <Text style={styles.qrHint}>📱 Show this at the entry gate</Text>
+            <Text style={styles.ticketCode}>{item.ticketCode}</Text>
+            <Text style={styles.qrHint}>📱 Show this QR at the entry gate</Text>
           </View>
 
           {/* Status */}
@@ -110,21 +128,27 @@ export default function MyTicketsScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-
       <FlatList
         data={upcoming}
         renderItem={renderTicket}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item) => item._id || item.ticketCode}
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={styles.pageTitle}>My Tickets</Text>
             <Text style={styles.pageSubtitle}>Present QR codes at the entry gate</Text>
+            {upcoming.length > 0 && (
+              <View style={styles.ticketCount}>
+                <Text style={styles.ticketCountText}>{upcoming.length} upcoming</Text>
+              </View>
+            )}
           </View>
         }
         ListEmptyComponent={
           !isLoading ? (
             <View style={styles.emptyWrap}>
-              <Text style={styles.emptyIcon}>🎫</Text>
+              <View style={styles.emptyIconWrap}>
+                <Text style={styles.emptyIcon}>🎫</Text>
+              </View>
               <Text style={styles.emptyTitle}>No Tickets Yet</Text>
               <Text style={styles.emptyText}>Book a match to see your tickets here</Text>
             </View>
@@ -133,9 +157,7 @@ export default function MyTicketsScreen({ navigation }) {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListFooterComponent={
-          isLoading ? (
-            <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: spacing.xxl }} />
-          ) : null
+          isLoading ? <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: spacing.xxl }} /> : null
         }
       />
     </SafeAreaView>
@@ -145,124 +167,88 @@ export default function MyTicketsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   listContent: { paddingBottom: spacing.xxxl },
-  header: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  pageTitle: {
-    color: colors.textPrimary,
-    fontSize: typography.h1.fontSize,
-    fontWeight: '800',
-    marginBottom: spacing.xxs,
-  },
-  pageSubtitle: {
-    color: colors.textMuted,
-    fontSize: typography.caption.fontSize,
-  },
+  header: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, marginBottom: spacing.xl },
+  pageTitle: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '900', marginBottom: spacing.xxs },
+  pageSubtitle: { color: colors.textMuted, fontSize: typography.caption.fontSize },
+  ticketCount: { marginTop: spacing.md, backgroundColor: colors.primarySurface, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radii.full, alignSelf: 'flex-start', borderWidth: 1, borderColor: `${colors.primary}25` },
+  ticketCountText: { color: colors.primaryLight, fontSize: 9, fontWeight: '700' },
 
   // Ticket
-  ticketWrapper: {
-    marginHorizontal: spacing.xl,
-    marginBottom: spacing.xl,
-    position: 'relative',
-  },
+  ticketWrapper: { marginHorizontal: spacing.xl, marginBottom: spacing.xl, position: 'relative' },
+  accentStripe: { height: 4, borderTopLeftRadius: radii.xxl, borderTopRightRadius: radii.xxl },
   ticketCard: {
-    borderRadius: radii.xxl,
-    padding: spacing.xxl,
-    ...shadows.lg,
+    borderTopLeftRadius: 1, borderTopRightRadius: 1,
+    borderBottomLeftRadius: radii.xxl, borderBottomRightRadius: radii.xxl,
+    padding: spacing.xxl, ...shadows.lg,
   },
   notch: {
-    position: 'absolute',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.background,
-    top: '50%',
-    marginTop: -12,
+    position: 'absolute', width: 24, height: 24, borderRadius: 12,
+    backgroundColor: colors.background, top: '50%', marginTop: -12,
   },
   notchLeft: { left: -12 },
   notchRight: { right: -12 },
 
-  ticketTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  ticketBrand: {},
-  ticketBrandText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 2,
-  },
-  catBadge: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radii.full,
-  },
-  catBadgeVip: { backgroundColor: `${colors.accent}40` },
-  catText: { color: '#FFF', fontSize: 9, fontWeight: '800', letterSpacing: 1 },
-  catTextVip: { color: colors.accent },
+  ticketTop: { marginBottom: spacing.lg },
+  ticketBrandRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  ticketBrandText: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: '800', letterSpacing: 2 },
+  catBadge: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radii.full },
+  catText: { fontSize: 9, fontWeight: '800', letterSpacing: 1 },
 
-  matchTitle: {
-    color: '#FFF',
-    fontSize: typography.h3.fontSize,
-    fontWeight: '800',
-    marginBottom: spacing.sm,
-  },
-  teamsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
+  matchTitle: { color: '#FFF', fontSize: typography.h3.fontSize, fontWeight: '800', marginBottom: spacing.sm },
+
+  teamsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.lg },
   teamText: { color: 'rgba(255,255,255,0.85)', fontSize: typography.bodyMedium.fontSize, fontWeight: '600' },
-  vsText: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: '800', letterSpacing: 2 },
+  vsBadge: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radii.full },
+  vsText: { color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: '800', letterSpacing: 2 },
 
-  dividerDashed: {
-    height: 1,
-    borderStyle: 'dashed',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    marginVertical: spacing.lg,
-    marginHorizontal: -spacing.xxl,
+  dateTimeRow: { flexDirection: 'row', gap: spacing.lg, marginBottom: spacing.lg },
+  dateTimeText: { color: 'rgba(255,255,255,0.6)', fontSize: typography.small.fontSize, fontWeight: '500' },
+
+  // Perforated divider
+  perforatedContainer: { marginVertical: spacing.md, marginHorizontal: -spacing.xxl },
+  perforatedLine: {
+    height: 0, borderWidth: 1, borderStyle: 'dashed',
+    borderColor: 'rgba(255,255,255,0.15)',
   },
 
-  detailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  detailCol: { flex: 1 },
-  detailLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.xs },
+  // Details
+  detailsGrid: { flexDirection: 'row', justifyContent: 'space-between' },
+  detailCell: { flex: 1 },
+  detailLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.xs },
   detailValue: { color: '#FFF', fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
 
-  qrSection: { alignItems: 'center', marginBottom: spacing.lg },
+  // QR
+  qrSection: { alignItems: 'center', marginVertical: spacing.lg },
   qrBox: {
     backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.sm,
+    position: 'relative',
   },
   qrImage: { width: 120, height: 120, borderRadius: radii.md },
-  qrHint: { color: 'rgba(255,255,255,0.6)', fontSize: typography.small.fontSize, fontWeight: '500' },
+  qrCorner: { position: 'absolute', width: 12, height: 12, borderColor: 'rgba(255,255,255,0.3)' },
+  qrCornerTL: { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 4 },
+  qrCornerTR: { top: -1, right: -1, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 4 },
+  qrCornerBL: { bottom: -1, left: -1, borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 4 },
+  qrCornerBR: { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: 4 },
+  ticketCode: { color: 'rgba(255,255,255,0.7)', fontSize: typography.small.fontSize, fontWeight: '800', letterSpacing: 2, marginBottom: spacing.xs, fontFamily: 'Courier' },
+  qrHint: { color: 'rgba(255,255,255,0.5)', fontSize: typography.small.fontSize, fontWeight: '500' },
 
-  statusBanner: {
-    borderRadius: radii.md,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  statusValid: { backgroundColor: 'rgba(0,200,83,0.2)' },
-  statusScanned: { backgroundColor: 'rgba(255,59,48,0.2)' },
+  // Status
+  statusBanner: { borderRadius: radii.md, paddingVertical: spacing.sm, alignItems: 'center' },
+  statusValid: { backgroundColor: 'rgba(0,200,83,0.15)' },
+  statusScanned: { backgroundColor: 'rgba(255,59,48,0.15)' },
   statusBannerText: { fontSize: typography.tiny.fontSize, fontWeight: '800', letterSpacing: 1 },
   statusTextValid: { color: colors.successLight },
   statusTextScanned: { color: colors.dangerLight },
 
   // Empty
   emptyWrap: { alignItems: 'center', paddingVertical: spacing.huge },
-  emptyIcon: { fontSize: 48, marginBottom: spacing.lg },
+  emptyIconWrap: {
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: colors.primarySurface, alignItems: 'center', justifyContent: 'center',
+    marginBottom: spacing.lg, borderWidth: 1, borderColor: `${colors.primary}20`,
+  },
+  emptyIcon: { fontSize: 32 },
   emptyTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '700', marginBottom: spacing.sm },
   emptyText: { color: colors.textMuted, fontSize: typography.caption.fontSize, textAlign: 'center' },
 });

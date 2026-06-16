@@ -1,12 +1,6 @@
 import React from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import ScreenHeader from '../../components/ScreenHeader';
 import { colors, spacing, radii, typography } from '../../constants/theme';
@@ -69,7 +63,7 @@ export default function DailyReportScreen() {
             {REPORT_DATA.gateBreakdown.map((gate, idx) => {
               const barWidth = `${(gate.scanned / REPORT_DATA.totalScans) * 100}%`;
               return (
-                <View key={idx} style={[styles.gateItem, idx < REPORT_DATA.gateBreakdown.length - 1 && styles.gateItemBorder]}>
+                <View key={gate.gate} style={[styles.gateItem, idx < REPORT_DATA.gateBreakdown.length - 1 && styles.gateItemBorder]}>
                   <View style={styles.gateHeader}>
                     <Text style={styles.gateName}>{gate.gate}</Text>
                     <Text style={styles.gateCount}>{gate.scanned} scans</Text>

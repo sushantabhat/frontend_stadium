@@ -74,7 +74,7 @@ export default function CreateMatchScreen({ navigation }) {
         {
           text: 'View Match',
           onPress: () =>
-            navigation.replace('MatchDetail', { matchId: match._id }),
+            navigation.replace('AdminMatchDetail', { matchId: match._id }),
         },
       ]);
     } catch (error) {

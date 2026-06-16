@@ -1,13 +1,6 @@
 import React from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import ScreenHeader from '../../components/ScreenHeader';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
@@ -51,7 +44,7 @@ export default function MyShiftsScreen() {
           <Text style={styles.sectionTitle}>Upcoming</Text>
           <View style={styles.shiftsList}>
             {SHIFTS.filter(s => s.status === 'upcoming').map((shift, idx) => (
-              <View key={idx} style={[styles.shiftItem, idx < SHIFTS.length - 2 && styles.shiftItemBorder]}>
+              <View key={shift.match} style={[styles.shiftItem, idx < SHIFTS.length - 2 && styles.shiftItemBorder]}>
                 <View style={styles.shiftLeft}>
                   <View style={styles.shiftDateBox}>
                     <Text style={styles.shiftDay}>{shift.date.split(',')[0]}</Text>
