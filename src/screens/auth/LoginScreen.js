@@ -43,10 +43,20 @@ export default function LoginScreen({ navigation }) {
         <View style={commonStyles.headerSection}>
           <Text style={commonStyles.logoIcon}>🏟️</Text>
           <Text style={commonStyles.brandTitle}>SMART STADIUM</Text>
-          <Text style={commonStyles.brandSubtitle}>Digital Arena & Ticket Management</Text>
+          <Text style={commonStyles.brandSubtitle}>Secure access for fans, staff, and administrators</Text>
         </View>
 
         <View style={commonStyles.formSection}>
+          <View style={styles.formHeaderRow}>
+            <Text style={styles.sectionTitle}>Sign in</Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>Protected</Text>
+            </View>
+          </View>
+          <Text style={styles.sectionText}>
+            Use your account to open the correct workspace automatically.
+          </Text>
+
           <Text style={commonStyles.inputLabel}>Email Address</Text>
           <TextInput
             style={commonStyles.inputField}
@@ -89,6 +99,10 @@ export default function LoginScreen({ navigation }) {
               <Text style={commonStyles.highlightText}>Create Account</Text>
             </Text>
           </TouchableOpacity>
+
+          <Text style={styles.helperText}>
+            Your role is controlled by the account assigned by the system admin.
+          </Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -96,8 +110,47 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  sectionTitle: {
+    color: colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  sectionText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 18,
+  },
+  formHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: colors.cardBackgroundAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  badgeText: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   registerLink: {
     marginTop: 20,
     alignItems: 'center',
+  },
+  helperText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginTop: 18,
   },
 });

@@ -5,6 +5,8 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import MatchListScreen from '../screens/matches/MatchListScreen';
 import MatchDetailScreen from '../screens/matches/MatchDetailScreen';
+import SeatSelectionScreen from '../screens/matches/SeatSelectionScreen';
+import BookingScreen from '../screens/matches/BookingScreen';
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import AdminMatchListScreen from '../screens/admin/AdminMatchListScreen';
 import CreateMatchScreen from '../screens/admin/CreateMatchScreen';
@@ -19,12 +21,10 @@ import TicketVerifyScreen from '../screens/staff/TicketVerifyScreen';
 import FanDashboardScreen from '../screens/home/FanDashboardScreen';
 import MyTicketsScreen from '../screens/home/MyTicketsScreen';
 import WishlistScreen from '../screens/home/WishlistScreen';
-import FanProfileScreen from '../screens/home/FanProfileScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import SettingsScreen from '../screens/common/SettingsScreen';
 import { ROLES } from '../constants/config';
 import { colors } from '../constants/theme';
-import { getDashboardRoute } from '../constants/roleNavigation';
 
 const AuthStack = createStackNavigator();
 const UserStack = createStackNavigator();
@@ -51,9 +51,10 @@ function UserNavigator() {
       <UserStack.Screen name="FanDashboard" component={FanDashboardScreen} />
       <UserStack.Screen name="MatchList" component={MatchListScreen} />
       <UserStack.Screen name="MatchDetail" component={MatchDetailScreen} />
+      <UserStack.Screen name="SeatSelection" component={SeatSelectionScreen} />
+      <UserStack.Screen name="Booking" component={BookingScreen} />
       <UserStack.Screen name="MyTickets" component={MyTicketsScreen} />
       <UserStack.Screen name="Wishlist" component={WishlistScreen} />
-      <UserStack.Screen name="FanProfile" component={FanProfileScreen} />
       <UserStack.Screen name="Profile" component={ProfileScreen} />
       <UserStack.Screen name="Settings" component={SettingsScreen} />
     </UserStack.Navigator>
@@ -102,12 +103,6 @@ function RoleNavigator() {
     default:
       return <UserNavigator />;
   }
-}
-
-export function useInitialRoute() {
-  const { userInfo } = useContext(AuthContext);
-
-  return getDashboardRoute(userInfo?.role);
 }
 
 export default function AppNavigator() {

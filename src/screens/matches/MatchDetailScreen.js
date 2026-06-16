@@ -156,8 +156,11 @@ export default function MatchDetailScreen({ route, navigation }) {
         </View>
 
         {!isAdmin && match.status !== 'cancelled' ? (
-          <TouchableOpacity style={[commonStyles.primaryButton, styles.disabledButton]} disabled>
-            <Text style={commonStyles.primaryButtonText}>Book Seats (Sprint 3)</Text>
+          <TouchableOpacity
+            style={commonStyles.primaryButton}
+            onPress={() => navigation.navigate('SeatSelection', { matchId: match.id })}
+          >
+            <Text style={commonStyles.primaryButtonText}>Select & Book Seats</Text>
           </TouchableOpacity>
         ) : null}
 

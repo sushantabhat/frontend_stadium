@@ -40,13 +40,18 @@ export default function ProfileMenuButton({ compact = false }) {
         <Pressable style={styles.overlay} onPress={closeMenu}>
           <Pressable style={styles.sheet} onPress={() => null}>
             <View style={styles.grip} />
-            <View style={styles.identityRow}>
-              <View style={styles.avatarCircle}>
-                <Text style={styles.avatarText}>{(userInfo?.name || 'U').slice(0, 1).toUpperCase()}</Text>
+            <View style={styles.sheetHeader}>
+              <View style={styles.identityRow}>
+                <View style={styles.avatarCircle}>
+                  <Text style={styles.avatarText}>{(userInfo?.name || 'U').slice(0, 1).toUpperCase()}</Text>
+                </View>
+                <View style={styles.identityText}>
+                  <Text style={styles.nameText}>{userInfo?.name || 'Account'}</Text>
+                  <Text style={styles.roleText}>{getRoleDisplayName(userInfo?.role)}</Text>
+                </View>
               </View>
-              <View style={styles.identityText}>
-                <Text style={styles.nameText}>{userInfo?.name || 'Account'}</Text>
-                <Text style={styles.roleText}>{getRoleDisplayName(userInfo?.role)}</Text>
+              <View style={styles.accountPill}>
+                <Text style={styles.accountPillText}>Active session</Text>
               </View>
             </View>
 
@@ -104,14 +109,18 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: colors.surfaceElevated || colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 24,
     borderTopWidth: 1,
     borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.32,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: -6 },
   },
   grip: {
     width: 42,
@@ -121,10 +130,13 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 16,
   },
+  sheetHeader: {
+    marginBottom: 14,
+  },
   identityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
     gap: 12,
   },
   avatarCircle: {
@@ -154,6 +166,20 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 12,
     marginTop: 2,
+  },
+  accountPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  accountPillText: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
   },
   menuSection: {
     gap: 8,
