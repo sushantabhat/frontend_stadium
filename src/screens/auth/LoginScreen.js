@@ -47,28 +47,33 @@ export default function LoginScreen({ navigation }) {
         style={styles.flex}
       >
         <LinearGradient
-          colors={[`${colors.primaryDark}40`, `${colors.background}`, colors.background]}
+          colors={[`${colors.primaryDark}50`, `${colors.primaryDark}20`, colors.background, colors.background]}
+          locations={[0, 0.3, 0.6, 1]}
           style={styles.flex}
         >
-          <View style={styles.scroll} contentContainerStyle={{ flexGrow: 1 }}>
-            {/* Brand */}
+          <View style={styles.scroll}>
+            {/* Brand — left aligned, asymmetric */}
             <View style={styles.brandSection}>
               <View style={styles.brandMark}>
-                <LinearGradient
-                  colors={colors.gradientPurple}
-                  style={styles.brandMarkGradient}
-                >
+                <LinearGradient colors={colors.gradientPurple} style={styles.brandMarkInner}>
                   <Text style={styles.brandEmoji}>🏟️</Text>
                 </LinearGradient>
               </View>
               <Text style={styles.brandTitle}>SMART{'\n'}STADIUM</Text>
-              <Text style={styles.brandSubtitle}>Premium sports ticketing experience</Text>
+              <Text style={styles.brandTagline}>
+                Your seat is waiting.
+              </Text>
             </View>
 
             {/* Form */}
             <View style={styles.formCard}>
-              <Text style={styles.formTitle}>Welcome Back</Text>
-              <Text style={styles.formDesc}>Sign in to continue</Text>
+              <View style={styles.formHeader}>
+                <Text style={styles.formTitle}>Sign in</Text>
+                <View style={styles.secureBadge}>
+                  <Text style={styles.secureDot}>●</Text>
+                  <Text style={styles.secureText}>SECURED</Text>
+                </View>
+              </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>EMAIL</Text>
@@ -104,12 +109,17 @@ export default function LoginScreen({ navigation }) {
               >
                 <LinearGradient
                   colors={colors.gradientPurple}
-                  style={styles.loginBtnGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.loginBtnInner}
                 >
                   {isLoading ? (
                     <ActivityIndicator color="#FFF" />
                   ) : (
-                    <Text style={styles.loginBtnText}>Sign In →</Text>
+                    <>
+                      <Text style={styles.loginBtnText}>Sign In</Text>
+                      <Text style={styles.loginBtnArrow}>→</Text>
+                    </>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
@@ -120,30 +130,25 @@ export default function LoginScreen({ navigation }) {
                 activeOpacity={0.7}
               >
                 <Text style={styles.registerText}>
-                  Don&apos;t have an account? <Text style={styles.registerHighlight}>Create one</Text>
+                  New here?{' '}
+                  <Text style={styles.registerHighlight}>Create an account</Text>
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Demo Accounts */}
+            {/* Demo accounts — horizontal pills */}
             <View style={styles.demoSection}>
-              <Text style={styles.demoTitle}>Quick Access (Dev)</Text>
+              <Text style={styles.demoLabel}>TRY A DEMO</Text>
               <View style={styles.demoRow}>
                 {DEMO_ACCOUNTS.map((a) => (
                   <TouchableOpacity
                     key={a.label}
-                    style={styles.demoCard}
+                    style={styles.demoPill}
                     onPress={() => { setEmail(a.email); setPassword(a.password); }}
                     activeOpacity={0.7}
                   >
-                    <LinearGradient
-                      colors={[`${a.color}25`, `${a.color}08`]}
-                      style={styles.demoGradient}
-                    >
-                      <Text style={styles.demoIcon}>{a.icon}</Text>
-                      <Text style={styles.demoLabel}>{a.label}</Text>
-                      <Text style={styles.demoEmail}>{a.email.split('@')[0]}</Text>
-                    </LinearGradient>
+                    <Text style={styles.demoIcon}>{a.icon}</Text>
+                    <Text style={styles.demoText}>{a.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -160,31 +165,36 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { flex: 1, justifyContent: 'center' },
 
-  // Brand
-  brandSection: { alignItems: 'center', marginBottom: spacing.xxl },
-  brandMark: { marginBottom: spacing.xl },
-  brandMarkGradient: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
+  // Brand — left aligned, not centered
+  brandSection: {
+    paddingHorizontal: spacing.xxl,
+    marginBottom: spacing.xxxl,
+  },
+  brandMark: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    marginBottom: spacing.xl,
+    overflow: 'hidden',
+  },
+  brandMarkInner: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.primary,
   },
-  brandEmoji: { fontSize: 36 },
+  brandEmoji: { fontSize: 32 },
   brandTitle: {
     color: colors.textPrimary,
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: '900',
-    textAlign: 'center',
-    letterSpacing: 3,
-    lineHeight: 38,
+    letterSpacing: -1,
+    lineHeight: 40,
     marginBottom: spacing.sm,
   },
-  brandSubtitle: {
+  brandTagline: {
     color: colors.textMuted,
-    fontSize: typography.caption.fontSize,
-    textAlign: 'center',
+    fontSize: typography.body.fontSize,
+    fontWeight: '400',
   },
 
   // Form
@@ -197,46 +207,66 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     ...shadows.lg,
   },
+  formHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xxl,
+  },
   formTitle: {
     color: colors.textPrimary,
     fontSize: typography.h2.fontSize,
     fontWeight: '800',
-    marginBottom: spacing.xxs,
   },
-  formDesc: {
-    color: colors.textMuted,
-    fontSize: typography.caption.fontSize,
-    marginBottom: spacing.xxl,
+  secureBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.successSurface,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: `${colors.success}30`,
   },
+  secureDot: { color: colors.success, fontSize: 6 },
+  secureText: {
+    color: colors.success,
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+
   inputGroup: { marginBottom: spacing.lg },
   inputLabel: {
     color: colors.textMuted,
-    fontSize: typography.label.fontSize,
+    fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     marginBottom: spacing.sm,
   },
   input: {
     backgroundColor: colors.surfaceElevated,
     color: colors.textPrimary,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md + 2,
-    borderRadius: radii.lg,
+    paddingVertical: spacing.md + 4,
+    borderRadius: radii.md,
     fontSize: typography.body.fontSize,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.border,
   },
+
   loginBtn: {
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     overflow: 'hidden',
     marginTop: spacing.sm,
-    ...shadows.primary,
   },
-  loginBtnGradient: {
-    paddingVertical: spacing.lg + 2,
+  loginBtnInner: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 54,
+    paddingVertical: spacing.lg + 2,
+    gap: spacing.sm,
   },
   loginBtnText: {
     color: '#FFF',
@@ -244,6 +274,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.3,
   },
+  loginBtnArrow: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
   registerLink: {
     marginTop: spacing.xl,
     alignItems: 'center',
@@ -251,44 +287,37 @@ const styles = StyleSheet.create({
   registerText: { color: colors.textMuted, fontSize: typography.caption.fontSize },
   registerHighlight: { color: colors.primaryLight, fontWeight: '700' },
 
-  // Demo
+  // Demo — horizontal pills
   demoSection: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.xxl,
     marginTop: spacing.xxl,
   },
-  demoTitle: {
-    color: colors.accent,
-    fontSize: typography.tiny.fontSize,
+  demoLabel: {
+    color: colors.textMuted,
+    fontSize: 9,
     fontWeight: '800',
-    letterSpacing: 1.5,
-    textAlign: 'center',
+    letterSpacing: 2,
     marginBottom: spacing.md,
   },
   demoRow: {
     flexDirection: 'row',
     gap: spacing.sm,
   },
-  demoCard: {
-    flex: 1,
-    borderRadius: radii.lg,
-    overflow: 'hidden',
+  demoPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radii.full,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 2,
     borderWidth: 1,
     borderColor: colors.border,
+    gap: spacing.sm,
   },
-  demoGradient: {
-    padding: spacing.md,
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  demoIcon: { fontSize: 18 },
-  demoLabel: {
-    color: colors.textPrimary,
+  demoIcon: { fontSize: 12 },
+  demoText: {
+    color: colors.textSecondary,
     fontSize: typography.small.fontSize,
-    fontWeight: '700',
-  },
-  demoEmail: {
-    color: colors.textMuted,
-    fontSize: 9,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });
