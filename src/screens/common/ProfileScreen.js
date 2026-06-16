@@ -6,7 +6,7 @@ import { colors, spacing, radii, typography, shadows } from '../../constants/the
 import { getRoleDisplayName } from '../../constants/roleNavigation';
 
 export default function ProfileScreen() {
-  const { userInfo } = useContext(AuthContext);
+  const { userInfo, logout } = useContext(AuthContext);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -40,6 +40,10 @@ export default function ProfileScreen() {
             <Text style={styles.value}>{getRoleDisplayName(userInfo?.role)}</Text>
           </View>
         </View>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={logout} activeOpacity={0.7}>
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -112,5 +116,19 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textPrimary,
     fontWeight: '600',
+  },
+  logoutButton: {
+    marginTop: spacing.xl,
+    paddingVertical: spacing.lg,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+  },
+  logoutText: {
+    color: colors.danger,
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: '700',
   },
 });
