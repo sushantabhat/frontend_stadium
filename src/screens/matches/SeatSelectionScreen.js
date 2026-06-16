@@ -10,8 +10,9 @@ import {
 } from 'react-native';
 import { io } from 'socket.io-client';
 import ScreenHeader from '../../components/ScreenHeader';
+import BookingProgress from '../../components/BookingProgress';
 import { API_BASE_URL } from '../../constants/config';
-import { colors, commonStyles } from '../../constants/theme';
+import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchMatchById, fetchMatchSeats } from '../../services/matchService';
 import { lockSeats } from '../../services/bookingService';
 import { fetchSmartSeatRecommendations } from '../../services/aiService';
@@ -136,7 +137,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
         'AI Recommended Seats',
         `We selected the best seats for you:\n\n${seatDetails}`
       );
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to fetch AI seat recommendations');
     } finally {
       setIsAiLoading(false);
@@ -186,6 +187,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
+      <BookingProgress currentStep="select" />
       <ScreenHeader
         title={`${match?.teamA} vs ${match?.teamB}`}
         subtitle="Select your preferred stadium seats"
@@ -330,7 +332,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
           </Text>
         </View>
         <TouchableOpacity
-          style={[commonStyles.primaryButton, styles.checkoutBtn]}
+          style={styles.checkoutBtn}
           activeOpacity={0.8}
           onPress={handleProceed}
           disabled={isSubmitting}
@@ -338,9 +340,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
           {isSubmitting ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={commonStyles.primaryButtonText}>
-              Pay ₹{totalAmount}
-            </Text>
+            <Text style={styles.checkoutBtnText}>Pay ₹{totalAmount}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -359,162 +359,164 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    padding: 16,
+    padding: spacing.lg,
     paddingBottom: 120,
   },
   pitchScreen: {
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 12,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.md,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   pitchText: {
-    color: colors.textSecondary,
-    fontSize: 11,
+    color: colors.textMuted,
+    fontSize: typography.tiny.fontSize,
     fontWeight: '800',
     letterSpacing: 1.5,
   },
   pitchLine: {
     height: 3,
-    backgroundColor: colors.primaryLight,
-    width: '60%',
+    backgroundColor: colors.primary,
+    width: '50%',
     borderRadius: 2,
-    marginTop: 6,
+    marginTop: spacing.sm,
   },
   legendContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: colors.surface,
-    padding: 12,
-    borderRadius: 12,
+    padding: spacing.md,
+    borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: spacing.xs + 2,
   },
   seatLegendCircle: {
-    width: 12,
-    height: 12,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 3,
   },
   legendLabel: {
-    color: colors.textSecondary,
-    fontSize: 11,
+    color: colors.textMuted,
+    fontSize: typography.tiny.fontSize,
     fontWeight: '600',
   },
   gridOuter: {
-    paddingBottom: 16,
+    paddingBottom: spacing.lg,
   },
   gridInner: {
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
   },
   rowWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
   },
   rowLabelText: {
     color: colors.textMuted,
-    fontSize: 14,
+    fontSize: typography.small.fontSize,
     fontWeight: '800',
     width: 16,
     textAlign: 'center',
   },
   rowSeatsContainer: {
     flexDirection: 'row',
-    gap: 6,
+    gap: spacing.xs + 2,
   },
   seatButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
+    width: 30,
+    height: 30,
+    borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   seatLabelText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: typography.tiny.fontSize,
     fontWeight: '800',
   },
   pricingGuide: {
-    marginTop: 20,
+    marginTop: spacing.xl,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: radii.xl,
+    padding: spacing.xl,
   },
   guideTitle: {
     color: colors.textPrimary,
     fontWeight: '700',
-    fontSize: 14,
-    marginBottom: 10,
+    fontSize: typography.captionMedium.fontSize,
+    marginBottom: spacing.md,
   },
   pricingPillsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing.sm,
   },
   pricingPill: {
     flex: 1,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 8,
+    borderRadius: radii.md,
+    paddingVertical: spacing.sm,
     alignItems: 'center',
+    backgroundColor: colors.surfaceElevated,
+    borderColor: colors.border,
   },
   pricingPillText: {
     color: colors.textPrimary,
-    fontSize: 12,
+    fontSize: typography.small.fontSize,
     fontWeight: '800',
   },
   aiPanel: {
-    marginTop: 16,
-    backgroundColor: colors.surfaceElevated,
+    marginTop: spacing.xl,
+    backgroundColor: colors.primarySurface,
     borderWidth: 1,
-    borderColor: colors.borderSoft,
-    borderRadius: 16,
-    padding: 16,
+    borderColor: `${colors.primary}30`,
+    borderRadius: radii.xl,
+    padding: spacing.xl,
   },
   aiPanelTitle: {
     color: colors.primaryLight,
     fontWeight: '800',
-    fontSize: 15,
-    marginBottom: 6,
+    fontSize: typography.bodyMedium.fontSize,
+    marginBottom: spacing.xs,
   },
   aiPanelDesc: {
     color: colors.textSecondary,
-    fontSize: 12,
+    fontSize: typography.small.fontSize,
     lineHeight: 18,
-    marginBottom: 14,
+    marginBottom: spacing.lg,
   },
   categorySelectorRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 14,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
   catSelectorBtn: {
     flex: 1,
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 8,
+    borderRadius: radii.md,
+    paddingVertical: spacing.sm,
     alignItems: 'center',
   },
   catSelectorBtnActive: {
-    borderColor: colors.primaryLight,
-    backgroundColor: `${colors.primary}20`,
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySurface,
   },
   catSelectorText: {
-    color: colors.textSecondary,
-    fontSize: 11,
+    color: colors.textMuted,
+    fontSize: typography.tiny.fontSize,
     fontWeight: '700',
   },
   catSelectorTextActive: {
@@ -522,16 +524,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   aiBtn: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: 12,
-    paddingVertical: 12,
+    backgroundColor: colors.primary,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.primary,
   },
   aiBtnText: {
-    color: colors.background,
-    fontSize: 13,
-    fontWeight: '900',
+    color: '#FFFFFF',
+    fontSize: typography.captionMedium.fontSize,
+    fontWeight: '800',
   },
   checkoutBar: {
     position: 'absolute',
@@ -540,29 +543,42 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    borderColor: colors.borderSubtle,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    ...shadows.xl,
   },
   checkoutSummary: {
     flex: 1,
   },
   checkoutLabel: {
-    color: colors.textSecondary,
-    fontSize: 12,
+    color: colors.textMuted,
+    fontSize: typography.small.fontSize,
   },
   selectedLabels: {
     color: colors.textPrimary,
-    fontSize: 16,
+    fontSize: typography.h3.fontSize,
     fontWeight: '800',
-    marginTop: 2,
+    marginTop: spacing.xxs,
   },
   checkoutBtn: {
     flex: 1,
     maxWidth: 160,
     marginTop: 0,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.lg,
+    borderRadius: radii.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
+    ...shadows.primary,
+  },
+  checkoutBtnText: {
+    color: '#FFFFFF',
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: '800',
   },
 });

@@ -10,8 +10,8 @@ export async function unlockSeats(matchId, seatIds) {
   return response.data;
 }
 
-export async function confirmBooking(matchId, seatIds, totalAmount) {
-  const response = await api.post('/api/bookings/confirm', { matchId, seatIds, totalAmount });
+export async function confirmBooking(matchId, seatIds) {
+  const response = await api.post('/api/bookings/confirm', { matchId, seatIds });
   return response.data;
 }
 

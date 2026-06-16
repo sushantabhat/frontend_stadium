@@ -1,347 +1,394 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import {
+  ActivityIndicator,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
-import ProfileMenuButton from '../../components/profile/ProfileMenuButton';
-import { colors } from '../../constants/theme';
+import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchMatchRecommendations } from '../../services/aiService';
-import { formatMatchDate } from '../../utils/date';
-
-const shortcuts = [
-  { title: 'Matches', icon: '🏏', route: 'MatchList', accent: colors.primaryLight },
-  { title: 'Tickets', icon: '🎫', route: 'MyTickets', accent: '#22C55E' },
-  { title: 'Wishlist', icon: '❤️', route: 'Wishlist', accent: '#F43F5E' },
-  { title: 'Profile', icon: '👤', route: 'Profile', accent: '#A78BFA' },
-];
 
 export default function FanDashboardScreen({ navigation }) {
-  const { userInfo, logout } = useContext(AuthContext);
+  const { userInfo } = useContext(AuthContext);
   const [recommendations, setRecommendations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const navigate = (route) => navigation.navigate(route);
-
-  useEffect(() => {
-    async function loadRecommendations() {
-      try {
-        const data = await fetchMatchRecommendations();
-        setRecommendations(data);
-      } catch (error) {
-        console.log('Error loading recommendations:', error.message);
-      } finally {
-        setIsLoading(false);
-      }
+  const loadData = async () => {
+    try {
+      const data = await fetchMatchRecommendations();
+      setRecommendations(data);
+    } catch (e) {
+      console.log('Recommendations error:', e.message);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
+  };
 
-    loadRecommendations();
-  }, []);
+  useEffect(() => { loadData(); }, []);
+
+  const onRefresh = () => { setIsRefreshing(true); loadData(); };
+
+  const firstName = userInfo?.name?.split(' ')[0] || 'Fan';
+  const initials = (userInfo?.name || 'F').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primaryLight} colors={[colors.primary]} />
+        }
+      >
+        {/* Top Bar */}
         <View style={styles.topBar}>
           <View>
-            <Text style={styles.roleBadge}>FAN HOME</Text>
-            <Text style={styles.title}>Hi {userInfo?.name || 'Fan'}</Text>
-            <Text style={styles.subtitle}>Browse matches, manage tickets, and book seats quickly.</Text>
+            <Text style={styles.greeting}>Hi, {firstName} 👋</Text>
+            <Text style={styles.tagline}>Find your next match</Text>
           </View>
-          <ProfileMenuButton />
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
+          </View>
         </View>
 
-        <View style={styles.heroCard}>
-          <Text style={styles.heroLabel}>Next up</Text>
-          <Text style={styles.heroTitle}>Live booking starts now</Text>
-          <Text style={styles.heroText}>See upcoming matches and open your next ticket in just a few taps.</Text>
-          <TouchableOpacity style={styles.heroButton} onPress={() => navigate('MatchList')}>
-            <Text style={styles.heroButtonText}>Explore matches</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Hero */}
+        <TouchableOpacity style={styles.hero} activeOpacity={0.9} onPress={() => navigation.navigate('MatchDetail', { matchId: recommendations[0]?._id || recommendations[0]?.id })}>
+          <View style={styles.heroGradient}>
+            <View style={styles.heroBadge}>
+              <Text style={styles.heroBadgeText}>🏏 FEATURED</Text>
+            </View>
+            <Text style={styles.heroTitle}>Live Match{'\n'}Booking</Text>
+            <Text style={styles.heroDesc}>Browse upcoming cricket matches and book your seats instantly.</Text>
+            <View style={styles.heroCta}>
+              <Text style={styles.heroCtaText}>Explore Now</Text>
+              <Text style={styles.heroCtaArrow}>→</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
 
-        <View style={styles.shortcutRow}>
-          {shortcuts.map((item) => (
-            <TouchableOpacity key={item.title} style={styles.shortcutCard} onPress={() => navigate(item.route)}>
-              <View style={[styles.shortcutIconWrap, { backgroundColor: `${item.accent}20` }]}>
-                <Text style={styles.shortcutIcon}>{item.icon}</Text>
-              </View>
-              <Text style={styles.shortcutTitle}>{item.title}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>🤖 Smart Recommendations</Text>
-          <Text style={styles.sectionCaption}>AI-curated matches based on your interest</Text>
-        </View>
-
-        <View style={styles.matchList}>
-          {isLoading ? (
-            <ActivityIndicator size="small" color={colors.primaryLight} style={{ marginVertical: 16 }} />
-          ) : recommendations.length === 0 ? (
-            <Text style={{ color: colors.textSecondary, textAlign: 'center', marginVertical: 16 }}>
-              No recommended matches available.
-            </Text>
-          ) : (
-            recommendations.map((match) => (
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.actionsRow}>
+            {[
+              { icon: '🔍', label: 'Browse\nMatches', route: 'Browse', color: colors.primary },
+              { icon: '🎫', label: 'My\nTickets', route: 'My Tickets', color: colors.success },
+              { icon: '❤️', label: 'My\nWishlist', route: 'Wishlist', color: colors.accent },
+            ].map((a) => (
               <TouchableOpacity
-                key={match._id || match.id}
-                style={styles.matchCard}
-                onPress={() => navigation.navigate('MatchDetail', { matchId: match._id || match.id })}
+                key={a.label}
+                style={styles.actionCard}
+                onPress={() => navigation.navigate(a.route)}
+                activeOpacity={0.7}
               >
-                <View style={styles.matchTopRow}>
-                  <Text style={styles.matchTag}>{match.reason || 'AI PICK'}</Text>
-                  <View style={styles.scoreBadge}>
-                    <Text style={styles.scoreText}>Score: {match.score}</Text>
-                  </View>
-                  <Text style={styles.matchArrow}>›</Text>
+                <View style={[styles.actionIconWrap, { backgroundColor: `${a.color}18` }]}>
+                  <Text style={styles.actionIcon}>{a.icon}</Text>
                 </View>
-                <Text style={styles.matchTitle}>{match.title}</Text>
-                <Text style={styles.matchMeta}>
-                  📍 {match.venue} • 🗓 {formatMatchDate(match.matchDate)}
-                </Text>
-                {match.stats && (
-                  <Text style={styles.matchStats}>
-                    {match.stats.available}/{match.stats.total} seats available
-                  </Text>
-                )}
-                {match.allReasons && match.allReasons.length > 1 && (
-                  <Text style={styles.matchInsight}>
-                    💡 {match.allReasons.slice(1, 3).join(' • ')}
-                  </Text>
-                )}
+                <Text style={styles.actionLabel}>{a.label}</Text>
               </TouchableOpacity>
-            ))
+            ))}
+          </View>
+        </View>
+
+        {/* Upcoming Matches */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Upcoming Matches</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Browse')}>
+              <Text style={styles.seeAll}>See All →</Text>
+            </TouchableOpacity>
+          </View>
+
+          {isLoading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator size="small" color={colors.primaryLight} />
+            </View>
+          ) : recommendations.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyIcon}>🏟️</Text>
+              <Text style={styles.emptyText}>No matches yet. Check back soon!</Text>
+            </View>
+          ) : (
+            <View style={styles.matchList}>
+              {recommendations.slice(0, 5).map((match, idx) => (
+                <TouchableOpacity
+                  key={match._id || match.id || idx}
+                  style={styles.matchCard}
+                  onPress={() => navigation.navigate('MatchDetail', { matchId: match._id || match.id })}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.matchCardLeft}>
+                    <View style={styles.matchDateBadge}>
+                      <Text style={styles.matchDateDay}>{new Date(match.matchDate).getDate()}</Text>
+                      <Text style={styles.matchDateMonth}>{new Date(match.matchDate).toLocaleString('default', { month: 'short' })}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.matchCardCenter}>
+                    <Text style={styles.matchTeams}>{match.teamA} vs {match.teamB}</Text>
+                    <Text style={styles.matchTitle}>{match.title}</Text>
+                    <Text style={styles.matchVenue}>📍 {match.venue}</Text>
+                  </View>
+                  <View style={styles.matchCardRight}>
+                    {match.stats?.available > 0 ? (
+                      <View style={styles.seatsBadge}>
+                        <Text style={styles.seatsText}>{match.stats.available}</Text>
+                        <Text style={styles.seatsLabel}>seats</Text>
+                      </View>
+                    ) : (
+                      <View style={[styles.seatsBadge, styles.soldOutBadge]}>
+                        <Text style={[styles.seatsText, styles.soldOutText]}>Full</Text>
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           )}
         </View>
 
-        <View style={styles.bottomCard}>
-          <Text style={styles.bottomTitle}>Your tickets</Text>
-          <Text style={styles.bottomLine}>3 active tickets ready to view</Text>
-          <Text style={styles.bottomLine}>2 matches saved to wishlist</Text>
-        </View>
-
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+        <View style={{ height: spacing.xxxl + 20 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 32,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  scroll: { paddingTop: spacing.md },
+
+  // Top bar
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 18,
-  },
-  roleBadge: {
-    color: '#38BDF8',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-    marginBottom: 6,
-  },
-  title: {
-    color: colors.textPrimary,
-    fontSize: 30,
-    fontWeight: '900',
-    lineHeight: 34,
-    maxWidth: 260,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 22,
-    marginTop: 8,
-    maxWidth: 280,
-  },
-  heroCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 16,
-  },
-  heroLabel: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-  },
-  heroTitle: {
-    color: colors.textPrimary,
-    fontSize: 20,
-    fontWeight: '800',
-    marginBottom: 8,
-  },
-  heroText: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  heroButton: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: 14,
-    paddingVertical: 12,
     alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.xl,
   },
-  heroButtonText: {
-    color: colors.background,
-    fontWeight: '800',
-    fontSize: 14,
+  greeting: {
+    color: colors.textPrimary,
+    fontSize: typography.h1.fontSize,
+    fontWeight: typography.h1.fontWeight,
   },
-  shortcutRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 22,
+  tagline: {
+    color: colors.textMuted,
+    fontSize: typography.caption.fontSize,
+    marginTop: spacing.xxs,
   },
-  shortcutCard: {
-    width: '48%',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 14,
-    alignItems: 'flex-start',
-  },
-  shortcutIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primarySurface,
+    borderWidth: 1.5,
+    borderColor: `${colors.primary}40`,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
   },
-  shortcutIcon: {
-    fontSize: 20,
-  },
-  shortcutTitle: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  sectionHeader: {
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    color: colors.textPrimary,
-    fontSize: 18,
+  avatarText: {
+    color: colors.primaryLight,
+    fontSize: typography.captionMedium.fontSize,
     fontWeight: '800',
   },
-  sectionCaption: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    marginTop: 4,
+
+  // Hero
+  hero: {
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.xxl,
+    borderRadius: radii.xxl,
+    overflow: 'hidden',
+    backgroundColor: colors.primary,
+    ...shadows.lg,
   },
-  matchList: {
-    gap: 10,
-    marginBottom: 18,
+  heroGradient: {
+    padding: spacing.xxl,
   },
-  matchCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
+  heroBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radii.full,
+    marginBottom: spacing.lg,
   },
-  matchTopRow: {
+  heroBadgeText: {
+    color: '#FFF',
+    fontSize: typography.tiny.fontSize,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  heroTitle: {
+    color: '#FFF',
+    fontSize: 28,
+    fontWeight: '900',
+    lineHeight: 34,
+    marginBottom: spacing.md,
+  },
+  heroDesc: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: typography.caption.fontSize,
+    lineHeight: 20,
+    marginBottom: spacing.xl,
+    maxWidth: 260,
+  },
+  heroCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radii.lg,
+    gap: spacing.sm,
+  },
+  heroCtaText: { color: '#FFF', fontSize: typography.captionMedium.fontSize, fontWeight: '800' },
+  heroCtaArrow: { color: '#FFF', fontSize: 18, fontWeight: '700' },
+
+  // Sections
+  section: {
+    marginBottom: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+  },
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.lg,
   },
-  matchTag: {
-    color: '#F59E0B',
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.7,
-  },
-  matchArrow: {
-    color: colors.primaryLight,
-    fontSize: 28,
-    lineHeight: 28,
-  },
-  matchTitle: {
+  sectionTitle: {
     color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 6,
+    fontSize: typography.h3.fontSize,
+    fontWeight: typography.h3.fontWeight,
   },
-  matchMeta: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  matchStats: {
+  seeAll: {
     color: colors.primaryLight,
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  matchInsight: {
-    color: colors.textMuted,
-    fontSize: 11,
-    fontStyle: 'italic',
-    marginTop: 6,
-    lineHeight: 16,
-  },
-  scoreBadge: {
-    backgroundColor: `${colors.primary}30`,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  scoreText: {
-    color: colors.primaryLight,
-    fontSize: 10,
+    fontSize: typography.small.fontSize,
     fontWeight: '700',
   },
-  bottomCard: {
+
+  // Quick actions
+  actionsRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  actionCard: {
+    flex: 1,
     backgroundColor: colors.surface,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
   },
-  bottomTitle: {
-    color: colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '800',
-    marginBottom: 10,
+  actionIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: radii.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
   },
-  bottomLine: {
+  actionIcon: { fontSize: 22 },
+  actionLabel: {
     color: colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 20,
-    marginBottom: 6,
+    fontSize: typography.tiny.fontSize,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 16,
   },
-  logoutButton: {
-    minHeight: 50,
-    borderRadius: 14,
+
+  // Match list
+  loadingWrap: { paddingVertical: spacing.xxxl, alignItems: 'center' },
+  emptyCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.xl,
+    padding: spacing.xxxl,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  emptyIcon: { fontSize: 36, marginBottom: spacing.md },
+  emptyText: { color: colors.textMuted, fontSize: typography.caption.fontSize },
+
+  matchList: { gap: spacing.md },
+  matchCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
+    gap: spacing.md,
+  },
+  matchCardLeft: {},
+  matchDateBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: radii.lg,
+    backgroundColor: colors.primarySurface,
+    alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
   },
-  logoutText: {
-    color: colors.danger,
+  matchDateDay: {
+    color: colors.primaryLight,
+    fontSize: typography.h3.fontSize,
+    fontWeight: '900',
+    lineHeight: 22,
+  },
+  matchDateMonth: {
+    color: colors.primaryLight,
+    fontSize: typography.tiny.fontSize,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  matchCardCenter: { flex: 1 },
+  matchTeams: {
+    color: colors.textPrimary,
+    fontSize: typography.captionMedium.fontSize,
     fontWeight: '800',
-    fontSize: 15,
+    marginBottom: spacing.xxs,
   },
+  matchTitle: {
+    color: colors.textMuted,
+    fontSize: typography.small.fontSize,
+    marginBottom: spacing.xxs,
+  },
+  matchVenue: {
+    color: colors.textMuted,
+    fontSize: typography.tiny.fontSize,
+  },
+  matchCardRight: {},
+  seatsBadge: {
+    backgroundColor: colors.successSurface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: `${colors.success}30`,
+  },
+  seatsText: {
+    color: colors.successLight,
+    fontSize: typography.captionMedium.fontSize,
+    fontWeight: '800',
+  },
+  seatsLabel: {
+    color: colors.success,
+    fontSize: typography.tiny.fontSize - 1,
+    fontWeight: '600',
+  },
+  soldOutBadge: {
+    backgroundColor: colors.dangerSurface,
+    borderColor: `${colors.danger}30`,
+  },
+  soldOutText: { color: colors.dangerLight },
 });

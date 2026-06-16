@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import ScreenHeader from '../../components/ScreenHeader';
 import { createMatch } from '../../services/matchService';
-import { colors, commonStyles } from '../../constants/theme';
+import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 
 const DEFAULT_FORM = {
   title: '',
@@ -97,149 +97,174 @@ export default function CreateMatchScreen({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.sectionTitle}>Event Info</Text>
-          <Text style={commonStyles.inputLabel}>Match Title</Text>
-          <TextInput
-            style={commonStyles.inputField}
-            placeholder="T20 Final - Season Opener"
-            placeholderTextColor="#666"
-            value={form.title}
-            onChangeText={(v) => updateField('title', v)}
-          />
-
-          <Text style={commonStyles.inputLabel}>Team A</Text>
-          <TextInput
-            style={commonStyles.inputField}
-            placeholder="India"
-            placeholderTextColor="#666"
-            value={form.teamA}
-            onChangeText={(v) => updateField('teamA', v)}
-          />
-
-          <Text style={commonStyles.inputLabel}>Team B</Text>
-          <TextInput
-            style={commonStyles.inputField}
-            placeholder="Australia"
-            placeholderTextColor="#666"
-            value={form.teamB}
-            onChangeText={(v) => updateField('teamB', v)}
-          />
-
-          <Text style={commonStyles.inputLabel}>Venue</Text>
-          <TextInput
-            style={commonStyles.inputField}
-            placeholder="Smart Stadium Arena"
-            placeholderTextColor="#666"
-            value={form.venue}
-            onChangeText={(v) => updateField('venue', v)}
-          />
-
-          <Text style={commonStyles.inputLabel}>Match Date (ISO)</Text>
-          <TextInput
-            style={commonStyles.inputField}
-            placeholder="2026-08-15T18:00:00.000Z"
-            placeholderTextColor="#666"
-            value={form.matchDate}
-            onChangeText={(v) => updateField('matchDate', v)}
-          />
-
-          <Text style={commonStyles.inputLabel}>Description</Text>
-          <TextInput
-            style={[commonStyles.inputField, styles.textArea]}
-            placeholder="Optional match description"
-            placeholderTextColor="#666"
-            multiline
-            value={form.description}
-            onChangeText={(v) => updateField('description', v)}
-          />
-
-          <Text style={styles.sectionTitle}>Pricing (₹)</Text>
-          <View style={styles.row}>
-            <View style={styles.halfField}>
-              <Text style={commonStyles.inputLabel}>VIP</Text>
-              <TextInput
-                style={commonStyles.inputField}
-                keyboardType="numeric"
-                value={form.vipPrice}
-                onChangeText={(v) => updateField('vipPrice', v)}
-              />
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionDot, { backgroundColor: colors.primary }]} />
+              <Text style={styles.sectionTitle}>Event Info</Text>
             </View>
-            <View style={styles.halfField}>
-              <Text style={commonStyles.inputLabel}>Premium</Text>
-              <TextInput
-                style={commonStyles.inputField}
-                keyboardType="numeric"
-                value={form.premiumPrice}
-                onChangeText={(v) => updateField('premiumPrice', v)}
-              />
+
+            <Text style={styles.inputLabel}>Match Title</Text>
+            <TextInput
+              style={styles.inputField}
+              placeholder="T20 Final - Season Opener"
+              placeholderTextColor={colors.textSecondary}
+              value={form.title}
+              onChangeText={(v) => updateField('title', v)}
+            />
+
+            <View style={styles.row}>
+              <View style={styles.halfField}>
+                <Text style={styles.inputLabel}>Team A</Text>
+                <TextInput
+                  style={styles.inputField}
+                  placeholder="India"
+                  placeholderTextColor={colors.textSecondary}
+                  value={form.teamA}
+                  onChangeText={(v) => updateField('teamA', v)}
+                />
+              </View>
+              <View style={styles.halfField}>
+                <Text style={styles.inputLabel}>Team B</Text>
+                <TextInput
+                  style={styles.inputField}
+                  placeholder="Australia"
+                  placeholderTextColor={colors.textSecondary}
+                  value={form.teamB}
+                  onChangeText={(v) => updateField('teamB', v)}
+                />
+              </View>
             </View>
+
+            <Text style={styles.inputLabel}>Venue</Text>
+            <TextInput
+              style={styles.inputField}
+              placeholder="Smart Stadium Arena"
+              placeholderTextColor={colors.textSecondary}
+              value={form.venue}
+              onChangeText={(v) => updateField('venue', v)}
+            />
+
+            <Text style={styles.inputLabel}>Match Date (ISO)</Text>
+            <TextInput
+              style={styles.inputField}
+              placeholder="2026-08-15T18:00:00.000Z"
+              placeholderTextColor={colors.textSecondary}
+              value={form.matchDate}
+              onChangeText={(v) => updateField('matchDate', v)}
+            />
+
+            <Text style={styles.inputLabel}>Description</Text>
+            <TextInput
+              style={[styles.inputField, styles.textArea]}
+              placeholder="Optional match description"
+              placeholderTextColor={colors.textSecondary}
+              multiline
+              value={form.description}
+              onChangeText={(v) => updateField('description', v)}
+            />
           </View>
 
-          <Text style={commonStyles.inputLabel}>General</Text>
-          <TextInput
-            style={commonStyles.inputField}
-            keyboardType="numeric"
-            value={form.generalPrice}
-            onChangeText={(v) => updateField('generalPrice', v)}
-          />
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionDot, { backgroundColor: colors.success }]} />
+              <Text style={styles.sectionTitle}>Pricing (₹)</Text>
+            </View>
 
-          <Text style={styles.sectionTitle}>Seat Layout</Text>
-          <View style={styles.row}>
-            <View style={styles.halfField}>
-              <Text style={commonStyles.inputLabel}>Total Rows</Text>
-              <TextInput
-                style={commonStyles.inputField}
-                keyboardType="numeric"
-                value={form.rows}
-                onChangeText={(v) => updateField('rows', v)}
-              />
+            <View style={styles.row}>
+              <View style={styles.halfField}>
+                <Text style={styles.inputLabel}>VIP</Text>
+                <TextInput
+                  style={styles.inputField}
+                  keyboardType="numeric"
+                  value={form.vipPrice}
+                  onChangeText={(v) => updateField('vipPrice', v)}
+                />
+              </View>
+              <View style={styles.halfField}>
+                <Text style={styles.inputLabel}>Premium</Text>
+                <TextInput
+                  style={styles.inputField}
+                  keyboardType="numeric"
+                  value={form.premiumPrice}
+                  onChangeText={(v) => updateField('premiumPrice', v)}
+                />
+              </View>
             </View>
-            <View style={styles.halfField}>
-              <Text style={commonStyles.inputLabel}>Seats / Row</Text>
-              <TextInput
-                style={commonStyles.inputField}
-                keyboardType="numeric"
-                value={form.seatsPerRow}
-                onChangeText={(v) => updateField('seatsPerRow', v)}
-              />
-            </View>
+
+            <Text style={styles.inputLabel}>General</Text>
+            <TextInput
+              style={styles.inputField}
+              keyboardType="numeric"
+              value={form.generalPrice}
+              onChangeText={(v) => updateField('generalPrice', v)}
+            />
           </View>
 
-          <View style={styles.row}>
-            <View style={styles.halfField}>
-              <Text style={commonStyles.inputLabel}>VIP Rows</Text>
-              <TextInput
-                style={commonStyles.inputField}
-                keyboardType="numeric"
-                value={form.vipRows}
-                onChangeText={(v) => updateField('vipRows', v)}
-              />
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionDot, { backgroundColor: colors.warning }]} />
+              <Text style={styles.sectionTitle}>Seat Layout</Text>
             </View>
-            <View style={styles.halfField}>
-              <Text style={commonStyles.inputLabel}>Premium Rows</Text>
-              <TextInput
-                style={commonStyles.inputField}
-                keyboardType="numeric"
-                value={form.premiumRows}
-                onChangeText={(v) => updateField('premiumRows', v)}
-              />
+
+            <View style={styles.row}>
+              <View style={styles.halfField}>
+                <Text style={styles.inputLabel}>Total Rows</Text>
+                <TextInput
+                  style={styles.inputField}
+                  keyboardType="numeric"
+                  value={form.rows}
+                  onChangeText={(v) => updateField('rows', v)}
+                />
+              </View>
+              <View style={styles.halfField}>
+                <Text style={styles.inputLabel}>Seats / Row</Text>
+                <TextInput
+                  style={styles.inputField}
+                  keyboardType="numeric"
+                  value={form.seatsPerRow}
+                  onChangeText={(v) => updateField('seatsPerRow', v)}
+                />
+              </View>
+            </View>
+
+            <View style={styles.row}>
+              <View style={styles.halfField}>
+                <Text style={styles.inputLabel}>VIP Rows</Text>
+                <TextInput
+                  style={styles.inputField}
+                  keyboardType="numeric"
+                  value={form.vipRows}
+                  onChangeText={(v) => updateField('vipRows', v)}
+                />
+              </View>
+              <View style={styles.halfField}>
+                <Text style={styles.inputLabel}>Premium Rows</Text>
+                <TextInput
+                  style={styles.inputField}
+                  keyboardType="numeric"
+                  value={form.premiumRows}
+                  onChangeText={(v) => updateField('premiumRows', v)}
+                />
+              </View>
+            </View>
+
+            <View style={styles.hintCard}>
+              <Text style={styles.hint}>
+                Total seats: {Number(form.rows || 0) * Number(form.seatsPerRow || 0)} · General rows are
+                auto-calculated from remaining rows.
+              </Text>
             </View>
           </View>
-
-          <Text style={styles.hint}>
-            Total seats: {Number(form.rows || 0) * Number(form.seatsPerRow || 0)} · General rows are
-            auto-calculated from remaining rows.
-          </Text>
 
           <TouchableOpacity
-            style={commonStyles.primaryButton}
+            style={styles.submitButton}
             onPress={handleSubmit}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={commonStyles.primaryButtonText}>Create Match & Seats</Text>
+              <Text style={styles.submitButtonText}>Create Match & Seats</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -257,19 +282,56 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    paddingBottom: 40,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl * 2,
+  },
+  sectionCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.sm,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  sectionDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   sectionTitle: {
     color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 8,
-    marginTop: 8,
+    fontSize: typography.h3.fontSize,
+    fontWeight: '800',
+  },
+  inputLabel: {
+    color: colors.textSecondary,
+    fontSize: typography.caption.fontSize,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  inputField: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    color: colors.textPrimary,
+    fontSize: typography.body.fontSize,
+    marginBottom: spacing.md,
+    minHeight: 48,
   },
   row: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.md,
   },
   halfField: {
     flex: 1,
@@ -278,10 +340,29 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
   },
+  hintCard: {
+    backgroundColor: colors.primarySurface,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+  },
   hint: {
     color: colors.textSecondary,
-    fontSize: 12,
-    marginBottom: 12,
+    fontSize: typography.small.fontSize,
     lineHeight: 18,
+  },
+  submitButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.lg,
+    borderRadius: radii.lg,
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.md,
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: typography.body.fontSize,
   },
 });

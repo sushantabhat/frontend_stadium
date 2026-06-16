@@ -22,7 +22,7 @@ export default function DailyReportScreen() {
         <Text style={styles.icon}>📊</Text>
         <Text style={styles.title}>Daily Analytics</Text>
         <Text style={styles.message}>
-          View today's entries, scan success rate, and other performance metrics.
+          View today&apos;s entries, scan success rate, and other performance metrics.
         </Text>
       </View>
     </SafeAreaView>

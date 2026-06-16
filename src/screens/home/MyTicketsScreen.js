@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenHeader from '../../components/ScreenHeader';
-import { colors } from '../../constants/theme';
+import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchMyTickets } from '../../services/ticketService';
 import { formatMatchDate } from '../../utils/date';
 import EmptyState from '../../components/EmptyState';
@@ -39,52 +39,52 @@ export default function MyTicketsScreen({ navigation }) {
   );
 
   const renderTicketItem = ({ item }) => {
-    // Generate QR code URL using a public API (reliable, web-safe, zero native package bugs)
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
       item.ticketCode
     )}&color=07111f&bgcolor=ffffff`;
 
     return (
       <View style={styles.ticketCard}>
-        {/* Ticket Header */}
-        <View style={styles.ticketHeader}>
-          <Text style={styles.matchTitle} numberOfLines={1}>
-            {item.match?.title}
-          </Text>
-          <View
-            style={[
-              styles.scannedBadge,
-              { backgroundColor: item.scanned ? `${colors.danger}20` : `${colors.success}20` },
-            ]}
-          >
-            <Text
+        {/* Upper section */}
+        <View style={styles.ticketUpper}>
+          <View style={styles.ticketHeader}>
+            <Text style={styles.matchTitle} numberOfLines={1}>
+              {item.match?.title}
+            </Text>
+            <View
               style={[
-                styles.scannedBadgeText,
-                { color: item.scanned ? colors.danger : colors.success },
+                styles.statusBadge,
+                { backgroundColor: item.scanned ? `${colors.danger}18` : `${colors.success}18` },
               ]}
             >
-              {item.scanned ? 'SCANNED' : 'VALID'}
+              <Text
+                style={[
+                  styles.statusText,
+                  { color: item.scanned ? colors.danger : colors.success },
+                ]}
+              >
+                {item.scanned ? 'SCANNED' : 'VALID'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.metaRow}>
+            <Text style={styles.metaText}>{item.match?.venue}</Text>
+            <Text style={styles.metaText}>
+              {item.match ? formatMatchDate(item.match.matchDate) : ''}
             </Text>
           </View>
         </View>
 
-        {/* Match details */}
-        <View style={styles.metaRow}>
-          <Text style={styles.metaText}>📍 {item.match?.venue}</Text>
-          <Text style={styles.metaText}>
-            🗓 {item.match ? formatMatchDate(item.match.matchDate) : ''}
-          </Text>
-        </View>
-
-        {/* Dotted separator divider */}
+        {/* Ticket stub separator */}
         <View style={styles.separatorContainer}>
           <View style={styles.leftCutout} />
-          <View style={styles.dottedLine} />
+          <View style={styles.dashedLine} />
           <View style={styles.rightCutout} />
         </View>
 
-        {/* Ticket Lower half (QR and Seat details) */}
-        <View style={styles.ticketBody}>
+        {/* Lower section */}
+        <View style={styles.ticketLower}>
           <View style={styles.qrContainer}>
             <Image source={{ uri: qrUrl }} style={styles.qrCode} />
             <Text style={styles.ticketCodeText}>{item.ticketCode}</Text>
@@ -101,7 +101,7 @@ export default function MyTicketsScreen({ navigation }) {
             </View>
             <View style={styles.infoBlock}>
               <Text style={styles.infoLabel}>PRICE</Text>
-              <Text style={styles.infoValue}>₹{item.seat?.price}</Text>
+              <Text style={styles.infoValue}>{item.seat?.price}</Text>
             </View>
           </View>
         </View>
@@ -116,7 +116,7 @@ export default function MyTicketsScreen({ navigation }) {
 
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primaryLight} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : tickets.length === 0 ? (
         <View style={styles.center}>
@@ -150,130 +150,124 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: spacing.xl,
   },
   listContent: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
   ticketCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    backgroundColor: colors.surface,
+    borderRadius: radii.xxl,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.md,
     overflow: 'hidden',
   },
+  ticketUpper: {
+    padding: spacing.lg,
+  },
   ticketHeader: {
-    padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FAFBFD',
+    marginBottom: spacing.sm,
   },
   matchTitle: {
-    color: '#07111F',
-    fontSize: 16,
-    fontWeight: '800',
+    ...typography.h3,
+    color: colors.textPrimary,
     flex: 1,
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
-  scannedBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  statusBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.md,
   },
-  scannedBadgeText: {
-    fontSize: 10,
+  statusText: {
+    ...typography.tiny,
     fontWeight: '800',
   },
   metaRow: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    backgroundColor: '#FAFBFD',
+    gap: spacing.xs,
   },
   metaText: {
-    color: '#64748B',
-    fontSize: 13,
-    marginBottom: 4,
+    ...typography.caption,
+    color: colors.textSecondary,
   },
   separatorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    height: 20,
+    height: 24,
+    backgroundColor: colors.surface,
   },
   leftCutout: {
-    width: 10,
-    height: 20,
+    width: 12,
+    height: 24,
     backgroundColor: colors.background,
-    borderTopRightRadius: 10,
-    borderBottomRightRadius: 10,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
     marginLeft: -1,
   },
   rightCutout: {
-    width: 10,
-    height: 20,
+    width: 12,
+    height: 24,
     backgroundColor: colors.background,
-    borderTopLeftRadius: 10,
-    borderBottomLeftRadius: 10,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
     marginRight: -1,
   },
-  dottedLine: {
+  dashedLine: {
     flex: 1,
     height: 1,
     borderStyle: 'dashed',
     borderWidth: 1,
-    borderColor: '#CBD5E1',
-    marginHorizontal: 8,
+    borderColor: colors.border,
+    marginHorizontal: spacing.sm,
   },
-  ticketBody: {
-    padding: 16,
+  ticketLower: {
+    padding: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
   },
   qrContainer: {
     alignItems: 'center',
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 8,
-    backgroundColor: '#FFFFFF',
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    backgroundColor: colors.surface,
   },
   qrCode: {
-    width: 120,
-    height: 120,
+    width: 110,
+    height: 110,
   },
   ticketCodeText: {
-    color: '#475569',
-    fontSize: 8,
-    fontWeight: '700',
-    marginTop: 6,
+    ...typography.tiny,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
     letterSpacing: 0.5,
   },
   seatInfo: {
     flex: 1,
-    paddingLeft: 20,
+    paddingLeft: spacing.xl,
     justifyContent: 'center',
-    gap: 12,
+    gap: spacing.md,
   },
   infoBlock: {
     alignItems: 'flex-start',
   },
   infoLabel: {
-    color: '#94A3B8',
-    fontSize: 9,
+    ...typography.tiny,
+    color: colors.textSecondary,
     fontWeight: '800',
     letterSpacing: 0.8,
   },
   infoValue: {
-    color: '#07111F',
-    fontSize: 14,
+    ...typography.body,
+    color: colors.textPrimary,
     fontWeight: '800',
     marginTop: 2,
   },

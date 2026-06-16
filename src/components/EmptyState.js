@@ -1,13 +1,15 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '../constants/theme';
+import { colors, spacing, radii, typography } from '../constants/theme';
 
 export default function EmptyState({ icon = '🏏', title, message }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>{icon}</Text>
+      <View style={styles.iconWrap}>
+        <Text style={styles.icon}>{icon}</Text>
+      </View>
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.message}>{message}</Text>
+      {message ? <Text style={styles.message}>{message}</Text> : null}
     </View>
   );
 }
@@ -16,24 +18,35 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 24,
+    paddingVertical: spacing.huge + 8,
+    paddingHorizontal: spacing.xxxl,
+  },
+  iconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: radii.xxl,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xl,
   },
   icon: {
-    fontSize: 48,
-    marginBottom: 12,
+    fontSize: 36,
   },
   title: {
     color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
+    fontSize: typography.h3.fontSize,
+    fontWeight: typography.h3.fontWeight,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
   message: {
-    color: colors.textSecondary,
-    fontSize: 14,
+    color: colors.textMuted,
+    fontSize: typography.caption.fontSize,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: typography.caption.lineHeight + 4,
+    maxWidth: 280,
   },
 });

@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import ScreenHeader from '../../components/ScreenHeader';
-import { colors, commonStyles } from '../../constants/theme';
+import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 
 export default function TicketVerifyScreen({ route, navigation }) {
   const { status, message, ticket, ticketCode, fraudPrediction } = route.params;
@@ -18,19 +18,23 @@ export default function TicketVerifyScreen({ route, navigation }) {
   const isBehavioral = status === 'fraud_behavioral';
 
   let alertColor = colors.success;
+  let alertSurface = colors.successSurface;
   let statusText = 'TICKET APPROVED';
   let badgeEmoji = '✅';
 
   if (isDuplicate) {
     alertColor = colors.danger;
+    alertSurface = colors.dangerSurface;
     statusText = 'FRAUD ALERT: DUPLICATE';
     badgeEmoji = '🚨';
   } else if (isBehavioral) {
     alertColor = colors.warning;
+    alertSurface = colors.warningSurface;
     statusText = 'BEHAVIORAL ANOMALY DETECTED';
     badgeEmoji = '⚠️';
   } else if (status === 'fraud_invalid') {
-    alertColor = colors.warning;
+    alertColor = colors.danger;
+    alertSurface = colors.dangerSurface;
     statusText = 'INVALID TICKET';
     badgeEmoji = '⚠️';
   }
@@ -46,8 +50,8 @@ export default function TicketVerifyScreen({ route, navigation }) {
 
       <View style={styles.content}>
         {/* Status Alert Banner */}
-        <View style={[styles.alertBanner, { backgroundColor: `${alertColor}15`, borderColor: alertColor }]}>
-          <Text style={[styles.badgeText]}>{badgeEmoji}</Text>
+        <View style={[styles.alertBanner, { backgroundColor: alertSurface, borderColor: alertColor }]}>
+          <Text style={styles.badgeText}>{badgeEmoji}</Text>
           <Text style={[styles.statusTitle, { color: alertColor }]}>{statusText}</Text>
           <Text style={styles.messageText}>{message}</Text>
         </View>
@@ -93,7 +97,7 @@ export default function TicketVerifyScreen({ route, navigation }) {
             <View style={styles.detailRow}>
               <Text style={styles.label}>Audit Classification</Text>
               <Text style={[styles.value, { color: colors.danger, fontWeight: '800' }]}>
-                {isDuplicate ? 'AI Flags: Repeated Entry Threat' : 
+                {isDuplicate ? 'AI Flags: Repeated Entry Threat' :
                  isBehavioral ? 'AI Flags: Behavioral Anomaly' : 'AI Flags: Counterfeit Signature'}
               </Text>
             </View>
@@ -115,10 +119,10 @@ export default function TicketVerifyScreen({ route, navigation }) {
         )}
 
         <TouchableOpacity
-          style={[commonStyles.primaryButton, { backgroundColor: alertColor, shadowColor: alertColor }]}
+          style={[styles.actionButton, { backgroundColor: alertColor }]}
           onPress={handleNext}
         >
-          <Text style={commonStyles.primaryButtonText}>Scan Next Ticket</Text>
+          <Text style={styles.actionButtonText}>Scan Next Ticket</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -132,69 +136,82 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: spacing.lg,
     justifyContent: 'center',
-    gap: 20,
+    gap: spacing.xl,
   },
   alertBanner: {
-    borderWidth: 1,
-    borderRadius: 22,
-    padding: 24,
+    borderWidth: 2,
+    borderRadius: radii.xxl,
+    padding: spacing.xxl,
     alignItems: 'center',
+    ...shadows.md,
   },
   badgeText: {
     fontSize: 48,
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   statusTitle: {
-    fontSize: 20,
-    fontWeight: '900',
+    ...typography.h2,
     letterSpacing: 0.5,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   messageText: {
     color: colors.textSecondary,
-    fontSize: 14,
+    ...typography.body,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
   },
   detailsCard: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: radii.xl,
+    padding: spacing.xl,
+    ...shadows.sm,
   },
   cardHeader: {
     color: colors.textMuted,
-    fontSize: 10,
+    ...typography.tiny,
     fontWeight: '800',
     letterSpacing: 1.2,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderColor: `${colors.border}40`,
+    borderColor: colors.border,
   },
   label: {
     color: colors.textSecondary,
-    fontSize: 13,
+    ...typography.caption,
   },
   value: {
     color: colors.textPrimary,
-    fontSize: 13,
+    ...typography.caption,
     fontWeight: '700',
     textAlign: 'right',
     flex: 1,
-    marginLeft: 16,
+    marginLeft: spacing.md,
   },
   codeValue: {
-    color: colors.primaryLight,
+    color: colors.primary,
     fontFamily: 'Courier',
-    fontSize: 12,
+    ...typography.small,
     fontWeight: '700',
+  },
+  actionButton: {
+    borderRadius: radii.lg,
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+    minHeight: 52,
+    ...shadows.sm,
+  },
+  actionButtonText: {
+    color: '#FFFFFF',
+    ...typography.body,
+    fontWeight: '800',
   },
 });

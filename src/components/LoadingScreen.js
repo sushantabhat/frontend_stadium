@@ -1,12 +1,14 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../constants/theme';
+import { colors, spacing, typography } from '../constants/theme';
 
-export default function LoadingScreen({ message = 'Loading session...' }) {
+export default function LoadingScreen({ message = 'Loading...' }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>🏟️</Text>
-      <ActivityIndicator size="large" color={colors.primaryLight} />
+      <View style={styles.loaderWrap}>
+        <ActivityIndicator size="large" color={colors.primaryLight} />
+      </View>
+      <Text style={styles.brand}>SMART STADIUM</Text>
       <Text style={styles.message}>{message}</Text>
     </View>
   );
@@ -18,15 +20,29 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xxxl,
   },
-  icon: {
-    fontSize: 48,
-    marginBottom: 16,
+  loaderWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xxl,
+  },
+  brand: {
+    color: colors.textPrimary,
+    fontSize: typography.label.fontSize,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: spacing.md,
   },
   message: {
-    marginTop: 16,
-    color: colors.textSecondary,
-    fontSize: 14,
+    color: colors.textMuted,
+    fontSize: typography.caption.fontSize,
+    fontWeight: '500',
   },
 });

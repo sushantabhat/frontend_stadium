@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenHeader from '../../components/ScreenHeader';
-import { colors, commonStyles } from '../../constants/theme';
+import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchScanHistory, verifyTicketCode } from '../../services/ticketService';
 
 export default function GateScannerScreen({ navigation }) {
@@ -135,7 +135,7 @@ export default function GateScannerScreen({ navigation }) {
           </Text>
 
           <TextInput
-            style={commonStyles.inputField}
+            style={styles.inputField}
             placeholder="e.g. TKT-69-A-1-XYZ"
             placeholderTextColor={colors.textMuted}
             value={ticketCode}
@@ -145,14 +145,14 @@ export default function GateScannerScreen({ navigation }) {
           />
 
           <TouchableOpacity
-            style={[commonStyles.primaryButton, styles.verifyBtn]}
+            style={styles.verifyBtn}
             onPress={() => handleVerify()}
             disabled={isVerifying}
           >
             {isVerifying ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={commonStyles.primaryButtonText}>Validate Ticket Code</Text>
+              <Text style={styles.verifyBtnText}>Validate Ticket Code</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -162,7 +162,7 @@ export default function GateScannerScreen({ navigation }) {
           <Text style={styles.cardHeader}>MY RECENT SCANS</Text>
 
           {isLoadingHistory ? (
-            <ActivityIndicator size="small" color={colors.primaryLight} style={{ marginVertical: 16 }} />
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: spacing.lg }} />
           ) : scanHistory.length === 0 ? (
             <Text style={styles.emptyHistory}>No scan records compiled in this shift.</Text>
           ) : (
@@ -186,133 +186,159 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    padding: 16,
+    padding: spacing.lg,
     paddingBottom: 40,
   },
   scannerWrapper: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   scannerFrame: {
     width: '100%',
-    height: 180,
+    height: 200,
     backgroundColor: colors.surface,
     borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 20,
+    borderWidth: 2,
+    borderRadius: radii.xxl,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    ...shadows.md,
   },
   scannerEmoji: {
-    fontSize: 36,
-    marginBottom: 8,
+    fontSize: 40,
+    marginBottom: spacing.md,
   },
   scannerFrameText: {
     color: colors.textSecondary,
-    fontSize: 13,
+    ...typography.caption,
     fontWeight: '700',
   },
   cornerTL: {
     position: 'absolute',
-    top: 16,
-    left: 16,
-    width: 20,
-    height: 20,
+    top: 20,
+    left: 20,
+    width: 24,
+    height: 24,
     borderTopWidth: 4,
     borderLeftWidth: 4,
-    borderColor: colors.primaryLight,
+    borderColor: colors.primary,
+    borderTopLeftRadius: 4,
   },
   cornerTR: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 20,
-    height: 20,
+    top: 20,
+    right: 20,
+    width: 24,
+    height: 24,
     borderTopWidth: 4,
     borderRightWidth: 4,
-    borderColor: colors.primaryLight,
+    borderColor: colors.primary,
+    borderTopRightRadius: 4,
   },
   cornerBL: {
     position: 'absolute',
-    bottom: 16,
-    left: 16,
-    width: 20,
-    height: 20,
+    bottom: 20,
+    left: 20,
+    width: 24,
+    height: 24,
     borderBottomWidth: 4,
     borderLeftWidth: 4,
-    borderColor: colors.primaryLight,
+    borderColor: colors.primary,
+    borderBottomLeftRadius: 4,
   },
   cornerBR: {
     position: 'absolute',
-    bottom: 16,
-    right: 16,
-    width: 20,
-    height: 20,
+    bottom: 20,
+    right: 20,
+    width: 24,
+    height: 24,
     borderBottomWidth: 4,
     borderRightWidth: 4,
-    borderColor: colors.primaryLight,
+    borderColor: colors.primary,
+    borderBottomRightRadius: 4,
   },
   manualEntryCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 20,
+    borderRadius: radii.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.xl,
+    ...shadows.sm,
   },
   cardHeader: {
     color: colors.textMuted,
-    fontSize: 11,
+    ...typography.tiny,
     fontWeight: '800',
     letterSpacing: 1.2,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   cardDesc: {
     color: colors.textSecondary,
-    fontSize: 12,
-    lineHeight: 18,
-    marginBottom: 14,
+    ...typography.small,
+    marginBottom: spacing.lg,
+  },
+  inputField: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    color: colors.textPrimary,
+    fontSize: 15,
+    marginBottom: spacing.md,
   },
   verifyBtn: {
-    marginTop: 0,
+    backgroundColor: colors.primary,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+    minHeight: 52,
+    ...shadows.sm,
+  },
+  verifyBtnText: {
+    color: '#FFFFFF',
+    ...typography.body,
+    fontWeight: '800',
   },
   historyCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 20,
-    padding: 16,
+    borderRadius: radii.xl,
+    padding: spacing.xl,
+    ...shadows.sm,
   },
   emptyHistory: {
     color: colors.textSecondary,
-    fontSize: 13,
+    ...typography.caption,
     textAlign: 'center',
-    marginVertical: 20,
+    marginVertical: spacing.xl,
   },
   historyList: {
-    gap: 12,
-    marginTop: 10,
+    gap: spacing.md,
+    marginTop: spacing.md,
   },
   historyRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderColor: `${colors.border}50`,
+    borderColor: colors.border,
   },
   historyLeft: {
     flex: 1,
   },
   historyUser: {
     color: colors.textPrimary,
-    fontSize: 14,
+    ...typography.body,
     fontWeight: '700',
   },
   historySeat: {
     color: colors.textSecondary,
-    fontSize: 12,
+    ...typography.small,
     marginTop: 2,
   },
   historyRight: {
@@ -321,17 +347,17 @@ const styles = StyleSheet.create({
   },
   historyTime: {
     color: colors.textMuted,
-    fontSize: 12,
+    ...typography.small,
   },
   successBadge: {
-    backgroundColor: `${colors.success}20`,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    backgroundColor: colors.successSurface,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radii.sm,
   },
   successBadgeText: {
     color: colors.success,
-    fontSize: 9,
+    ...typography.tiny,
     fontWeight: '800',
   },
 });

@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import ScreenHeader from '../../components/ScreenHeader';
-import { colors } from '../../constants/theme';
+import { colors, spacing, typography } from '../../constants/theme';
 
 export default function WishlistScreen() {
   return (
@@ -19,7 +19,9 @@ export default function WishlistScreen() {
       />
 
       <View style={styles.content}>
-        <Text style={styles.icon}>❤️</Text>
+        <View style={styles.iconContainer}>
+          <Text style={styles.icon}>❤️</Text>
+        </View>
         <Text style={styles.title}>Your Wishlist</Text>
         <Text style={styles.message}>
           Save your favorite matches to book later or get notified when tickets are available.
@@ -38,21 +40,28 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xxl,
+  },
+  iconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: `${colors.primary}12`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
   },
   icon: {
-    fontSize: 56,
-    marginBottom: 16,
+    fontSize: 48,
   },
   title: {
+    ...typography.h2,
     color: colors.textPrimary,
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   message: {
+    ...typography.body,
     color: colors.textSecondary,
-    fontSize: 14,
     textAlign: 'center',
     lineHeight: 22,
   },

@@ -9,7 +9,8 @@ import {
   ScrollView,
 } from 'react-native';
 import ScreenHeader from '../../components/ScreenHeader';
-import { colors, commonStyles } from '../../constants/theme';
+import BookingProgress from '../../components/BookingProgress';
+import { colors, spacing, radii, typography, shadows, commonStyles } from '../../constants/theme';
 import { fetchMatchById } from '../../services/matchService';
 import { confirmBooking, unlockSeats } from '../../services/bookingService';
 import { fetchDynamicPricingSuggestions } from '../../services/aiService';
@@ -30,15 +31,13 @@ export default function BookingScreen({ route, navigation }) {
         const matchData = await fetchMatchById(matchId);
         setMatch(matchData);
 
-        // Fetch dynamic pricing analytics (simulated AI demand pricing)
         try {
           const suggestionsData = await fetchDynamicPricingSuggestions(matchId);
           setPricingSuggestions(suggestionsData);
         } catch {
-          // Fallback if AI endpoint fails (staff/admin only permissions)
           setPricingSuggestions(null);
         }
-      } catch (error) {
+      } catch {
         Alert.alert('Error', 'Failed to retrieve match checkout details');
       } finally {
         setIsLoading(false);
@@ -47,7 +46,6 @@ export default function BookingScreen({ route, navigation }) {
 
     loadData();
 
-    // Clean up locks when user navigates away without booking
     return () => {
       if (!isBooked) {
         const seatIds = selectedSeats.map((s) => s.id);
@@ -66,7 +64,7 @@ export default function BookingScreen({ route, navigation }) {
     setIsPaying(true);
     const seatIds = selectedSeats.map((s) => s.id);
     try {
-      await confirmBooking(matchId, seatIds, totalAmount);
+      await confirmBooking(matchId, seatIds);
       setIsBooked(true);
 
       Alert.alert(
@@ -76,7 +74,6 @@ export default function BookingScreen({ route, navigation }) {
           {
             text: 'View Tickets',
             onPress: () => {
-              // Reset navigation stack to FanDashboard and go to MyTickets
               navigation.reset({
                 index: 0,
                 routes: [
@@ -110,16 +107,15 @@ export default function BookingScreen({ route, navigation }) {
     );
   }
 
-  // Calculate dynamic multiplier display
   const demandLevel = pricingSuggestions?.demandLevel || 'Normal';
   const multiplier = pricingSuggestions?.multiplier || 1.0;
 
   return (
     <View style={styles.container}>
+      <BookingProgress currentStep={isBooked ? 'done' : 'pay'} />
       <ScreenHeader title="Confirm Booking" onBack={handleCancel} />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Match Details Card */}
         <View style={styles.card}>
           <Text style={styles.cardHeader}>EVENT DETAILS</Text>
           <Text style={styles.matchTitle}>{match?.title}</Text>
@@ -127,7 +123,6 @@ export default function BookingScreen({ route, navigation }) {
           <Text style={styles.matchMeta}>🗓 {match ? formatMatchDate(match.matchDate) : ''}</Text>
         </View>
 
-        {/* Selected Seats Details */}
         <View style={styles.card}>
           <Text style={styles.cardHeader}>SELECTED SEATS</Text>
           {selectedSeats.map((seat) => (
@@ -143,7 +138,6 @@ export default function BookingScreen({ route, navigation }) {
           ))}
         </View>
 
-        {/* AI Dynamic Pricing Alert */}
         {multiplier > 1.0 ? (
           <View style={styles.aiAlert}>
             <Text style={styles.aiAlertTitle}>📈 AI Pricing Alert: {demandLevel} Demand</Text>
@@ -177,7 +171,6 @@ export default function BookingScreen({ route, navigation }) {
           </View>
         ) : null}
 
-        {/* Billing details */}
         <View style={styles.card}>
           <Text style={styles.cardHeader}>PAYMENT BREAKDOWN</Text>
           <View style={styles.billRow}>
@@ -203,7 +196,6 @@ export default function BookingScreen({ route, navigation }) {
         </View>
       </ScrollView>
 
-      {/* Checkout Payment CTAs */}
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} disabled={isPaying}>
           <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -236,149 +228,150 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    padding: 16,
+    padding: spacing.lg,
     paddingBottom: 100,
   },
   card: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.md,
   },
   cardHeader: {
     color: colors.textMuted,
-    fontSize: 11,
-    fontWeight: '800',
+    ...typography.small,
     letterSpacing: 1.2,
-    marginBottom: 12,
+    marginBottom: spacing.lg,
   },
   matchTitle: {
     color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 8,
+    ...typography.h3,
+    marginBottom: spacing.sm,
   },
   matchMeta: {
     color: colors.textSecondary,
-    fontSize: 13,
-    marginBottom: 4,
+    ...typography.caption,
+    marginBottom: spacing.xs,
   },
   seatRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderColor: `${colors.border}50`,
   },
   seatBadge: {
     backgroundColor: colors.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs + 2,
+    borderRadius: radii.sm,
   },
   seatLabel: {
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
+    ...typography.tiny,
+    letterSpacing: 0,
   },
   seatCategory: {
     color: colors.textSecondary,
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.captionMedium,
     flex: 1,
-    marginLeft: 12,
+    marginLeft: spacing.lg,
   },
   seatPrice: {
     color: colors.textPrimary,
-    fontWeight: '800',
-    fontSize: 14,
+    ...typography.bodyMedium,
   },
   aiAlert: {
     backgroundColor: `${colors.info}15`,
     borderColor: colors.info,
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
   },
   aiAlertTitle: {
     color: colors.info,
-    fontWeight: '800',
-    fontSize: 13,
-    marginBottom: 4,
+    ...typography.small,
+    letterSpacing: 0,
+    textTransform: 'none',
+    marginBottom: spacing.xs,
   },
   aiAlertText: {
     color: colors.textSecondary,
-    fontSize: 12,
-    lineHeight: 18,
+    ...typography.caption,
+    lineHeight: typography.caption.lineHeight + 4,
   },
   highlight: {
     color: colors.textPrimary,
     fontWeight: '800',
   },
   pricingFactors: {
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: `${colors.info}30`,
   },
   factorTitle: {
     color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '700',
-    marginBottom: 4,
+    ...typography.tiny,
+    letterSpacing: 0,
+    textTransform: 'none',
+    marginBottom: spacing.xs,
   },
   factorItem: {
     color: colors.textMuted,
-    fontSize: 11,
-    lineHeight: 18,
+    ...typography.tiny,
+    lineHeight: typography.tiny.lineHeight + 4,
+    letterSpacing: 0,
+    textTransform: 'none',
   },
   confidenceText: {
     color: colors.textMuted,
-    fontSize: 10,
+    fontSize: typography.tiny.fontSize - 1,
     fontStyle: 'italic',
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 4,
+    paddingVertical: spacing.xs,
   },
   billLabel: {
     color: colors.textSecondary,
-    fontSize: 13,
+    ...typography.caption,
   },
   billValue: {
     color: colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 13,
+    ...typography.bodyMedium,
   },
   divider: {
     height: 1,
     backgroundColor: colors.border,
-    marginVertical: 10,
+    marginVertical: spacing.md,
   },
   totalLabel: {
     color: colors.textPrimary,
-    fontSize: 15,
+    ...typography.body,
     fontWeight: '800',
   },
   totalValue: {
     color: colors.primaryLight,
-    fontWeight: '800',
-    fontSize: 18,
+    ...typography.h3,
   },
   warningBox: {
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.lg,
   },
   warningText: {
     color: colors.textMuted,
-    fontSize: 12,
+    ...typography.small,
     textAlign: 'center',
-    lineHeight: 18,
+    letterSpacing: 0,
+    textTransform: 'none',
+    lineHeight: typography.small.lineHeight + 4,
   },
   bottomBar: {
     position: 'absolute',
@@ -388,25 +381,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.lg,
+    ...shadows.lg,
   },
   cancelBtn: {
     flex: 1,
     height: 48,
-    borderRadius: 14,
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surfaceElevated,
   },
   cancelBtnText: {
     color: colors.textPrimary,
-    fontWeight: '700',
-    fontSize: 14,
+    ...typography.bodyMedium,
   },
   payBtn: {
     flex: 2,

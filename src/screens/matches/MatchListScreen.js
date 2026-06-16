@@ -11,7 +11,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import MatchCard from '../../components/MatchCard';
 import EmptyState from '../../components/EmptyState';
 import { fetchMatches } from '../../services/matchService';
-import { colors } from '../../constants/theme';
+import { colors, spacing } from '../../constants/theme';
 
 export default function MatchListScreen({ navigation }) {
   const [matches, setMatches] = useState([]);
@@ -98,8 +98,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   list: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxxl,
   },
   center: {
     flex: 1,

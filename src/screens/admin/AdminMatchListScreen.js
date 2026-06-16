@@ -13,7 +13,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import MatchCard from '../../components/MatchCard';
 import EmptyState from '../../components/EmptyState';
 import { fetchMatches } from '../../services/matchService';
-import { colors, commonStyles } from '../../constants/theme';
+import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 
 export default function AdminMatchListScreen({ navigation }) {
   const [matches, setMatches] = useState([]);
@@ -53,17 +53,17 @@ export default function AdminMatchListScreen({ navigation }) {
         subtitle="Create events and monitor seat inventory"
         rightAction={
           <TouchableOpacity
-            style={commonStyles.primaryButton}
+            style={styles.createButton}
             onPress={() => navigation.navigate('CreateMatch')}
           >
-            <Text style={commonStyles.primaryButtonText}>+ Create Match</Text>
+            <Text style={styles.createButtonText}>+ Create Match</Text>
           </TouchableOpacity>
         }
       />
 
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primaryLight} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : error ? (
         <EmptyState icon="⚠️" title="Could not load matches" message={error} />
@@ -76,7 +76,7 @@ export default function AdminMatchListScreen({ navigation }) {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={() => loadMatches(true)}
-              tintColor={colors.primaryLight}
+              tintColor={colors.primary}
             />
           }
           ListEmptyComponent={
@@ -104,12 +104,27 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   list: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl * 1.5,
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  createButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radii.lg,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.sm,
+  },
+  createButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: typography.caption.fontSize,
   },
 });

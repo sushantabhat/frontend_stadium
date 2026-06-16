@@ -10,8 +10,15 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
-import { colors } from '../../constants/theme';
+import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { getRoleDisplayName } from '../../constants/roleNavigation';
+
+const roleColors = {
+  fan: colors.primary,
+  user: colors.primary,
+  staff: colors.success,
+  admin: colors.accent,
+};
 
 export default function ProfileMenuButton({ compact = false }) {
   const navigation = useNavigation();
@@ -26,39 +33,58 @@ export default function ProfileMenuButton({ compact = false }) {
     navigation.navigate(routeName);
   };
 
+  const roleKey = userInfo?.role === 'user' ? 'fan' : userInfo?.role;
+  const roleColor = roleColors[roleKey] || colors.primary;
+  const initials = (userInfo?.name || 'U').slice(0, 1).toUpperCase();
+
   return (
     <>
       <TouchableOpacity
         accessibilityLabel="Open profile menu"
         onPress={openMenu}
+        activeOpacity={0.7}
         style={[styles.trigger, compact && styles.triggerCompact]}
       >
-        <Text style={[styles.triggerIcon, compact && styles.triggerIconCompact]}>👤</Text>
+        <View style={[styles.avatarDot, { backgroundColor: `${roleColor}20`, borderColor: `${roleColor}40` }]}>
+          <Text style={[styles.avatarInitial, { color: roleColor }]}>{initials}</Text>
+        </View>
       </TouchableOpacity>
 
       <Modal animationType="fade" transparent visible={isVisible} onRequestClose={closeMenu}>
         <Pressable style={styles.overlay} onPress={closeMenu}>
           <Pressable style={styles.sheet} onPress={() => null}>
             <View style={styles.grip} />
+
             <View style={styles.sheetHeader}>
               <View style={styles.identityRow}>
-                <View style={styles.avatarCircle}>
-                  <Text style={styles.avatarText}>{(userInfo?.name || 'U').slice(0, 1).toUpperCase()}</Text>
+                <View style={[styles.avatarLarge, { backgroundColor: `${roleColor}15`, borderColor: `${roleColor}30` }]}>
+                  <Text style={[styles.avatarLargeText, { color: roleColor }]}>{initials}</Text>
                 </View>
                 <View style={styles.identityText}>
                   <Text style={styles.nameText}>{userInfo?.name || 'Account'}</Text>
                   <Text style={styles.roleText}>{getRoleDisplayName(userInfo?.role)}</Text>
                 </View>
               </View>
-              <View style={styles.accountPill}>
-                <Text style={styles.accountPillText}>Active session</Text>
+              <View style={[styles.sessionPill, { backgroundColor: colors.successSurface, borderColor: `${colors.success}30` }]}>
+                <View style={styles.sessionDot} />
+                <Text style={styles.sessionPillText}>Active session</Text>
               </View>
             </View>
 
             <View style={styles.menuSection}>
-              <MenuItem label="Profile" onPress={() => handleNavigate('Profile')} />
-              <MenuItem label="Settings" onPress={() => handleNavigate('Settings')} />
               <MenuItem
+                icon="👤"
+                label="Profile"
+                onPress={() => handleNavigate('Profile')}
+              />
+              <MenuItem
+                icon="⚙️"
+                label="Settings"
+                onPress={() => handleNavigate('Settings')}
+              />
+              <View style={styles.menuDivider} />
+              <MenuItem
+                icon="🚪"
                 label={isLoading ? 'Signing out...' : 'Logout'}
                 onPress={logout}
                 destructive
@@ -72,11 +98,23 @@ export default function ProfileMenuButton({ compact = false }) {
   );
 }
 
-function MenuItem({ label, onPress, destructive = false, loading = false }) {
+function MenuItem({ icon, label, onPress, destructive = false, loading = false }) {
   return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress} disabled={loading}>
-      <Text style={[styles.menuItemText, destructive && styles.destructiveText]}>{label}</Text>
-      {loading ? <ActivityIndicator size="small" color={colors.primaryLight} /> : null}
+    <TouchableOpacity
+      style={styles.menuItem}
+      onPress={onPress}
+      disabled={loading}
+      activeOpacity={0.6}
+    >
+      <View style={styles.menuItemLeft}>
+        <Text style={styles.menuItemIcon}>{icon}</Text>
+        <Text style={[styles.menuItemText, destructive && styles.destructiveText]}>{label}</Text>
+      </View>
+      {loading ? (
+        <ActivityIndicator size="small" color={colors.primaryLight} />
+      ) : (
+        <Text style={styles.menuItemArrow}>›</Text>
+      )}
     </TouchableOpacity>
   );
 }
@@ -85,73 +123,69 @@ const styles = StyleSheet.create({
   trigger: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radii.full,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
   },
   triggerCompact: {
     width: 36,
     height: 36,
-    borderRadius: 18,
   },
-  triggerIcon: {
-    fontSize: 18,
+  avatarDot: {
+    width: '100%',
+    height: '100%',
+    borderRadius: radii.full,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  triggerIconCompact: {
-    fontSize: 16,
+  avatarInitial: {
+    fontSize: 15,
+    fontWeight: '800',
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.72)',
+    backgroundColor: 'rgba(6, 9, 18, 0.75)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: colors.surfaceElevated || colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 24,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radii.xxl,
+    borderTopRightRadius: radii.xxl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxxl,
     borderTopWidth: 1,
-    borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOpacity: 0.32,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: -6 },
+    borderColor: colors.borderLight,
+    ...shadows.xl,
   },
   grip: {
-    width: 42,
+    width: 40,
     height: 4,
-    borderRadius: 999,
-    backgroundColor: colors.border,
+    borderRadius: 2,
+    backgroundColor: colors.borderLight,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.xl,
   },
   sheetHeader: {
-    marginBottom: 14,
+    marginBottom: spacing.lg,
   },
   identityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    gap: 12,
+    marginBottom: spacing.md,
+    gap: spacing.md,
   },
-  avatarCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.background,
+  avatarLarge: {
+    width: 52,
+    height: 52,
+    borderRadius: radii.lg,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
   },
-  avatarText: {
-    color: colors.textPrimary,
-    fontSize: 18,
+  avatarLargeText: {
+    fontSize: 22,
     fontWeight: '800',
   },
   identityText: {
@@ -159,47 +193,71 @@ const styles = StyleSheet.create({
   },
   nameText: {
     color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: typography.h3.fontSize,
+    fontWeight: typography.h3.fontWeight,
   },
   roleText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    marginTop: 2,
+    color: colors.textMuted,
+    fontSize: typography.caption.fontSize,
+    marginTop: spacing.xxs,
   },
-  accountPill: {
+  sessionPill: {
+    flexDirection: 'row',
     alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: colors.background,
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 1,
+    borderRadius: radii.full,
     borderWidth: 1,
-    borderColor: colors.border,
+    gap: spacing.xs,
   },
-  accountPillText: {
-    color: colors.textSecondary,
-    fontSize: 11,
+  sessionDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.success,
+  },
+  sessionPillText: {
+    color: colors.successLight,
+    fontSize: typography.tiny.fontSize,
     fontWeight: '700',
   },
   menuSection: {
-    gap: 8,
-    marginBottom: 16,
+    gap: spacing.sm,
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: colors.borderSubtle,
+    marginVertical: spacing.xs,
   },
   menuItem: {
-    minHeight: 48,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: colors.background,
+    minHeight: 50,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  menuItemIcon: {
+    fontSize: 18,
+  },
   menuItemText: {
     color: colors.textPrimary,
-    fontSize: 14,
+    fontSize: typography.bodyMedium.fontSize,
     fontWeight: '600',
+  },
+  menuItemArrow: {
+    color: colors.textMuted,
+    fontSize: 22,
+    fontWeight: '300',
   },
   destructiveText: {
     color: colors.danger,

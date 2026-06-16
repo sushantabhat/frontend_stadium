@@ -4,6 +4,7 @@
   "main": "index.js",
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-navigation/bottom-tabs": "^6.6.1",
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/stack": "^6.3.29",
     "axios": "^1.18.0",
