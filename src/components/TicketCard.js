@@ -1,7 +1,41 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, radii, typography, shadows } from '../constants/theme';
+import { colors, spacing, radii, typography } from '../constants/theme';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = SCREEN_WIDTH - spacing.xl * 2;
+
+const CATEGORY_THEMES = {
+  VIP: { gradient: ['#FFD700', '#E6C200'], accent: '#FFD700', label: 'VIP' },
+  PREMIUM: { gradient: ['#6C5CE7', '#4834D4'], accent: '#A29BFE', label: 'PREMIUM' },
+  GENERAL: { gradient: ['#374151', '#1F2937'], accent: '#9CA3AF', label: 'GENERAL' },
+};
+
+function PerforatedEdge() {
+  const dotCount = 28;
+  const dotSize = 8;
+  const gap = (CARD_WIDTH - spacing.xxl * 2) / dotCount;
+
+  return (
+    <View style={styles.perforation}>
+      {Array.from({ length: dotCount }).map((_, i) => (
+        <View
+          key={i}
+          style={[
+            styles.perfDot,
+            {
+              width: dotSize,
+              height: dotSize,
+              borderRadius: dotSize / 2,
+              marginLeft: i === 0 ? 0 : gap - dotSize,
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
 
 export default function TicketCard({ ticket, showQR = true }) {
   const matchTitle = ticket.match?.title || ticket.matchTitle || 'Match';
@@ -12,6 +46,10 @@ export default function TicketCard({ ticket, showQR = true }) {
   const category = (ticket.seat?.category || ticket.category || 'general').toUpperCase();
   const ticketCode = ticket.ticketCode || 'N/A';
   const matchDate = ticket.match?.matchDate || ticket.matchDate;
+  const status = (ticket.status || 'VALID').toUpperCase();
+
+  const catTheme = CATEGORY_THEMES[category] || CATEGORY_THEMES.GENERAL;
+
 
   let dateStr = '';
   let timeStr = '';
@@ -22,69 +60,82 @@ export default function TicketCard({ ticket, showQR = true }) {
   }
 
   return (
-    <View style={styles.cardWrapper}>
+    <View style={styles.wrapper}>
+      {/* Top section — event info */}
       <LinearGradient
-        colors={[colors.gradientStart, colors.gradientEnd]}
+        colors={catTheme.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.card}
+        style={styles.topHalf}
       >
-        {/* Top section */}
-        <View style={styles.topSection}>
-          <Text style={styles.eventLabel}>SMART STADIUM</Text>
-          <View style={[styles.categoryBadge, category === 'VIP' && styles.vipBadge]}>
-            <Text style={[styles.categoryText, category === 'VIP' && styles.vipText]}>{category}</Text>
+        {/* Background texture — subtle diagonal lines */}
+        <View style={styles.texture} />
+
+        {/* Header row */}
+        <View style={styles.topRow}>
+          <Text style={styles.brand}>SMART STADIUM</Text>
+          <View style={styles.statusPill}>
+            <Text style={styles.statusPillText}>{status}</Text>
           </View>
         </View>
 
         {/* Match info */}
-        <Text style={styles.matchTitle}>{matchTitle}</Text>
+        <Text style={styles.matchTitle} numberOfLines={1}>{matchTitle}</Text>
         <View style={styles.teamsRow}>
-          <Text style={styles.teamName}>{teamA}</Text>
-          <Text style={styles.vsText}>VS</Text>
-          <Text style={styles.teamName}>{teamB}</Text>
+          <Text style={styles.team}>{teamA}</Text>
+          <Text style={styles.vs}>VS</Text>
+          <Text style={styles.team}>{teamB}</Text>
         </View>
 
-        <View style={styles.dividerDashed} />
+        {/* Category badge */}
+        <View style={styles.catBadge}>
+          <Text style={styles.catBadgeText}>{catTheme.label}</Text>
+        </View>
+      </LinearGradient>
 
+      {/* Perforated edge */}
+      <PerforatedEdge />
+
+      {/* Bottom section — details */}
+      <View style={styles.bottomHalf}>
         {/* Details grid */}
-        <View style={styles.detailsGrid}>
-          <View style={styles.detailItem}>
+        <View style={styles.detailsRow}>
+          <View style={styles.detail}>
             <Text style={styles.detailLabel}>DATE</Text>
             <Text style={styles.detailValue}>{dateStr || 'TBD'}</Text>
           </View>
-          <View style={styles.detailItem}>
+          <View style={styles.detailDivider} />
+          <View style={styles.detail}>
             <Text style={styles.detailLabel}>TIME</Text>
             <Text style={styles.detailValue}>{timeStr || 'TBD'}</Text>
           </View>
-          <View style={styles.detailItem}>
+          <View style={styles.detailDivider} />
+          <View style={styles.detail}>
             <Text style={styles.detailLabel}>SEAT</Text>
             <Text style={styles.detailValue}>{seatLabel}</Text>
           </View>
         </View>
 
-        <View style={styles.dividerDashed} />
-
         {/* Venue */}
         <View style={styles.venueRow}>
           <Text style={styles.venueIcon}>📍</Text>
-          <Text style={styles.venueText}>{venue}</Text>
+          <Text style={styles.venueText} numberOfLines={1}>{venue}</Text>
         </View>
 
-        {/* Ticket code */}
-        <View style={styles.codeSection}>
+        {/* Ticket code — monospace, prominent */}
+        <View style={styles.codeBox}>
           <Text style={styles.codeLabel}>TICKET CODE</Text>
           <Text style={styles.codeValue}>{ticketCode}</Text>
         </View>
 
-        {/* Entry message */}
-        <View style={styles.entryBanner}>
+        {/* Entry instruction */}
+        <View style={styles.entryRow}>
           <Text style={styles.entryIcon}>📱</Text>
           <Text style={styles.entryText}>Show this at the entry gate</Text>
         </View>
-      </LinearGradient>
+      </View>
 
-      {/* Notch cutouts for ticket feel */}
+      {/* Side notch cutouts */}
       <View style={[styles.notch, styles.notchLeft]} />
       <View style={[styles.notch, styles.notchRight]} />
     </View>
@@ -92,57 +143,52 @@ export default function TicketCard({ ticket, showQR = true }) {
 }
 
 const styles = StyleSheet.create({
-  cardWrapper: {
+  wrapper: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.xl,
     position: 'relative',
   },
-  card: {
-    borderRadius: radii.xxl,
-    padding: spacing.xxl,
-    ...shadows.lg,
-  },
-  notch: {
-    position: 'absolute',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.background,
-    top: '50%',
-    marginTop: -12,
-  },
-  notchLeft: { left: -12 },
-  notchRight: { right: -12 },
 
-  topSection: {
+  // Top half
+  topHalf: {
+    borderTopLeftRadius: radii.xxl,
+    borderTopRightRadius: radii.xxl,
+    padding: spacing.xxl,
+    paddingBottom: spacing.lg,
+    overflow: 'hidden',
+  },
+  texture: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.04,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+  },
+
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
-  eventLabel: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: typography.tiny.fontSize,
+  brand: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 9,
     fontWeight: '800',
     letterSpacing: 2,
   },
-  categoryBadge: {
+  statusPill: {
     backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
     borderRadius: radii.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
-  vipBadge: {
-    backgroundColor: `${colors.accent}40`,
-  },
-  categoryText: {
+  statusPillText: {
     color: '#FFF',
-    fontSize: typography.tiny.fontSize,
+    fontSize: 9,
     fontWeight: '800',
     letterSpacing: 1,
-  },
-  vipText: {
-    color: colors.accent,
   },
 
   matchTitle: {
@@ -157,43 +203,78 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginBottom: spacing.lg,
   },
-  teamName: {
+  team: {
     color: 'rgba(255,255,255,0.9)',
     fontSize: typography.bodyMedium.fontSize,
     fontWeight: '700',
   },
-  vsText: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: typography.tiny.fontSize,
+  vs: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: 9,
     fontWeight: '800',
     letterSpacing: 2,
   },
 
-  dividerDashed: {
-    height: 1,
-    borderStyle: 'dashed',
+  catBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: radii.full,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs + 2,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    marginVertical: spacing.lg,
-    marginHorizontal: -spacing.xxl,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  catBadgeText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
 
-  detailsGrid: {
+  // Perforated edge
+  perforation: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: 16,
+    marginHorizontal: spacing.xxl - 4,
   },
-  detailItem: {
-    flex: 1,
+  perfDot: {
+    backgroundColor: colors.background,
+  },
+
+  // Bottom half
+  bottomHalf: {
+    backgroundColor: colors.surface,
+    borderBottomLeftRadius: radii.xxl,
+    borderBottomRightRadius: radii.xxl,
+    padding: spacing.xxl,
+    paddingTop: spacing.lg,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: colors.border,
+  },
+
+  detailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  detail: { flex: 1 },
+  detailDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.md,
   },
   detailLabel: {
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.textMuted,
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 1,
     marginBottom: spacing.xs,
   },
   detailValue: {
-    color: '#FFF',
+    color: colors.textPrimary,
     fontSize: typography.captionMedium.fontSize,
     fontWeight: '700',
   },
@@ -203,49 +284,70 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.md,
   },
-  venueIcon: { fontSize: 14 },
+  venueIcon: { fontSize: 13 },
   venueText: {
-    color: 'rgba(255,255,255,0.8)',
+    color: colors.textSecondary,
     fontSize: typography.caption.fontSize,
     flex: 1,
   },
 
-  codeSection: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+  codeBox: {
+    backgroundColor: colors.surfaceElevated,
     borderRadius: radii.lg,
     padding: spacing.lg,
     alignItems: 'center',
     marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   codeLabel: {
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.textMuted,
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 1.5,
     marginBottom: spacing.xs,
   },
   codeValue: {
-    color: '#FFF',
+    color: colors.textPrimary,
     fontSize: typography.h3.fontSize,
     fontWeight: '900',
     fontFamily: 'Courier',
-    letterSpacing: 2,
+    letterSpacing: 3,
   },
 
-  entryBanner: {
+  entryRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: `${colors.primary}15`,
     borderRadius: radii.md,
     paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: `${colors.primary}25`,
   },
-  entryIcon: { fontSize: 14 },
+  entryIcon: { fontSize: 13 },
   entryText: {
-    color: 'rgba(255,255,255,0.8)',
+    color: colors.primaryLight,
     fontSize: typography.small.fontSize,
-    fontWeight: '600',
+    fontWeight: '700',
   },
+
+  // Notch cutouts
+  notch: {
+    position: 'absolute',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.background,
+    top: '50%',
+    marginTop: -12,
+  },
+  notchLeft: { left: -12 },
+  notchRight: { right: -12 },
 });

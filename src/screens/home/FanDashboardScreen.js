@@ -92,25 +92,29 @@ export default function FanDashboardScreen({ navigation }) {
           }}
         />
 
-        {/* Quick actions — pill style */}
+        {/* Quick actions — scrollable */}
         <View style={styles.section}>
-          <View style={styles.pillsRow}>
-            {[
+          <FlatList
+            data={[
               { icon: '🔍', label: 'Browse Matches', route: 'Browse' },
               { icon: '🎫', label: 'My Tickets', route: 'My Tickets' },
               { icon: '❤️', label: 'Wishlist', route: 'Wishlist' },
-            ].map((a) => (
+            ]}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.pillsList}
+            keyExtractor={(item) => item.label}
+            renderItem={({ item }) => (
               <TouchableOpacity
-                key={a.label}
                 style={styles.pill}
-                onPress={() => navigation.navigate(a.route)}
+                onPress={() => navigation.navigate(item.route)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.pillIcon}>{a.icon}</Text>
-                <Text style={styles.pillLabel}>{a.label}</Text>
+                <Text style={styles.pillIcon}>{item.icon}</Text>
+                <Text style={styles.pillLabel}>{item.label}</Text>
               </TouchableOpacity>
-            ))}
-          </View>
+            )}
+          />
         </View>
 
         {/* Loading */}
@@ -306,9 +310,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Pills
-  pillsRow: {
-    flexDirection: 'row',
+  // Pills — horizontal scroll
+  pillsList: {
     gap: spacing.sm,
   },
   pill: {
