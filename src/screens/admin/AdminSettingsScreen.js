@@ -31,11 +31,11 @@ const SETTINGS_SECTIONS = [
   },
 ];
 
-export default function AdminSettingsScreen() {
+export default function AdminSettingsScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScreenHeader title="Settings" subtitle="System configuration" />
+      <ScreenHeader title="Settings" subtitle="System configuration" onBack={() => navigation.goBack()} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {SETTINGS_SECTIONS.map((section) => (
           <View key={section.title} style={styles.section}>

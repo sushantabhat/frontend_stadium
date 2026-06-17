@@ -60,7 +60,7 @@ export default function AdminMatchListScreen({ navigation }) {
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : error ? (
-        <EmptyState icon="⚠️" title="Could not load matches" message={error} />
+        <EmptyState icon="⚠️" title="Could not load matches" description={error} />
       ) : (
         <FlatList
           data={matches}
@@ -77,7 +77,7 @@ export default function AdminMatchListScreen({ navigation }) {
             <EmptyState
               icon="📊"
               title="No matches yet"
-              message="Create your first cricket match to start selling tickets."
+              description="Create your first cricket match to start selling tickets."
             />
           }
           renderItem={({ item, index }) => (

@@ -131,7 +131,7 @@ export default function AdminDashboardScreen({ navigation }) {
                   <Text style={styles.actionSmallLabel}>Users</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionSmall} onPress={() => navigation.navigate('Dashboard')} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.actionSmall} onPress={() => navigation.navigate('AdminStatistics')} activeOpacity={0.7}>
                 <LinearGradient colors={[`${colors.success}25`, `${colors.success}08`]} style={styles.actionSmallInner}>
                   <Text style={styles.actionSmallIcon}>📈</Text>
                   <Text style={styles.actionSmallLabel}>Analytics</Text>

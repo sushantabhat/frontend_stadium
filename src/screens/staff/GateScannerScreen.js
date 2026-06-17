@@ -137,7 +137,7 @@ export default function GateScannerScreen({ navigation }) {
                   <View style={styles.historyLeft}>
                     <Text style={styles.historyUser}>{item.user?.name || 'Fan'}</Text>
                     <Text style={styles.historySeat}>
-                      {item.seat?.seatLabel} ({item.seat?.category.toUpperCase()})
+                      {item.seat?.seatLabel} ({item.seat?.category?.toUpperCase()})
                     </Text>
                   </View>
                   <View style={styles.historyRight}>

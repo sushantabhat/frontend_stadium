@@ -161,7 +161,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <View style={[styles.statDot, { backgroundColor: colors.borderSoft }]} />
+            <View style={[styles.statDot, { backgroundColor: colors.borderLight }]} />
             <Text style={styles.statNum}>{seatStats.booked}</Text>
             <Text style={styles.statText}>Taken</Text>
           </View>
@@ -178,7 +178,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
             { color: colors.success, label: 'Available' },
             { color: colors.primary, label: 'Selected' },
             { color: colors.warning, label: 'Locked' },
-            { color: colors.borderSoft, label: 'Booked' },
+            { color: colors.borderLight, label: 'Booked' },
           ].map((item) => (
             <View key={item.label} style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: item.color }]} />
@@ -197,7 +197,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
                   {rowSeats.map(seat => {
                     const isSelected = selectedSeats.some(s => s.id === seat.id);
                     let seatBg = colors.success;
-                    if (seat.status === 'booked') seatBg = colors.borderSoft;
+                    if (seat.status === 'booked') seatBg = colors.borderLight;
                     else if (seat.status === 'locked') seatBg = colors.warning;
                     else if (isSelected) seatBg = colors.primary;
                     const cat = CATEGORY_COLORS[seat.category] || CATEGORY_COLORS.general;
