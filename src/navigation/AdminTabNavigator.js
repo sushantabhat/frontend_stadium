@@ -3,50 +3,51 @@ import { StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 
-/* ── Admin Screen Imports ── */
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import AdminMatchListScreen from '../screens/admin/AdminMatchListScreen';
 import CreateMatchScreen from '../screens/admin/CreateMatchScreen';
 import MatchDetailScreen from '../screens/matches/MatchDetailScreen';
 import StatisticsScreen from '../screens/admin/StatisticsScreen';
 import TicketValidationScreen from '../screens/admin/TicketValidationScreen';
+import ScannerDashboardScreen from '../screens/admin/ScannerDashboardScreen';
 import PromotionalHubScreen from '../screens/admin/PromotionalHubScreen';
 import UserManagementScreen from '../screens/admin/UserManagementScreen';
 import AdminSettingsScreen from '../screens/admin/AdminSettingsScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import SettingsScreen from '../screens/common/SettingsScreen';
-import { glass, shadows } from '../constants/theme';
+import { glass } from '../constants/theme';
 
-/* ── Navigator instances ── */
 const Tab = createBottomTabNavigator();
 const DashStack = createStackNavigator();
 const MatchesStack = createStackNavigator();
+const TicketsStack = createStackNavigator();
 const UsersStack = createStackNavigator();
-const ProfileStack = createStackNavigator();
+const ScannersStack = createStackNavigator();
+const ReportsStack = createStackNavigator();
 
-/* ── Shared screen options: no headers, dark canvas ── */
 const screenOptions = { headerShown: false, cardStyle: { backgroundColor: glass.canvasStart } };
 
-/* ──────────────────────────────────────────────────────
- * Tab Icon Component
- * Maps each tab label to an emoji icon with active/inactive states.
- * ────────────────────────────────────────────────────── */
-function TabIcon({ label, focused }) {
-  const icons = { Dashboard: '📊', Matches: '⚽', Users: '👥', Account: '👤' };
+const TAB_CONFIG = {
+  Home: { icon: '🏠', label: 'Home' },
+  Events: { icon: '📅', label: 'Events' },
+  Tickets: { icon: '🎫', label: 'Tickets' },
+  Users: { icon: '👥', label: 'Users' },
+  Scanners: { icon: '📷', label: 'Scanners' },
+  Reports: { icon: '📊', label: 'Reports' },
+};
+
+function TabIcon({ routeName, focused }) {
+  const config = TAB_CONFIG[routeName] || { icon: '•', label: routeName };
   return (
     <View style={tabStyles.iconWrap}>
-      <Text style={[tabStyles.icon, focused && tabStyles.iconFocused]}>{icons[label] || '•'}</Text>
-      <Text style={[tabStyles.label, focused && tabStyles.labelFocused]}>{label}</Text>
-      {/* Active tab indicator dot */}
-      {focused && <View style={tabStyles.activeDot} />}
+      <View style={[tabStyles.iconCircle, focused && tabStyles.iconCircleActive]}>
+        <Text style={[tabStyles.icon, focused && tabStyles.iconFocused]}>{config.icon}</Text>
+      </View>
+      <Text style={[tabStyles.label, focused && tabStyles.labelFocused]}>{config.label}</Text>
     </View>
   );
 }
 
-/* ──────────────────────────────────────────────────────
- * Dashboard Stack Navigator
- * Contains: Main Dashboard → Statistics → Ticket Validation → Settings
- * ────────────────────────────────────────────────────── */
 function DashboardNavigator() {
   return (
     <DashStack.Navigator screenOptions={screenOptions}>
@@ -54,14 +55,12 @@ function DashboardNavigator() {
       <DashStack.Screen name="AdminStatistics" component={StatisticsScreen} />
       <DashStack.Screen name="AdminTicketValidation" component={TicketValidationScreen} />
       <DashStack.Screen name="AdminSettings" component={AdminSettingsScreen} />
+      <DashStack.Screen name="AdminProfile" component={ProfileScreen} />
+      <DashStack.Screen name="Settings" component={SettingsScreen} />
     </DashStack.Navigator>
   );
 }
 
-/* ──────────────────────────────────────────────────────
- * Matches Stack Navigator
- * Contains: Match List (Scheduler) → Create Match → Match Detail
- * ────────────────────────────────────────────────────── */
 function MatchesNavigator() {
   return (
     <MatchesStack.Navigator screenOptions={screenOptions}>
@@ -72,10 +71,14 @@ function MatchesNavigator() {
   );
 }
 
-/* ──────────────────────────────────────────────────────
- * Users Stack Navigator
- * Contains: User Management → Promotional Hub
- * ────────────────────────────────────────────────────── */
+function TicketsNavigator() {
+  return (
+    <TicketsStack.Navigator screenOptions={screenOptions}>
+      <TicketsStack.Screen name="AdminTicketValidation" component={TicketValidationScreen} />
+    </TicketsStack.Navigator>
+  );
+}
+
 function UsersNavigator() {
   return (
     <UsersStack.Navigator screenOptions={screenOptions}>
@@ -85,61 +88,66 @@ function UsersNavigator() {
   );
 }
 
-/* ──────────────────────────────────────────────────────
- * Profile Stack Navigator
- * Contains: Profile → Settings
- * ────────────────────────────────────────────────────── */
-function ProfileNavigator() {
+function ScannersNavigator() {
   return (
-    <ProfileStack.Navigator screenOptions={screenOptions}>
-      <ProfileStack.Screen name="AdminProfile" component={ProfileScreen} />
-      <ProfileStack.Screen name="Settings" component={SettingsScreen} />
-    </ProfileStack.Navigator>
+    <ScannersStack.Navigator screenOptions={screenOptions}>
+      <ScannersStack.Screen name="AdminScannerHub" component={ScannerDashboardScreen} />
+    </ScannersStack.Navigator>
   );
 }
 
-/* ──────────────────────────────────────────────────────
- * Main Admin Tab Navigator
- * 4 tabs: Dashboard | Matches | Users | Account
- * ────────────────────────────────────────────────────── */
+function ReportsNavigator() {
+  return (
+    <ReportsStack.Navigator screenOptions={screenOptions}>
+      <ReportsStack.Screen name="AdminReports" component={StatisticsScreen} />
+    </ReportsStack.Navigator>
+  );
+}
+
 export default function AdminTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} />,
+        tabBarIcon: ({ focused }) => <TabIcon routeName={route.name} focused={focused} />,
         tabBarStyle: tabStyles.bar,
-        tabBarActiveTintColor: glass.neonCyan,
+        tabBarActiveTintColor: glass.brandPurple,
         tabBarInactiveTintColor: glass.textMuted,
         tabBarLabel: () => null,
       })}
     >
-      <Tab.Screen name="Dashboard" component={DashboardNavigator} />
-      <Tab.Screen name="Matches" component={MatchesNavigator} />
+      <Tab.Screen name="Home" component={DashboardNavigator} />
+      <Tab.Screen name="Events" component={MatchesNavigator} />
+      <Tab.Screen name="Tickets" component={TicketsNavigator} />
       <Tab.Screen name="Users" component={UsersNavigator} />
-      <Tab.Screen name="Account" component={ProfileNavigator} />
+      <Tab.Screen name="Scanners" component={ScannersNavigator} />
+      <Tab.Screen name="Reports" component={ReportsNavigator} />
     </Tab.Navigator>
   );
 }
 
-/* ═══ TAB BAR STYLES ═══ */
 const tabStyles = StyleSheet.create({
   bar: {
     backgroundColor: '#0A0B0E',
     borderTopColor: glass.border,
     borderTopWidth: 1,
-    height: 85,
-    paddingTop: 8,
-    paddingBottom: 28,
-    ...shadows.xl,
+    height: 88,
+    paddingTop: 6,
+    paddingBottom: 24,
   },
-  iconWrap: { alignItems: 'center', gap: 3 },
-  icon: { fontSize: 22 },
-  iconFocused: { transform: [{ scale: 1.15 }] },
+  iconWrap: { alignItems: 'center', gap: 4, minWidth: 52 },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconCircleActive: {
+    backgroundColor: glass.brandPurpleSurface,
+  },
+  icon: { fontSize: 20, opacity: 0.55 },
+  iconFocused: { opacity: 1, transform: [{ scale: 1.05 }] },
   label: { fontSize: 10, fontWeight: '600', color: glass.textMuted },
-  labelFocused: { color: glass.neonCyan, fontWeight: '700' },
-  activeDot: {
-    width: 4, height: 4, borderRadius: 2,
-    backgroundColor: glass.neonCyan, marginTop: 2,
-  },
+  labelFocused: { color: glass.brandPurple, fontWeight: '700' },
 });

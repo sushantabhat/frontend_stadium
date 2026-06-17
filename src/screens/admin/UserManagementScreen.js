@@ -1,50 +1,75 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, Alert, Modal, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import ScreenHeader from '../../components/ScreenHeader';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import TicketProHeader, { AdminCard, AdminFilterPills, AdminSearchBar } from '../../components/admin/TicketProHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchUsers, createUser, updateUser, deleteUser } from '../../services/adminService';
 
-/* ─── Role & Status Constants ─── */
 const ROLES = ['user', 'staff', 'supervisor', 'admin'];
-const ROLE_COLORS = { user: glass.neonCyan, staff: glass.statusSuccessText, supervisor: glass.neonMagenta, admin: glass.neonAmber };
-const STATUS_COLORS = { active: glass.statusSuccessText, suspended: glass.statusDangerText };
+const ROLE_LABELS = { user: 'Fan', staff: 'Staff', supervisor: 'Organizer', admin: 'VIP' };
+const ROLE_COLORS = {
+  user: '#4F8EF7',
+  staff: glass.statusSuccessText,
+  supervisor: '#F59E0B',
+  admin: glass.brandPurple,
+};
+const AVATAR_COLORS = ['#4F8EF7', '#F59E0B', glass.brandPurple, '#22C55E', '#EC4899'];
 const FILTERS = [
   { key: null, label: 'All' },
   { key: 'user', label: 'Fans' },
   { key: 'staff', label: 'Staff' },
-  { key: 'supervisor', label: 'Supervisors' },
-  { key: 'admin', label: 'Admins' },
   { key: 'active', label: 'Active' },
   { key: 'suspended', label: 'Suspended' },
 ];
 
-/* ─── Helper: Format date string ─── */
 function formatDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function getInitials(name) {
+  return (name || '?')
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function isThisMonth(dateStr) {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  const now = new Date();
+  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+}
+
 export default function UserManagementScreen() {
-  /* ── Preserved: All state hooks ── */
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState(null);
-
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(null);
   const [showDelete, setShowDelete] = useState(null);
   const [showDetail, setShowDetail] = useState(null);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
-
   const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role: 'user' });
   const [editForm, setEditForm] = useState({ name: '', email: '', role: 'user', status: 'active' });
 
-  /* ── Preserved: Data loading callback ── */
   const loadData = useCallback(async () => {
     try {
       const data = await fetchUsers();
@@ -57,20 +82,18 @@ export default function UserManagementScreen() {
     }
   }, []);
 
-  /* ── Preserved: Effect-based initial load + refresh handler ── */
   React.useEffect(() => { loadData(); }, [loadData]);
   const onRefresh = () => { setIsRefreshing(true); loadData(); };
 
-  /* ── Preserved: Filtered users memo ── */
   const filteredUsers = useMemo(() => {
     let list = users;
-    if (filter === 'active') list = list.filter(u => u.status === 'active');
-    else if (filter === 'suspended') list = list.filter(u => u.status === 'suspended');
-    else if (filter) list = list.filter(u => u.role === filter);
+    if (filter === 'active') list = list.filter((u) => u.status === 'active');
+    else if (filter === 'suspended') list = list.filter((u) => u.status === 'suspended');
+    else if (filter) list = list.filter((u) => u.role === filter);
 
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(u =>
+      list = list.filter((u) =>
         u.name?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
         u.role?.toLowerCase().includes(q)
@@ -79,17 +102,12 @@ export default function UserManagementScreen() {
     return list;
   }, [users, filter, search]);
 
-  /* ── Preserved: Derived stats memo ── */
   const stats = useMemo(() => ({
-    total: users.length,
-    fans: users.filter(u => u.role === 'user').length,
-    staff: users.filter(u => u.role === 'staff').length,
-    supervisors: users.filter(u => u.role === 'supervisor').length,
-    admins: users.filter(u => u.role === 'admin').length,
-    active: users.filter(u => u.status === 'active').length,
+    active: users.filter((u) => u.status === 'active').length,
+    suspended: users.filter((u) => u.status === 'suspended').length,
+    thisMonth: users.filter((u) => isThisMonth(u.createdAt)).length,
   }), [users]);
 
-  /* ── Preserved: CRUD handlers ── */
   const handleCreate = async () => {
     if (!createForm.name.trim() || !createForm.email.trim() || !createForm.password.trim()) {
       Alert.alert('Missing fields', 'Name, email, and password are required.');
@@ -150,198 +168,130 @@ export default function UserManagementScreen() {
     setShowEdit(user);
   };
 
-  /* ── Preserved: Initials helper ── */
-  const getInitial = (name) => (name || '?')[0].toUpperCase();
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScreenHeader
-        title="User Permissions"
-        subtitle="Staff accounts & security access control"
-        rightAction={
-          <TouchableOpacity onPress={() => setShowCreate(true)} activeOpacity={0.7}>
-            <LinearGradient
-              colors={[glass.neonCyan, glass.neonPurple]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.addBtnGradient}
-            >
-              <Text style={styles.addBtn}>+ Add</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        }
-      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={glass.neonCyan} colors={[glass.neonCyan]} />}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={glass.brandPurple} />}
       >
-        {/* ═══ STATS GRID ═══ */}
-        <View style={styles.statRow}>
-          {[
-            { label: 'Total', value: stats.total, icon: '👥', color: colors.textPrimary },
-            { label: 'Fans', value: stats.fans, icon: '🎟️', color: glass.neonCyan },
-            { label: 'Staff', value: stats.staff, icon: '🛡️', color: glass.statusSuccessText },
-            { label: 'Supv', value: stats.supervisors, icon: '📋', color: glass.neonMagenta },
-            { label: 'Admins', value: stats.admins, icon: '👑', color: glass.neonAmber },
-            { label: 'Active', value: stats.active, icon: '🟢', color: glass.statusSuccessText },
-          ].map((s) => (
-            <View key={s.label} style={styles.statCard}>
-              <LinearGradient
-                colors={[glass.surface, 'rgba(18,21,34,0.4)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.statInner}
-              >
-                <Text style={styles.statIcon}>{s.icon}</Text>
-                <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
-                <Text style={styles.statLabel}>{s.label}</Text>
-              </LinearGradient>
-            </View>
-          ))}
-        </View>
+        <TicketProHeader showLive />
 
-        {/* ═══ SEARCH BAR ═══ */}
-        <View style={styles.searchWrap}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name, email, or role..."
-            placeholderTextColor={glass.textMuted}
-            value={search}
-            onChangeText={setSearch}
-            autoCapitalize="none"
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')} activeOpacity={0.7}>
-              <Text style={styles.searchClear}>✕</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* ═══ FILTER PILLS ═══ */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-          {FILTERS.map((f) => (
-            <TouchableOpacity
-              key={f.key || 'all'}
-              style={[styles.filterPill, filter === f.key && styles.filterPillActive]}
-              onPress={() => setFilter(f.key)}
-              activeOpacity={0.7}
-            >
-              {filter === f.key ? (
-                <LinearGradient
-                  colors={[glass.neonCyan, glass.neonPurple]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.filterPillGradient}
-                >
-                  <Text style={styles.filterTextActive}>{f.label}</Text>
-                </LinearGradient>
-              ) : (
-                <Text style={styles.filterText}>{f.label}</Text>
-              )}
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* ═══ USER GRID CARDS ═══ */}
-        {isLoading ? (
-          <View style={styles.loadingWrap}><ActivityIndicator color={glass.neonCyan} /></View>
-        ) : filteredUsers.length === 0 ? (
-          <View style={styles.emptyWrap}>
-            <Text style={styles.emptyIcon}>👥</Text>
-            <Text style={styles.emptyTitle}>No users found</Text>
+        <View style={styles.titleRow}>
+          <View>
+            <Text style={styles.eyebrow}>MANAGEMENT</Text>
+            <Text style={styles.pageTitle}>Users</Text>
           </View>
-        ) : (
-          filteredUsers.map((user, idx) => (
-            <TouchableOpacity
-              key={user._id || idx}
-              style={styles.userCard}
-              onPress={() => setShowDetail(user)}
-              activeOpacity={0.7}
-            >
-              <LinearGradient
-                colors={[glass.surface, 'rgba(18,21,34,0.4)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.userCardInner}
-              >
-                {/* Left: Initials badge */}
-                <View style={[styles.userAvatar, { borderColor: `${ROLE_COLORS[user.role]}40` }]}>
-                  <LinearGradient
-                    colors={[`${ROLE_COLORS[user.role]}30`, `${ROLE_COLORS[user.role]}10`]}
-                    style={styles.userAvatarInner}
-                  >
-                    <Text style={[styles.userInitial, { color: ROLE_COLORS[user.role] }]}>
-                      {getInitial(user.name)}
-                    </Text>
-                  </LinearGradient>
-                </View>
+          <TouchableOpacity style={styles.addBtn} onPress={() => setShowCreate(true)} activeOpacity={0.85}>
+            <Text style={styles.addBtnText}>+ Add</Text>
+          </TouchableOpacity>
+        </View>
 
-                {/* Center: Multi-line metadata */}
-                <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{user.name}</Text>
-                  <Text style={styles.userEmail}>{user.email}</Text>
-                  <Text style={styles.userMeta}>Joined {formatDate(user.createdAt)}</Text>
-                </View>
+        <AdminCard style={styles.statsCard}>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: glass.statusSuccessText }]}>{stats.active.toLocaleString()}</Text>
+              <Text style={styles.statLabel}>Active</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: glass.statusDangerText }]}>{stats.suspended}</Text>
+              <Text style={styles.statLabel}>Suspended</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: '#4F8EF7' }]}>+{stats.thisMonth}</Text>
+              <Text style={styles.statLabel}>This month</Text>
+            </View>
+          </View>
+        </AdminCard>
 
-                {/* Right: Role badge + status dot */}
-                <View style={styles.userRight}>
-                  <View style={[styles.rolePill, { backgroundColor: `${ROLE_COLORS[user.role]}18`, borderColor: `${ROLE_COLORS[user.role]}30` }]}>
-                    <Text style={[styles.roleText, { color: ROLE_COLORS[user.role] }]}>{user.role.toUpperCase()}</Text>
+        <AdminSearchBar
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search by name or email..."
+          onClear={() => setSearch('')}
+          rightIcon="⫶"
+        />
+
+        <AdminFilterPills options={FILTERS} value={filter} onChange={setFilter} />
+
+        <AdminCard>
+          {isLoading ? (
+            <View style={styles.loading}><ActivityIndicator color={glass.brandPurple} /></View>
+          ) : filteredUsers.length === 0 ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>No users found</Text>
+            </View>
+          ) : (
+            filteredUsers.map((user, idx) => {
+              const roleColor = ROLE_COLORS[user.role] || glass.textSecondary;
+              const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+              const isActive = user.status !== 'suspended';
+              return (
+                <TouchableOpacity
+                  key={user._id || idx}
+                  style={[styles.userRow, idx < filteredUsers.length - 1 && styles.userRowBorder]}
+                  onPress={() => setShowDetail(user)}
+                  activeOpacity={0.75}
+                >
+                  <View style={[styles.avatar, { backgroundColor: `${avatarColor}22` }]}>
+                    <Text style={[styles.avatarText, { color: avatarColor }]}>{getInitials(user.name)}</Text>
                   </View>
-                  <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[user.status] || glass.statusSuccessText }]} />
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-          ))
-        )}
-
-        <View style={{ height: spacing.xxxl + 20 }} />
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userName}>{user.name}</Text>
+                    <Text style={styles.userEmail}>{user.email}</Text>
+                    <View style={styles.userMeta}>
+                      <View style={[styles.roleBadge, { backgroundColor: `${roleColor}18` }]}>
+                        <Text style={[styles.roleText, { color: roleColor }]}>{ROLE_LABELS[user.role] || user.role}</Text>
+                      </View>
+                      <Text style={styles.spentText}>Joined {formatDate(user.createdAt)}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.userRight}>
+                    <View style={[styles.statusBadge, isActive ? styles.statusActive : styles.statusSuspended]}>
+                      <Text style={[styles.statusText, { color: isActive ? glass.statusSuccessText : glass.statusDangerText }]}>
+                        {isActive ? 'Active' : 'Suspended'}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => setShowDetail(user)}
+                      hitSlop={8}
+                      style={styles.menuBtn}
+                    >
+                      <Text style={styles.menuIcon}>···</Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </AdminCard>
       </ScrollView>
 
-      {/* ═══ DETAIL MODAL ═══ */}
+      {/* Detail modal */}
       <Modal visible={!!showDetail} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>User Details</Text>
-              <TouchableOpacity onPress={() => setShowDetail(null)} activeOpacity={0.7}>
-                <Text style={styles.modalClose}>✕</Text>
-              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowDetail(null)}><Text style={styles.modalClose}>×</Text></TouchableOpacity>
             </View>
             {showDetail && (
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.detailAvatar}>
-                  <LinearGradient colors={[`${ROLE_COLORS[showDetail.role]}40`, `${ROLE_COLORS[showDetail.role]}15`]} style={styles.detailAvatarInner}>
-                    <Text style={styles.detailAvatarText}>{getInitial(showDetail.name)}</Text>
-                  </LinearGradient>
+                  <Text style={styles.detailAvatarText}>{getInitials(showDetail.name)}</Text>
                 </View>
                 <Text style={styles.detailName}>{showDetail.name}</Text>
                 <Text style={styles.detailEmail}>{showDetail.email}</Text>
-                <View style={styles.detailRow}>
-                  <View style={[styles.rolePill, { backgroundColor: `${ROLE_COLORS[showDetail.role]}18`, borderColor: `${ROLE_COLORS[showDetail.role]}30` }]}>
-                    <Text style={[styles.roleText, { color: ROLE_COLORS[showDetail.role] }]}>{showDetail.role.toUpperCase()}</Text>
-                  </View>
-                  <View style={[styles.statusPill, { backgroundColor: `${STATUS_COLORS[showDetail.status] || glass.statusSuccessText}18`, borderColor: `${STATUS_COLORS[showDetail.status] || glass.statusSuccessText}30` }]}>
-                    <Text style={[styles.statusText, { color: STATUS_COLORS[showDetail.status] || glass.statusSuccessText }]}>{(showDetail.status || 'active').toUpperCase()}</Text>
-                  </View>
-                </View>
                 <Text style={styles.detailMeta}>Joined {formatDate(showDetail.createdAt)}</Text>
-
                 <View style={styles.detailActions}>
-                  <TouchableOpacity style={styles.detailActionBtn} onPress={() => { setShowDetail(null); openEdit(showDetail); }} activeOpacity={0.7}>
-                    <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} style={styles.detailActionInner}>
-                      <Text style={styles.detailActionIcon}>✏️</Text>
-                      <Text style={styles.detailActionLabel}>Edit</Text>
-                    </LinearGradient>
+                  <TouchableOpacity style={styles.detailBtn} onPress={() => { setShowDetail(null); openEdit(showDetail); }}>
+                    <Text style={styles.detailBtnText}>Edit</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.detailActionBtn} onPress={() => { setShowDetail(null); setShowDelete(showDetail); }} activeOpacity={0.7}>
-                    <LinearGradient colors={[glass.statusDangerFill, 'rgba(255,23,68,0.04)']} style={styles.detailActionInner}>
-                      <Text style={styles.detailActionIcon}>🗑️</Text>
-                      <Text style={[styles.detailActionLabel, { color: glass.statusDangerText }]}>Delete</Text>
-                    </LinearGradient>
+                  <TouchableOpacity style={[styles.detailBtn, styles.detailBtnDanger]} onPress={() => { setShowDetail(null); setShowDelete(showDetail); }}>
+                    <Text style={[styles.detailBtnText, { color: glass.statusDangerText }]}>Delete</Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>
@@ -350,114 +300,85 @@ export default function UserManagementScreen() {
         </View>
       </Modal>
 
-      {/* ═══ EDIT MODAL ═══ */}
+      {/* Edit modal */}
       <Modal visible={!!showEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit User</Text>
-              <TouchableOpacity onPress={() => setShowEdit(null)} activeOpacity={0.7}>
-                <Text style={styles.modalClose}>✕</Text>
-              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowEdit(null)}><Text style={styles.modalClose}>×</Text></TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>NAME</Text>
-                <TextInput style={styles.input} value={editForm.name} onChangeText={(t) => setEditForm({ ...editForm, name: t })} />
+              <Text style={styles.formLabel}>NAME</Text>
+              <TextInput style={styles.input} value={editForm.name} onChangeText={(t) => setEditForm({ ...editForm, name: t })} />
+              <Text style={styles.formLabel}>EMAIL</Text>
+              <TextInput style={styles.input} value={editForm.email} onChangeText={(t) => setEditForm({ ...editForm, email: t })} keyboardType="email-address" autoCapitalize="none" />
+              <Text style={styles.formLabel}>ROLE</Text>
+              <View style={styles.optionRow}>
+                {ROLES.map((r) => (
+                  <TouchableOpacity key={r} style={[styles.option, editForm.role === r && styles.optionActive]} onPress={() => setEditForm({ ...editForm, role: r })}>
+                    <Text style={[styles.optionText, editForm.role === r && styles.optionTextActive]}>{ROLE_LABELS[r]}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>EMAIL</Text>
-                <TextInput style={styles.input} value={editForm.email} onChangeText={(t) => setEditForm({ ...editForm, email: t })} keyboardType="email-address" autoCapitalize="none" />
-              </View>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>ROLE</Text>
-                <View style={styles.roleRow}>
-                  {ROLES.map((r) => (
-                    <TouchableOpacity key={r} style={[styles.roleOption, editForm.role === r && { backgroundColor: `${ROLE_COLORS[r]}20`, borderColor: `${ROLE_COLORS[r]}40` }]} onPress={() => setEditForm({ ...editForm, role: r })} activeOpacity={0.7}>
-                      <Text style={[styles.roleOptionText, editForm.role === r && { color: ROLE_COLORS[r] }]}>{r.charAt(0).toUpperCase() + r.slice(1)}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>STATUS</Text>
-                <View style={styles.roleRow}>
-                  {['active', 'suspended'].map((s) => (
-                    <TouchableOpacity key={s} style={[styles.roleOption, editForm.status === s && { backgroundColor: `${STATUS_COLORS[s]}20`, borderColor: `${STATUS_COLORS[s]}40` }]} onPress={() => setEditForm({ ...editForm, status: s })} activeOpacity={0.7}>
-                      <Text style={[styles.roleOptionText, editForm.status === s && { color: STATUS_COLORS[s] }]}>{s.charAt(0).toUpperCase() + s.slice(1)}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+              <Text style={styles.formLabel}>STATUS</Text>
+              <View style={styles.optionRow}>
+                {['active', 'suspended'].map((s) => (
+                  <TouchableOpacity key={s} style={[styles.option, editForm.status === s && styles.optionActive]} onPress={() => setEditForm({ ...editForm, status: s })}>
+                    <Text style={[styles.optionText, editForm.status === s && styles.optionTextActive]}>{s}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </ScrollView>
-            <TouchableOpacity style={styles.createBtn} onPress={handleEdit} disabled={saving} activeOpacity={0.85}>
-              <LinearGradient colors={[glass.neonCyan, glass.neonPurple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.createBtnInner}>
-                {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.createBtnText}>Save Changes</Text>}
-              </LinearGradient>
+            <TouchableOpacity style={styles.saveBtn} onPress={handleEdit} disabled={saving}>
+              {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Save Changes</Text>}
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* ═══ DELETE CONFIRMATION MODAL ═══ */}
+      {/* Delete modal */}
       <Modal visible={!!showDelete} animationType="fade" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.deleteCard}>
-            <Text style={styles.deleteIcon}>⚠️</Text>
             <Text style={styles.deleteTitle}>Delete User</Text>
-            <Text style={styles.deleteMsg}>
-              Are you sure you want to delete <Text style={{ fontWeight: '800' }}>{showDelete?.name}</Text>?{'\n\n'}This action is irreversible and all their data will be permanently removed.
-            </Text>
+            <Text style={styles.deleteMsg}>Remove {showDelete?.name}? This cannot be undone.</Text>
             <View style={styles.deleteActions}>
-              <TouchableOpacity style={styles.deleteCancel} onPress={() => setShowDelete(null)} activeOpacity={0.7}>
-                <Text style={styles.deleteCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.deleteConfirm} onPress={handleDelete} disabled={saving} activeOpacity={0.85}>
-                {saving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.deleteConfirmText}>Delete Permanently</Text>}
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowDelete(null)}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.confirmBtn} onPress={handleDelete} disabled={saving}>
+                {saving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.confirmText}>Delete</Text>}
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* ═══ CREATE USER MODAL ═══ */}
+      {/* Create modal */}
       <Modal visible={showCreate} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Create User</Text>
-              <TouchableOpacity onPress={() => setShowCreate(false)} activeOpacity={0.7}>
-                <Text style={styles.modalClose}>✕</Text>
-              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowCreate(false)}><Text style={styles.modalClose}>×</Text></TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>NAME</Text>
-                <TextInput style={styles.input} placeholder="Full name" placeholderTextColor={glass.textMuted} value={createForm.name} onChangeText={(t) => setCreateForm({ ...createForm, name: t })} />
-              </View>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>EMAIL</Text>
-                <TextInput style={styles.input} placeholder="email@example.com" placeholderTextColor={glass.textMuted} keyboardType="email-address" autoCapitalize="none" value={createForm.email} onChangeText={(t) => setCreateForm({ ...createForm, email: t })} />
-              </View>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>PASSWORD</Text>
-                <TextInput style={styles.input} placeholder="Min 6 characters" placeholderTextColor={glass.textMuted} secureTextEntry value={createForm.password} onChangeText={(t) => setCreateForm({ ...createForm, password: t })} />
-              </View>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>ROLE</Text>
-                <View style={styles.roleRow}>
-                  {ROLES.map((r) => (
-                    <TouchableOpacity key={r} style={[styles.roleOption, createForm.role === r && { backgroundColor: `${ROLE_COLORS[r]}20`, borderColor: `${ROLE_COLORS[r]}40` }]} onPress={() => setCreateForm({ ...createForm, role: r })} activeOpacity={0.7}>
-                      <Text style={[styles.roleOptionText, createForm.role === r && { color: ROLE_COLORS[r] }]}>{r.charAt(0).toUpperCase() + r.slice(1)}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+              <Text style={styles.formLabel}>NAME</Text>
+              <TextInput style={styles.input} placeholder="Full name" placeholderTextColor={glass.textMuted} value={createForm.name} onChangeText={(t) => setCreateForm({ ...createForm, name: t })} />
+              <Text style={styles.formLabel}>EMAIL</Text>
+              <TextInput style={styles.input} placeholder="email@example.com" placeholderTextColor={glass.textMuted} keyboardType="email-address" autoCapitalize="none" value={createForm.email} onChangeText={(t) => setCreateForm({ ...createForm, email: t })} />
+              <Text style={styles.formLabel}>PASSWORD</Text>
+              <TextInput style={styles.input} placeholder="Min 6 characters" placeholderTextColor={glass.textMuted} secureTextEntry value={createForm.password} onChangeText={(t) => setCreateForm({ ...createForm, password: t })} />
+              <Text style={styles.formLabel}>ROLE</Text>
+              <View style={styles.optionRow}>
+                {ROLES.map((r) => (
+                  <TouchableOpacity key={r} style={[styles.option, createForm.role === r && styles.optionActive]} onPress={() => setCreateForm({ ...createForm, role: r })}>
+                    <Text style={[styles.optionText, createForm.role === r && styles.optionTextActive]}>{ROLE_LABELS[r]}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </ScrollView>
-            <TouchableOpacity style={styles.createBtn} onPress={handleCreate} disabled={creating} activeOpacity={0.85}>
-              <LinearGradient colors={[glass.neonCyan, glass.neonPurple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.createBtnInner}>
-                {creating ? <ActivityIndicator color="#FFF" /> : <Text style={styles.createBtnText}>Create User</Text>}
-              </LinearGradient>
+            <TouchableOpacity style={styles.saveBtn} onPress={handleCreate} disabled={creating}>
+              {creating ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Create User</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -467,145 +388,69 @@ export default function UserManagementScreen() {
 }
 
 const styles = StyleSheet.create({
-  /* ── Canvas ── */
   container: { flex: 1, backgroundColor: glass.canvasStart },
-  scroll: { paddingTop: spacing.md },
-
-  /* ── Add button ── */
-  addBtnGradient: {
-    paddingVertical: spacing.sm, paddingHorizontal: spacing.lg,
-    borderRadius: radii.lg, minHeight: 36, alignItems: 'center', justifyContent: 'center',
-  },
-  addBtn: { color: '#FFFFFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
-
-  /* ── Stats Grid ── */
-  statRow: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl, marginBottom: spacing.lg },
-  statCard: { flex: 1, borderRadius: radii.lg, overflow: 'hidden', borderWidth: 1, borderColor: glass.border },
-  statInner: { padding: spacing.md, alignItems: 'center' },
-  statIcon: { fontSize: 14, marginBottom: spacing.xs },
-  statValue: { fontSize: typography.h3.fontSize, fontWeight: '900', marginBottom: 1 },
-  statLabel: { color: glass.textMuted, fontSize: 8, fontWeight: '600' },
-
-  /* ── Search ── */
-  searchWrap: {
-    flexDirection: 'row', alignItems: 'center', marginHorizontal: spacing.xl, marginBottom: spacing.lg,
-    backgroundColor: glass.surface, borderRadius: radii.md, borderWidth: 1, borderColor: glass.border,
-    paddingHorizontal: spacing.lg, height: 44,
-  },
-  searchIcon: { fontSize: 14, marginRight: spacing.sm },
-  searchInput: { flex: 1, color: colors.textPrimary, fontSize: typography.caption.fontSize },
-  searchClear: { color: glass.textMuted, fontSize: 14, marginLeft: spacing.sm },
-
-  /* ── Filter Pills ── */
-  filterRow: { gap: spacing.sm, paddingHorizontal: spacing.xl, marginBottom: spacing.xl },
-  filterPill: {
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.full,
-    backgroundColor: glass.surface, borderWidth: 1, borderColor: glass.border,
-  },
-  filterPillActive: { borderWidth: 0, padding: 0, paddingHorizontal: 0, paddingVertical: 0 },
-  filterPillGradient: {
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
-    borderRadius: radii.full, alignItems: 'center', justifyContent: 'center',
-  },
-  filterText: { color: glass.textMuted, fontSize: typography.small.fontSize, fontWeight: '600' },
-  filterTextActive: { color: '#FFFFFF', fontSize: typography.small.fontSize, fontWeight: '800' },
-
-  loadingWrap: { paddingVertical: spacing.xxl, alignItems: 'center' },
-
-  /* ── User Cards (isolated grid, not compressed list) ── */
-  userCard: {
-    marginHorizontal: spacing.xl, marginBottom: spacing.md,
-    borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: glass.border,
-  },
-  userCardInner: {
-    flexDirection: 'row', alignItems: 'center',
-    padding: spacing.xl, gap: spacing.lg,
-  },
-
-  /* Left: Initials badge with high-contrast outline */
-  userAvatar: {
-    width: 48, height: 48, borderRadius: 14, overflow: 'hidden',
-    borderWidth: 1.5,
-  },
-  userAvatarInner: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  userInitial: { fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
-
-  /* Center: Multi-line metadata */
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxl * 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: spacing.xl },
+  eyebrow: { color: glass.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, marginBottom: spacing.xs },
+  pageTitle: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '900', letterSpacing: -0.4 },
+  addBtn: { backgroundColor: glass.brandPurple, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2, borderRadius: radii.full },
+  addBtnText: { color: '#FFF', fontSize: typography.caption.fontSize, fontWeight: '800' },
+  statsCard: { marginBottom: spacing.lg },
+  statsRow: { flexDirection: 'row', alignItems: 'center', padding: spacing.xl },
+  statItem: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: typography.h2.fontSize, fontWeight: '900', marginBottom: 4 },
+  statLabel: { color: glass.textMuted, fontSize: typography.small.fontSize, fontWeight: '600' },
+  statDivider: { width: 1, height: 36, backgroundColor: glass.border },
+  loading: { paddingVertical: spacing.xxl, alignItems: 'center' },
+  empty: { paddingVertical: spacing.xxl, alignItems: 'center' },
+  emptyTitle: { color: glass.textMuted, fontSize: typography.body.fontSize, fontWeight: '600' },
+  userRow: { flexDirection: 'row', alignItems: 'center', padding: spacing.lg, gap: spacing.md },
+  userRowBorder: { borderBottomWidth: 1, borderBottomColor: glass.border },
+  avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontSize: 13, fontWeight: '800' },
   userInfo: { flex: 1 },
-  userName: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700', marginBottom: 2 },
-  userEmail: { color: glass.textMuted, fontSize: 9, marginBottom: 2 },
-  userMeta: { color: glass.textSecondary, fontSize: 8, fontFamily: glass.monoFont },
-
-  /* Right: Role pill + status dot */
+  userName: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '800', marginBottom: 2 },
+  userEmail: { color: glass.textMuted, fontSize: typography.small.fontSize, marginBottom: spacing.sm },
+  userMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  roleBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radii.full },
+  roleText: { fontSize: 10, fontWeight: '800' },
+  spentText: { color: glass.textMuted, fontSize: 10, fontWeight: '600' },
   userRight: { alignItems: 'flex-end', gap: spacing.sm },
-  rolePill: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radii.full, borderWidth: 1 },
-  roleText: { fontSize: 8, fontWeight: '800', letterSpacing: 0.8 },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
-
-  emptyWrap: { alignItems: 'center', paddingVertical: spacing.xxl },
-  emptyIcon: { fontSize: 36, marginBottom: spacing.md },
-  emptyTitle: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
-
-  /* ═══ MODAL SHARED ═══ */
+  statusBadge: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radii.full },
+  statusActive: { backgroundColor: glass.statusSuccessFill },
+  statusSuspended: { backgroundColor: glass.statusDangerFill },
+  statusText: { fontSize: 10, fontWeight: '800' },
+  menuBtn: { paddingHorizontal: 4 },
+  menuIcon: { color: glass.textMuted, fontSize: 16, fontWeight: '700', letterSpacing: 1 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modalCard: {
-    backgroundColor: '#0D0F18', borderTopLeftRadius: radii.xxl, borderTopRightRadius: radii.xxl,
-    padding: spacing.xxl, maxHeight: '85%', borderWidth: 1, borderColor: glass.border,
-  },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xxl },
+  modalCard: { backgroundColor: '#0D0F18', borderTopLeftRadius: radii.xxl, borderTopRightRadius: radii.xxl, padding: spacing.xxl, maxHeight: '85%', borderWidth: 1, borderColor: glass.border },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xl },
   modalTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800' },
-  modalClose: { color: glass.textMuted, fontSize: 20, fontWeight: '600' },
-
-  /* ── Detail Modal ── */
-  detailAvatar: { alignItems: 'center', marginBottom: spacing.lg },
-  detailAvatarInner: { width: 72, height: 72, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  detailAvatarText: { color: '#FFF', fontSize: 28, fontWeight: '900' },
+  modalClose: { color: glass.textMuted, fontSize: 24, fontWeight: '400' },
+  detailAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: glass.brandPurpleSurface, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginBottom: spacing.lg },
+  detailAvatarText: { color: glass.brandPurple, fontSize: 22, fontWeight: '900' },
   detailName: { color: colors.textPrimary, fontSize: typography.h2.fontSize, fontWeight: '800', textAlign: 'center', marginBottom: spacing.xs },
-  detailEmail: { color: glass.textMuted, fontSize: typography.caption.fontSize, textAlign: 'center', marginBottom: spacing.lg },
-  detailRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.sm, marginBottom: spacing.md },
-  statusPill: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radii.full, borderWidth: 1 },
-  statusText: { fontSize: 8, fontWeight: '800', letterSpacing: 0.8 },
-  detailMeta: { color: glass.textMuted, fontSize: typography.small.fontSize, textAlign: 'center', marginBottom: spacing.xxl },
+  detailEmail: { color: glass.textMuted, fontSize: typography.caption.fontSize, textAlign: 'center', marginBottom: spacing.sm },
+  detailMeta: { color: glass.textMuted, fontSize: typography.small.fontSize, textAlign: 'center', marginBottom: spacing.xl },
   detailActions: { flexDirection: 'row', gap: spacing.md },
-  detailActionBtn: { flex: 1, borderRadius: radii.lg, overflow: 'hidden', borderWidth: 1, borderColor: glass.border },
-  detailActionInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: spacing.lg, gap: spacing.sm },
-  detailActionIcon: { fontSize: 16 },
-  detailActionLabel: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
-
-  /* ── Delete Modal ── */
-  deleteCard: {
-    backgroundColor: '#0D0F18', borderTopLeftRadius: radii.xxl, borderTopRightRadius: radii.xxl,
-    padding: spacing.xxl, alignItems: 'center', borderWidth: 1, borderColor: glass.border,
-  },
-  deleteIcon: { fontSize: 40, marginBottom: spacing.lg },
-  deleteTitle: { color: colors.textPrimary, fontSize: typography.h2.fontSize, fontWeight: '800', marginBottom: spacing.md },
-  deleteMsg: { color: glass.textSecondary, fontSize: typography.caption.fontSize, textAlign: 'center', lineHeight: 20, marginBottom: spacing.xxl },
-  deleteActions: { flexDirection: 'row', gap: spacing.md, width: '100%' },
-  deleteCancel: {
-    flex: 1, paddingVertical: spacing.lg, borderRadius: radii.md, alignItems: 'center',
-    backgroundColor: glass.surface, borderWidth: 1, borderColor: glass.border,
-  },
-  deleteCancelText: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
-  deleteConfirm: { flex: 1, paddingVertical: spacing.lg, borderRadius: radii.md, alignItems: 'center', backgroundColor: glass.statusDangerText },
-  deleteConfirmText: { color: '#FFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
-
-  /* ── Forms ── */
-  formGroup: { marginBottom: spacing.xl },
-  formLabel: { color: glass.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.sm },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.04)', color: colors.textPrimary,
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.md + 2,
-    borderRadius: radii.md, fontSize: typography.body.fontSize,
-    borderWidth: 1, borderColor: glass.border,
-  },
-  roleRow: { flexDirection: 'row', gap: spacing.sm },
-  roleOption: {
-    flex: 1, paddingVertical: spacing.md, borderRadius: radii.md, alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: glass.border,
-  },
-  roleOptionText: { color: glass.textMuted, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
-
-  createBtn: { borderRadius: radii.md, overflow: 'hidden', marginTop: spacing.md },
-  createBtnInner: { paddingVertical: spacing.lg, alignItems: 'center' },
-  createBtnText: { color: '#FFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
+  detailBtn: { flex: 1, paddingVertical: spacing.lg, borderRadius: radii.lg, backgroundColor: glass.card, borderWidth: 1, borderColor: glass.border, alignItems: 'center' },
+  detailBtnDanger: { borderColor: 'rgba(255,23,68,0.2)' },
+  detailBtnText: { color: colors.textPrimary, fontWeight: '700' },
+  formLabel: { color: glass.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.sm, marginTop: spacing.md },
+  input: { backgroundColor: glass.card, color: colors.textPrimary, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderRadius: radii.lg, borderWidth: 1, borderColor: glass.border, fontSize: typography.body.fontSize },
+  optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  option: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.full, backgroundColor: glass.card, borderWidth: 1, borderColor: glass.border },
+  optionActive: { backgroundColor: glass.brandPurpleSurface, borderColor: glass.brandPurple },
+  optionText: { color: glass.textMuted, fontSize: typography.small.fontSize, fontWeight: '700', textTransform: 'capitalize' },
+  optionTextActive: { color: glass.brandPurple },
+  saveBtn: { backgroundColor: glass.brandPurple, borderRadius: radii.lg, paddingVertical: spacing.lg, alignItems: 'center', marginTop: spacing.lg },
+  saveBtnText: { color: '#FFF', fontWeight: '800' },
+  deleteCard: { backgroundColor: '#0D0F18', borderTopLeftRadius: radii.xxl, borderTopRightRadius: radii.xxl, padding: spacing.xxl, borderWidth: 1, borderColor: glass.border },
+  deleteTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800', marginBottom: spacing.sm },
+  deleteMsg: { color: glass.textSecondary, marginBottom: spacing.xl },
+  deleteActions: { flexDirection: 'row', gap: spacing.md },
+  cancelBtn: { flex: 1, paddingVertical: spacing.lg, borderRadius: radii.lg, backgroundColor: glass.card, borderWidth: 1, borderColor: glass.border, alignItems: 'center' },
+  cancelText: { color: colors.textPrimary, fontWeight: '700' },
+  confirmBtn: { flex: 1, paddingVertical: spacing.lg, borderRadius: radii.lg, backgroundColor: glass.statusDangerText, alignItems: 'center' },
+  confirmText: { color: '#FFF', fontWeight: '700' },
 });

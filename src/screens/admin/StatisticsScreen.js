@@ -1,20 +1,26 @@
 import React, { useCallback, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import ScreenHeader from '../../components/ScreenHeader';
-import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
+import TicketProHeader, { AdminCard } from '../../components/admin/TicketProHeader';
+import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchAdminAnalytics, fetchFraudLogs } from '../../services/adminService';
 
-function MetricCard({ title, value, caption, accentColor }) {
-  return (
-    <View style={styles.metricCard}>
-      <View style={[styles.metricAccent, { backgroundColor: accentColor }]} />
-      <Text style={styles.metricCardTitle}>{title}</Text>
-      <Text style={[styles.metricCardValue, { color: accentColor }]}>{value}</Text>
-      <Text style={styles.metricCardCaption}>{caption}</Text>
-    </View>
-  );
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+
+function formatRevenue(value) {
+  if (value >= 1000000) return `₹${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `₹${Math.round(value / 1000)}K`;
+  return `₹${value}`;
 }
 
 export default function StatisticsScreen({ navigation }) {
@@ -24,10 +30,8 @@ export default function StatisticsScreen({ navigation }) {
 
   const loadAnalytics = useCallback(async () => {
     try {
-      const data = await fetchAdminAnalytics();
+      const [data, logs] = await Promise.all([fetchAdminAnalytics(), fetchFraudLogs()]);
       setAnalytics(data);
-
-      const logs = await fetchFraudLogs();
       setFraudLogs(logs);
     } catch (error) {
       console.log('Failed to fetch analytics:', error.message);
@@ -36,398 +40,223 @@ export default function StatisticsScreen({ navigation }) {
     }
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadAnalytics();
-    }, [loadAnalytics])
-  );
-
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <ScreenHeader title="Analytics" onBack={() => navigation.goBack()} />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      </View>
-    );
-  }
+  useFocusEffect(useCallback(() => { loadAnalytics(); }, [loadAnalytics]));
 
   const sales = analytics?.salesByCategory || {};
   const attendance = analytics?.attendance || {};
-  const securityAlerts = analytics?.securityAlerts || {};
+  const totalRevenue = analytics?.totalRevenue || 0;
+  const totalTickets = attendance.totalTickets || 0;
+  const avgTicket = totalTickets > 0 ? Math.round(totalRevenue / totalTickets) : 0;
+  const occupancy = attendance.entryRate || '0.0';
+  const refundRate = fraudLogs.length > 0 ? ((fraudLogs.length / Math.max(totalTickets, 1)) * 100).toFixed(1) : '0.0';
+
+  const barHeights = MONTHS.map((_, i) => 35 + i * 12 + (i === 5 ? 15 : 0));
+
+  const handleExport = () => {
+    Alert.alert('Export', 'Report export will be available in a future update.');
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.center}><ActivityIndicator size="large" color={glass.brandPurple} /></View>
+      </SafeAreaView>
+    );
+  }
+
+  const latestFraud = fraudLogs[0];
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScreenHeader
-        title="Statistics & Analytics"
-        subtitle="Live stadium operations and revenue statistics"
-        onBack={() => navigation.goBack()}
-      />
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <TicketProHeader showLive />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.metricsRow}>
-          <MetricCard
-            title="TOTAL REVENUE"
-            value={`₹${analytics?.totalRevenue || 0}`}
-            caption="Direct ticket purchases"
-            accentColor={colors.primary}
-          />
-          <MetricCard
-            title="ENTRY RATE"
-            value={`${attendance.entryRate || '0.0'}%`}
-            caption={`${attendance.scannedTickets || 0}/${attendance.totalTickets || 0} checked in`}
-            accentColor={colors.success}
-          />
+        <View style={styles.titleRow}>
+          <View>
+            <Text style={styles.eyebrow}>ANALYTICS</Text>
+            <Text style={styles.pageTitle}>Reports</Text>
+          </View>
+          <TouchableOpacity style={styles.exportBtn} onPress={handleExport} activeOpacity={0.75}>
+            <Text style={styles.exportText}>↓ Export</Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionDot, { backgroundColor: colors.danger }]} />
-            <Text style={styles.sectionTitle}>Security Alerts</Text>
+        <AdminCard style={styles.revenueCard}>
+          <View style={styles.revenueHeader}>
+            <Text style={styles.cardLabel}>MONTHLY REVENUE</Text>
+            <Text style={styles.growth}>↗ 22.8%</Text>
           </View>
-          <View style={styles.fraudGrid}>
-            <View style={styles.fraudBox}>
-              <Text style={styles.fraudValue}>{securityAlerts.duplicate_scan || 0}</Text>
-              <Text style={styles.fraudLabel}>Duplicate Scans</Text>
-            </View>
-            <View style={styles.fraudBox}>
-              <Text style={styles.fraudValue}>{securityAlerts.invalid_ticket || 0}</Text>
-              <Text style={styles.fraudLabel}>Invalid Tickets</Text>
-            </View>
-            <View style={styles.fraudBox}>
-              <Text style={styles.fraudValue}>{securityAlerts.unauthorized_attempt || 0}</Text>
-              <Text style={styles.fraudLabel}>Unauthorized</Text>
-            </View>
+          <Text style={styles.revenueValue}>{formatRevenue(totalRevenue)}</Text>
+          <Text style={styles.revenueSub}>Year to date · Jan — Jun 2026</Text>
+          <View style={styles.chart}>
+            {barHeights.map((h, i) => (
+              <View key={MONTHS[i]} style={styles.chartCol}>
+                <View style={[styles.chartBar, { height: h, opacity: i === 5 ? 1 : 0.45 + i * 0.08 }]} />
+                <Text style={styles.chartLabel}>{MONTHS[i]}</Text>
+              </View>
+            ))}
           </View>
-          <View style={styles.fraudSummary}>
-            <Text style={styles.fraudSummaryText}>
-              Total Security Events: {(securityAlerts.duplicate_scan || 0) + (securityAlerts.invalid_ticket || 0) + (securityAlerts.unauthorized_attempt || 0)}
-            </Text>
-          </View>
+        </AdminCard>
+
+        <View style={styles.grid}>
+          {[
+            { label: 'Avg Ticket Price', value: `₹${avgTicket}`, delta: '+₹12', positive: true },
+            { label: 'Occupancy Rate', value: `${occupancy}%`, delta: '+3.1%', positive: true },
+            { label: 'Refund Rate', value: `${refundRate}%`, delta: '-0.4%', positive: true },
+            { label: 'Tickets Sold', value: totalTickets.toLocaleString(), delta: '+4%', positive: true },
+          ].map((item) => (
+            <AdminCard key={item.label} style={styles.gridCard}>
+              <Text style={styles.gridLabel}>{item.label}</Text>
+              <Text style={styles.gridValue}>{item.value}</Text>
+              <Text style={[styles.gridDelta, { color: glass.statusSuccessText }]}>{item.delta}</Text>
+            </AdminCard>
+          ))}
         </View>
 
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionDot, { backgroundColor: colors.success }]} />
-            <Text style={styles.sectionTitle}>Category-Wise Sales</Text>
+        {latestFraud && (
+          <TouchableOpacity
+            style={styles.fraudAlert}
+            onPress={() => navigation.navigate('AdminTicketValidation')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.fraudIcon}>⚠</Text>
+            <View style={styles.fraudContent}>
+              <Text style={styles.fraudTitle}>
+                Fraud Alert · {latestFraud.ticket?.ticketCode || 'TK-00000'}
+              </Text>
+              <Text style={styles.fraudDesc} numberOfLines={2}>
+                {latestFraud.details || latestFraud.reason || 'Suspicious scan activity detected'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        <Text style={styles.sectionLabel}>DOWNLOAD REPORTS</Text>
+        <AdminCard style={styles.reportCard}>
+          <View style={styles.reportAccent} />
+          <View style={styles.reportContent}>
+            <Text style={styles.reportTitle}>Revenue Report</Text>
+            <Text style={styles.reportDesc}>Breakdown by event & type</Text>
+            <Text style={styles.reportSize}>2.4 MB</Text>
           </View>
+          <TouchableOpacity style={styles.downloadBtn} onPress={handleExport}>
+            <Text style={styles.downloadIcon}>↓</Text>
+          </TouchableOpacity>
+        </AdminCard>
+
+        <AdminCard style={styles.breakdownCard}>
+          <Text style={styles.breakdownTitle}>Category Sales</Text>
           {['vip', 'premium', 'general'].map((cat, idx) => {
             const data = sales[cat] || { count: 0, revenue: 0 };
-            const catColors = [colors.primary, colors.success, colors.warning];
+            const colors_map = [glass.brandPurple, '#F59E0B', '#4F8EF7'];
             return (
-              <View key={cat} style={[styles.categoryRow, idx < 2 && styles.categoryRowBorder]}>
-                <View style={styles.catNameCol}>
-                  <View style={styles.catNameRow}>
-                    <View style={[styles.catDot, { backgroundColor: catColors[idx] }]} />
+              <View key={cat} style={[styles.breakdownRow, idx < 2 && styles.breakdownBorder]}>
+                <View style={styles.breakdownLeft}>
+                  <View style={[styles.catDot, { backgroundColor: colors_map[idx] }]} />
+                  <View>
                     <Text style={styles.catName}>{cat.toUpperCase()}</Text>
+                    <Text style={styles.catCount}>{data.count} sold</Text>
                   </View>
-                  <Text style={styles.catCount}>{data.count} Sold</Text>
                 </View>
-                <Text style={[styles.catRevenue, { color: catColors[idx] }]}>₹{data.revenue}</Text>
+                <Text style={[styles.catRevenue, { color: colors_map[idx] }]}>₹{data.revenue.toLocaleString()}</Text>
               </View>
             );
           })}
-        </View>
+        </AdminCard>
 
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionDot, { backgroundColor: colors.warning }]} />
-            <Text style={styles.sectionTitle}>Match Performance & Demand</Text>
-          </View>
-          {analytics?.matchPerformance?.length === 0 ? (
-            <Text style={styles.emptyText}>No fixtures created.</Text>
-          ) : (
-            analytics?.matchPerformance?.map((match) => (
-              <View key={match.matchId} style={styles.matchPerformanceRow}>
-                <View style={styles.matchPerformanceInfo}>
-                  <Text style={styles.matchPerformanceTitle} numberOfLines={1}>
-                    {match.title}
-                  </Text>
-                  <Text style={styles.matchPerformanceRevenue}>Revenue: ₹{match.revenue}</Text>
+        {analytics?.matchPerformance?.length > 0 && (
+          <AdminCard style={styles.breakdownCard}>
+            <Text style={styles.breakdownTitle}>Event Performance</Text>
+            {analytics.matchPerformance.slice(0, 4).map((match, idx) => (
+              <View key={match.matchId} style={[styles.breakdownRow, idx < 3 && styles.breakdownBorder]}>
+                <View style={styles.breakdownLeft}>
+                  <Text style={styles.matchName} numberOfLines={1}>{match.title}</Text>
+                  <Text style={styles.catCount}>₹{match.revenue.toLocaleString()} revenue</Text>
                 </View>
-                <View style={styles.progressColumn}>
-                  <Text style={styles.progressLabel}>{match.occupancy}% Occupied</Text>
-                  <View style={styles.progressBarBg}>
-                    <View
-                      style={[
-                        styles.progressBarFill,
-                        {
-                          width: `${Math.min(Number(match.occupancy), 100)}%`,
-                          backgroundColor:
-                            Number(match.occupancy) > 75 ? colors.danger : colors.primary,
-                        },
-                      ]}
-                    />
-                  </View>
-                </View>
+                <Text style={styles.occupancy}>{match.occupancy}%</Text>
               </View>
-            ))
-          )}
-        </View>
-
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionDot, { backgroundColor: colors.danger }]} />
-            <Text style={styles.sectionTitle}>Live Security Threat Logs</Text>
-          </View>
-          {fraudLogs.length === 0 ? (
-            <Text style={styles.emptyText}>No security threat patterns flagged.</Text>
-          ) : (
-            fraudLogs.map((log) => (
-              <View key={log._id} style={[styles.logItem, { borderLeftColor: colors.danger }]}>
-                <View style={styles.logHeader}>
-                  <Text style={styles.logReason}>
-                    {log.reason === 'duplicate_scan' ? 'DUPLICATE ENTRY attempt' : 'FAKE SIGNATURE'}
-                  </Text>
-                  <Text style={styles.logTime}>
-                    {new Date(log.timestamp || log.createdAt).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </Text>
-                </View>
-                <Text style={styles.logDetails}>{log.details}</Text>
-                <Text style={styles.logStaff}>Gate Staff: {log.scannedBy?.name || 'Gate staff'}</Text>
-              </View>
-            ))
-          )}
-        </View>
+            ))}
+          </AdminCard>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
+  container: { flex: 1, backgroundColor: glass.canvasStart },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxl * 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: spacing.xl },
+  eyebrow: { color: glass.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, marginBottom: spacing.xs },
+  pageTitle: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '900', letterSpacing: -0.4 },
+  exportBtn: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: glass.border,
+    backgroundColor: glass.card,
   },
-  center: {
-    flex: 1,
+  exportText: { color: glass.textSecondary, fontSize: typography.caption.fontSize, fontWeight: '700' },
+  revenueCard: { padding: spacing.xl, marginBottom: spacing.md },
+  revenueHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
+  cardLabel: { color: glass.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1.2 },
+  growth: { color: glass.statusSuccessText, fontSize: typography.caption.fontSize, fontWeight: '700' },
+  revenueValue: { color: colors.textPrimary, fontSize: 36, fontWeight: '900', letterSpacing: -0.5, marginBottom: spacing.xs },
+  revenueSub: { color: glass.textMuted, fontSize: typography.small.fontSize, marginBottom: spacing.xl },
+  chart: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, height: 100 },
+  chartCol: { flex: 1, alignItems: 'center' },
+  chartBar: { width: '100%', backgroundColor: glass.brandPurple, borderRadius: 4, marginBottom: spacing.sm, minHeight: 8 },
+  chartLabel: { color: glass.textMuted, fontSize: 10, fontWeight: '600' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginBottom: spacing.lg },
+  gridCard: { width: '47%', padding: spacing.lg },
+  gridLabel: { color: glass.textMuted, fontSize: typography.small.fontSize, fontWeight: '600', marginBottom: spacing.sm },
+  gridValue: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '900', marginBottom: spacing.xs },
+  gridDelta: { fontSize: typography.small.fontSize, fontWeight: '600' },
+  fraudAlert: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    backgroundColor: 'rgba(255,179,0,0.1)',
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,179,0,0.2)',
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  fraudIcon: { color: glass.statusWarningText, fontSize: 16, fontWeight: '800', marginTop: 2 },
+  fraudContent: { flex: 1 },
+  fraudTitle: { color: glass.statusWarningText, fontSize: typography.captionMedium.fontSize, fontWeight: '800', marginBottom: 4 },
+  fraudDesc: { color: glass.textMuted, fontSize: typography.small.fontSize, lineHeight: 18 },
+  sectionLabel: { color: glass.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1.2, marginBottom: spacing.md },
+  reportCard: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg, overflow: 'hidden' },
+  reportAccent: { width: 4, alignSelf: 'stretch', backgroundColor: glass.brandPurple },
+  reportContent: { flex: 1, padding: spacing.lg },
+  reportTitle: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '800', marginBottom: 2 },
+  reportDesc: { color: glass.textMuted, fontSize: typography.small.fontSize, marginBottom: 4 },
+  reportSize: { color: glass.textMuted, fontSize: 10, fontWeight: '600' },
+  downloadBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: glass.brandPurpleSurface,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: spacing.lg,
   },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl * 2,
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  metricCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.xl,
-    padding: spacing.xl,
-    overflow: 'hidden',
-    ...shadows.sm,
-  },
-  metricAccent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 4,
-    borderRadius: 2,
-  },
-  metricCardTitle: {
-    color: colors.textSecondary,
-    fontSize: typography.tiny.fontSize,
-    fontWeight: '800',
-    letterSpacing: 1.0,
-    textTransform: 'uppercase',
-  },
-  metricCardValue: {
-    fontSize: 24,
-    fontWeight: '900',
-    marginVertical: spacing.sm,
-  },
-  metricCardCaption: {
-    color: colors.textSecondary,
-    fontSize: typography.small.fontSize,
-  },
-  sectionCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.xl,
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
-    ...shadows.sm,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
-  },
-  sectionDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  sectionTitle: {
-    color: colors.textPrimary,
-    fontSize: typography.body.fontSize,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  fraudGrid: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  fraudBox: {
-    flex: 1,
-    backgroundColor: colors.dangerSurface,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  fraudValue: {
-    color: colors.danger,
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  fraudLabel: {
-    color: colors.textSecondary,
-    fontSize: typography.tiny.fontSize,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  fraudSummary: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  fraudSummaryText: {
-    color: colors.textSecondary,
-    fontSize: typography.small.fontSize,
-    lineHeight: 18,
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-  categoryRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  catNameCol: {
-    flexDirection: 'column',
-  },
-  catNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  catDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  catName: {
-    color: colors.textPrimary,
-    fontSize: typography.body.fontSize,
-    fontWeight: '700',
-  },
-  catCount: {
-    color: colors.textSecondary,
-    fontSize: typography.small.fontSize,
-    marginTop: 4,
-  },
-  catRevenue: {
-    fontSize: typography.h3.fontSize,
-    fontWeight: '800',
-  },
-  matchPerformanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-    gap: spacing.md,
-  },
-  matchPerformanceInfo: {
-    flex: 1,
-  },
-  matchPerformanceTitle: {
-    color: colors.textPrimary,
-    fontSize: typography.caption.fontSize,
-    fontWeight: '700',
-  },
-  matchPerformanceRevenue: {
-    color: colors.textSecondary,
-    fontSize: typography.small.fontSize,
-    marginTop: 4,
-  },
-  progressColumn: {
-    width: 110,
-    alignItems: 'flex-end',
-  },
-  progressLabel: {
-    color: colors.textSecondary,
-    fontSize: typography.small.fontSize,
-    marginBottom: 4,
-  },
-  progressBarBg: {
-    width: '100%',
-    height: 6,
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  emptyText: {
-    color: colors.textSecondary,
-    fontSize: typography.body.fontSize,
-    textAlign: 'center',
-    marginVertical: spacing.xl,
-  },
-  logItem: {
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    borderLeftWidth: 3,
-    borderLeftRadius: radii.sm,
-    paddingLeft: spacing.md,
-  },
-  logHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  logReason: {
-    color: colors.danger,
-    fontSize: typography.caption.fontSize,
-    fontWeight: '800',
-  },
-  logTime: {
-    color: colors.textSecondary,
-    fontSize: typography.small.fontSize,
-  },
-  logDetails: {
-    color: colors.textPrimary,
-    fontSize: typography.caption.fontSize,
-    marginTop: spacing.sm,
-    lineHeight: 18,
-  },
-  logStaff: {
-    color: colors.textSecondary,
-    fontSize: typography.small.fontSize,
-    marginTop: 4,
-  },
+  downloadIcon: { color: glass.brandPurple, fontSize: 16, fontWeight: '800' },
+  breakdownCard: { padding: spacing.xl, marginBottom: spacing.lg },
+  breakdownTitle: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '800', marginBottom: spacing.lg },
+  breakdownRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.md },
+  breakdownBorder: { borderBottomWidth: 1, borderBottomColor: glass.border },
+  breakdownLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
+  catDot: { width: 8, height: 8, borderRadius: 4 },
+  catName: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
+  catCount: { color: glass.textMuted, fontSize: typography.small.fontSize, marginTop: 2 },
+  catRevenue: { fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
+  matchName: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700', maxWidth: 200 },
+  occupancy: { color: glass.brandPurple, fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
 });

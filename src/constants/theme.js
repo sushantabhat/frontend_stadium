@@ -70,6 +70,7 @@ export const glass = {
   /* Component surfaces: semi-transparent dark cards */
   surface: 'rgba(18, 21, 34, 0.65)',
   surfaceElevated: 'rgba(18, 21, 34, 0.75)',
+  card: '#161B22',
 
   /* Borders: super-fine translucent high-contrast paths */
   border: 'rgba(255, 255, 255, 0.08)',
@@ -84,6 +85,13 @@ export const glass = {
   neonMagenta: '#FF2E93',
   neonPurple: '#8A2BE2',
   neonAmber: '#FFEE55',
+
+  /* TICKETPRO admin palette */
+  brandPurple: '#7B61FF',
+  brandPurpleGlow: 'rgba(123, 97, 255, 0.35)',
+  brandPurpleSurface: 'rgba(123, 97, 255, 0.15)',
+  occupancyTeal: '#00D4AA',
+  occupancyTealGlow: 'rgba(0, 212, 170, 0.25)',
 
   /* Neon glow colors (for shadows) */
   neonCyanGlow: 'rgba(0, 229, 255, 0.35)',
