@@ -12,6 +12,7 @@ export default function ProfileScreen({ navigation }) {
   const initials = (userInfo?.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const isAdmin = userInfo?.role === ROLES.ADMIN;
   const isStaff = userInfo?.role === ROLES.STAFF;
+  const isSupervisor = userInfo?.role === ROLES.SUPERVISOR;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -39,9 +40,9 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.section}>
           <View style={styles.statsRow}>
             {[
-              { value: isAdmin ? '12' : isStaff ? '48' : '3', label: isAdmin ? 'Matches' : isStaff ? 'Scans' : 'Bookings', icon: isAdmin ? '🏟️' : isStaff ? '📋' : '🎫' },
-              { value: isAdmin ? '₹2.4L' : isStaff ? '99%' : '₹4,800', label: isAdmin ? 'Revenue' : isStaff ? 'Accuracy' : 'Spent', icon: isAdmin ? '💰' : isStaff ? '✅' : '💳' },
-              { value: isAdmin ? '186' : isStaff ? '6' : '12', label: isAdmin ? 'Users' : isStaff ? 'Gates' : 'Tickets', icon: isAdmin ? '👥' : isStaff ? '🚪' : '🎟️' },
+              { value: isAdmin ? '12' : isSupervisor ? '8' : isStaff ? '48' : '3', label: isAdmin ? 'Matches' : isSupervisor ? 'Incidents' : isStaff ? 'Scans' : 'Bookings', icon: isAdmin ? '🏟️' : isSupervisor ? '🚨' : isStaff ? '📋' : '🎫' },
+              { value: isAdmin ? '₹2.4L' : isSupervisor ? '94%' : isStaff ? '99%' : '₹4,800', label: isAdmin ? 'Revenue' : isSupervisor ? 'Resolved' : isStaff ? 'Accuracy' : 'Spent', icon: isAdmin ? '💰' : isSupervisor ? '✅' : isStaff ? '✅' : '💳' },
+              { value: isAdmin ? '186' : isSupervisor ? '4' : isStaff ? '6' : '12', label: isAdmin ? 'Users' : isSupervisor ? 'Gates' : isStaff ? 'Gates' : 'Tickets', icon: isAdmin ? '👥' : isSupervisor ? '🚪' : isStaff ? '🚪' : '🎟️' },
             ].map((stat) => (
               <View key={stat.label} style={styles.statCard}>
                 <Text style={styles.statIcon}>{stat.icon}</Text>

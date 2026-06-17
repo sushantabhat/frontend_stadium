@@ -3,6 +3,7 @@ export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost
 export const ROLES = {
   USER: 'user',
   STAFF: 'staff',
+  SUPERVISOR: 'supervisor',
   ADMIN: 'admin',
 };
 

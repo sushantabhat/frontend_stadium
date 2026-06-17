@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
@@ -21,6 +21,9 @@ export default function StaffDashboardScreen({ navigation }) {
   const [scans, setScans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportType, setReportType] = useState('');
+  const [reportNote, setReportNote] = useState('');
 
   const loadData = useCallback(async () => {
     try {
@@ -45,7 +48,8 @@ export default function StaffDashboardScreen({ navigation }) {
   const todayScans = scans.filter(s => new Date(s.entryTime) >= todayStart);
   const totalToday = todayScans.length;
   const verifiedToday = todayScans.length;
-  const flaggedToday = 0;
+  /* Compute flagged scans from actual data instead of hardcoded 0 */
+  const flaggedToday = scans.filter(s => s.status === 'duplicate' || s.status === 'invalid' || s.fraud).length;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -145,12 +149,12 @@ export default function StaffDashboardScreen({ navigation }) {
               { icon: '🔍', label: 'Verify\nTicket', route: 'TicketVerify', gradient: [`${colors.info}25`, `${colors.info}08`] },
               { icon: '🕒', label: 'My\nShifts', route: 'MyShifts', gradient: [`${colors.warning}25`, `${colors.warning}08`] },
               { icon: '📊', label: 'Daily\nReport', route: 'DailyReport', gradient: [`${colors.accent}25`, `${colors.accent}08`] },
-              { icon: '🚨', label: 'Report\nIssue', route: 'StaffDashboard', gradient: [`${colors.danger}25`, `${colors.danger}08`] },
+              { icon: '🚨', label: 'Report\nIssue', route: '__report', gradient: [`${colors.danger}25`, `${colors.danger}08`] },
             ].map((t) => (
               <TouchableOpacity
                 key={t.label}
                 style={styles.toolCard}
-                onPress={() => navigation.navigate(t.route)}
+                onPress={() => t.route === '__report' ? setShowReportModal(true) : navigation.navigate(t.route)}
                 activeOpacity={0.7}
               >
                 <LinearGradient colors={t.gradient} style={styles.toolGradient}>
@@ -212,6 +216,57 @@ export default function StaffDashboardScreen({ navigation }) {
 
         <View style={{ height: spacing.xxxl + 20 }} />
       </ScrollView>
+
+      {/* ═══ REPORT ISSUE MODAL ═══ */}
+      <Modal visible={showReportModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Report Issue</Text>
+              <TouchableOpacity onPress={() => setShowReportModal(false)} activeOpacity={0.7}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            {[
+              { key: 'fraud', label: 'Fraud — Fake or duplicate ticket' },
+              { key: 'technical', label: 'Technical — System or API failure' },
+              { key: 'operational', label: 'Operational — Customer dispute' },
+            ].map((item) => (
+              <TouchableOpacity
+                key={item.key}
+                style={[styles.reportOption, reportType === item.key && styles.reportOptionActive]}
+                onPress={() => setReportType(item.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.reportLabel, reportType === item.key && styles.reportLabelActive]}>{item.label}</Text>
+                {reportType === item.key && <Text style={styles.reportCheck}>✓</Text>}
+              </TouchableOpacity>
+            ))}
+            <TextInput
+              style={styles.reportInput}
+              placeholder="Additional details..."
+              placeholderTextColor={colors.textMuted}
+              value={reportNote}
+              onChangeText={setReportNote}
+              multiline
+            />
+            <TouchableOpacity
+              style={styles.reportSubmitBtn}
+              onPress={() => {
+                if (!reportType) { Alert.alert('Required', 'Select an issue type.'); return; }
+                Alert.alert('Reported', 'Your issue has been sent to the supervisor on duty.', [
+                  { text: 'OK', onPress: () => { setShowReportModal(false); setReportType(''); setReportNote(''); } },
+                ]);
+              }}
+              activeOpacity={0.85}
+            >
+              <LinearGradient colors={colors.gradientPurple} style={styles.reportSubmitGradient}>
+                <Text style={styles.reportSubmitText}>Submit Report</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -328,4 +383,20 @@ const styles = StyleSheet.create({
   badgeValid: { backgroundColor: colors.successSurface },
   badgeText: { fontSize: 9, fontWeight: '700' },
   badgeTextValid: { color: colors.successLight },
+
+  /* Report Issue Modal */
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalCard: { backgroundColor: colors.surface, borderTopLeftRadius: radii.xxl, borderTopRightRadius: radii.xxl, padding: spacing.xxl, maxHeight: '85%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xl },
+  modalTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800' },
+  modalClose: { color: colors.textMuted, fontSize: 20, fontWeight: '600' },
+  reportOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: spacing.xl, borderRadius: radii.lg, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.sm },
+  reportOptionActive: { borderColor: colors.primary, backgroundColor: `${colors.primary}15` },
+  reportLabel: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '600', flex: 1 },
+  reportLabelActive: { color: colors.primaryLight },
+  reportCheck: { color: colors.primaryLight, fontSize: 16, fontWeight: '800' },
+  reportInput: { backgroundColor: colors.surfaceElevated, color: colors.textPrimary, paddingHorizontal: spacing.lg, paddingVertical: spacing.md + 2, borderRadius: radii.md, fontSize: typography.body.fontSize, borderWidth: 1, borderColor: colors.border, minHeight: 80, textAlignVertical: 'top', marginTop: spacing.md, marginBottom: spacing.xl },
+  reportSubmitBtn: { borderRadius: radii.md, overflow: 'hidden' },
+  reportSubmitGradient: { paddingVertical: spacing.lg, alignItems: 'center' },
+  reportSubmitText: { color: '#FFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
 });

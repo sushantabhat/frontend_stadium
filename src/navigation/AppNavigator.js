@@ -6,6 +6,7 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import FanTabNavigator from './FanTabNavigator';
 import AdminTabNavigator from './AdminTabNavigator';
 import StaffTabNavigator from './StaffTabNavigator';
+import SupervisorTabNavigator from './SupervisorTabNavigator';
 import { ROLES } from '../constants/config';
 import { colors } from '../constants/theme';
 
@@ -31,6 +32,8 @@ function RoleNavigator() {
   switch (userInfo?.role) {
     case ROLES.ADMIN:
       return <AdminTabNavigator />;
+    case ROLES.SUPERVISOR:
+      return <SupervisorTabNavigator />;
     case ROLES.STAFF:
       return <StaffTabNavigator />;
     case ROLES.USER:

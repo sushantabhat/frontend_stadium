@@ -2,12 +2,14 @@ import { ROLES } from './config';
 
 export const ROLE_DISPLAY_NAMES = {
   [ROLES.ADMIN]: 'Admin',
+  [ROLES.SUPERVISOR]: 'Supervisor',
   [ROLES.STAFF]: 'Staff',
   [ROLES.USER]: 'Fan',
 };
 
 export const ROLE_DASHBOARD_ROUTES = {
   [ROLES.ADMIN]: 'AdminDashboard',
+  [ROLES.SUPERVISOR]: 'SupervisorDashboard',
   [ROLES.STAFF]: 'StaffDashboard',
   [ROLES.USER]: 'FanDashboard',
 };

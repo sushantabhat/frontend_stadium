@@ -17,6 +17,7 @@ const roleColors = {
   fan: colors.primary,
   user: colors.primary,
   staff: colors.success,
+  supervisor: '#FF2E93',
   admin: colors.accent,
 };
 

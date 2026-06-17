@@ -9,7 +9,8 @@ import { validateLoginForm } from '../../utils/validation';
 const DEMO_ACCOUNTS = [
   { label: 'Admin', email: 'admin@stadium.com', password: 'admin123', icon: '👑', color: colors.accent },
   { label: 'Staff', email: 'staff@stadium.com', password: 'staff123', icon: '🛡️', color: colors.info },
-  { label: 'Fan', email: 'fan@stadium.com', password: 'fan123', icon: '🎟️', color: colors.primary },
+  { label: 'Supervisor', email: 'supervisor@gmail.com', password: 'supervisor123', icon: '🔧', color: colors.magenta },
+  { label: 'Fan', email: 'fan@stadium.com', password: 'fan12345', icon: '🎟️', color: colors.primary },
 ];
 
 export default function LoginScreen({ navigation }) {

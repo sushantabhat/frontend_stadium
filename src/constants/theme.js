@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 const palette = {
   background: '#0F111A',
@@ -57,6 +57,54 @@ const palette = {
   gradientPurple: ['#6C5CE7', '#4834D4'],
   gradientGold: ['#FFD700', '#E6C200'],
   gradientLive: ['#FF3B30', '#FF6B61'],
+};
+
+/* ─── Glassmorphic Design Tokens ───
+ * Additive export for the admin glassmorphic UI layer.
+ * Existing screens using `colors` remain unaffected. */
+export const glass = {
+  /* Canvas: pitch-black workspace background */
+  canvasStart: '#07080B',
+  canvasEnd: '#0A0B0E',
+
+  /* Component surfaces: semi-transparent dark cards */
+  surface: 'rgba(18, 21, 34, 0.65)',
+  surfaceElevated: 'rgba(18, 21, 34, 0.75)',
+
+  /* Borders: super-fine translucent high-contrast paths */
+  border: 'rgba(255, 255, 255, 0.08)',
+  borderActive: 'rgba(255, 255, 255, 0.15)',
+
+  /* Gradient backdrop: top-left highlight → bottom-right dark fade */
+  highlight: 'rgba(255, 255, 255, 0.05)',
+  highlightStrong: 'rgba(255, 255, 255, 0.10)',
+
+  /* Neon brand accents */
+  neonCyan: '#00E5FF',
+  neonMagenta: '#FF2E93',
+  neonPurple: '#8A2BE2',
+  neonAmber: '#FFEE55',
+
+  /* Neon glow colors (for shadows) */
+  neonCyanGlow: 'rgba(0, 229, 255, 0.35)',
+  neonMagentaGlow: 'rgba(255, 46, 147, 0.35)',
+  neonPurpleGlow: 'rgba(138, 43, 226, 0.30)',
+  neonAmberGlow: 'rgba(255, 238, 85, 0.25)',
+
+  /* Semantic status badge fills (low-opacity tints) */
+  statusSuccessFill: 'rgba(0, 230, 118, 0.12)',
+  statusSuccessText: '#00E676',
+  statusWarningFill: 'rgba(255, 179, 0, 0.10)',
+  statusWarningText: '#FFB300',
+  statusDangerFill: 'rgba(255, 23, 68, 0.12)',
+  statusDangerText: '#FF1744',
+
+  /* Labels & secondary text */
+  textMuted: '#94A3B8',
+  textSecondary: '#A0AEC0',
+
+  /* Monospace typography reference (used in StyleSheet) */
+  monoFont: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
 };
 
 export const colors = palette;
@@ -203,6 +251,35 @@ export const shadows = {
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 6,
+  },
+  /* Glassmorphic neon glow shadows */
+  neonCyan: {
+    shadowColor: '#00E5FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  neonMagenta: {
+    shadowColor: '#FF2E93',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  neonPurple: {
+    shadowColor: '#8A2BE2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.30,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  glassCard: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 8,
   },
 };
 
