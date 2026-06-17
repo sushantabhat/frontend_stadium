@@ -1,9 +1,10 @@
 import React, { useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
+import { validateLoginForm } from '../../utils/validation';
 
 const DEMO_ACCOUNTS = [
   { label: 'Admin', email: 'admin@stadium.com', password: 'admin123', icon: '👑', color: colors.accent },
@@ -15,16 +16,29 @@ export default function LoginScreen({ navigation }) {
   const { login, isLoading } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({ email: null, password: null });
+  const [serverError, setServerError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+
+  const clearFieldError = (field) => {
+    setErrors((prev) => ({ ...prev, [field]: null }));
+    setServerError(null);
+    setSuccessMessage(null);
+  };
 
   const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      Alert.alert('Missing fields', 'Please enter email and password.');
+    const { errors: validationErrors, isValid } = validateLoginForm({ email, password });
+    if (!isValid) {
+      setErrors(validationErrors);
       return;
     }
     try {
+      setServerError(null);
+      setSuccessMessage(null);
       await login(email.trim(), password);
+      setSuccessMessage('Login successful! Redirecting...');
     } catch (error) {
-      Alert.alert('Login failed', error.message);
+      setServerError(error.message);
     }
   };
 
@@ -64,30 +78,44 @@ export default function LoginScreen({ navigation }) {
                 </View>
               </View>
 
+              {serverError ? (
+                <View style={styles.errorBanner}>
+                  <Text style={styles.errorBannerText}>{serverError}</Text>
+                </View>
+              ) : null}
+
+              {successMessage ? (
+                <View style={styles.successBanner}>
+                  <Text style={styles.successBannerText}>{successMessage}</Text>
+                </View>
+              ) : null}
+
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>EMAIL</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, errors.email && styles.inputError]}
                   placeholder="you@example.com"
                   placeholderTextColor={colors.textMuted}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(text) => { setEmail(text); clearFieldError('email'); }}
                 />
+                {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>PASSWORD</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, errors.password && styles.inputError]}
                   placeholder="Enter your password"
                   placeholderTextColor={colors.textMuted}
                   secureTextEntry
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(text) => { setPassword(text); clearFieldError('password'); }}
                 />
+                {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
               </View>
 
               <TouchableOpacity
@@ -133,7 +161,7 @@ export default function LoginScreen({ navigation }) {
                   <TouchableOpacity
                     key={a.label}
                     style={styles.demoPill}
-                    onPress={() => { setEmail(a.email); setPassword(a.password); }}
+                    onPress={() => { setEmail(a.email); setPassword(a.password); setErrors({ email: null, password: null }); setServerError(null); setSuccessMessage(null); }}
                     activeOpacity={0.7}
                   >
                     <Text style={styles.demoIcon}>{a.icon}</Text>
@@ -226,6 +254,33 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
+  errorBanner: {
+    backgroundColor: colors.dangerSurface,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: `${colors.danger}30`,
+  },
+  errorBannerText: {
+    color: colors.dangerLight,
+    fontSize: typography.caption.fontSize,
+    fontWeight: '600',
+  },
+  successBanner: {
+    backgroundColor: colors.successSurface,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: `${colors.success}30`,
+  },
+  successBannerText: {
+    color: colors.successLight,
+    fontSize: typography.caption.fontSize,
+    fontWeight: '600',
+  },
+
   inputGroup: { marginBottom: spacing.lg },
   inputLabel: {
     color: colors.textMuted,
@@ -243,6 +298,15 @@ const styles = StyleSheet.create({
     fontSize: typography.body.fontSize,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  inputError: {
+    borderColor: colors.danger,
+  },
+  errorText: {
+    color: colors.dangerLight,
+    fontSize: 11,
+    marginTop: spacing.xs,
+    fontWeight: '500',
   },
 
   loginBtn: {
