@@ -53,7 +53,7 @@ function DashboardNavigator() {
 function ToolsNavigator() {
   return (
     <ToolsStack.Navigator screenOptions={screenOptions}>
-      <ToolsStack.Screen name="TicketVerifyMain" component={TicketVerifyScreen} />
+      <ToolsStack.Screen name="ToolsHome" component={StaffDashboardScreen} />
       <ToolsStack.Screen name="MyShifts" component={MyShiftsScreen} />
       <ToolsStack.Screen name="DailyReportAlt" component={DailyReportScreen} />
     </ToolsStack.Navigator>
