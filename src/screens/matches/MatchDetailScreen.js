@@ -184,102 +184,62 @@ export default function MatchDetailScreen({ route, navigation }) {
         </View>
 
         {/* ═══════════════════════════════════════════════
-            QUICK STATS — Colored accent cards
+            STATS ROW — Clean single-line stats
             ═══════════════════════════════════════════════ */}
-        <View style={s.section}>
-          <View style={s.sectionHeader}>
-            <View style={[s.sectionDot, { backgroundColor: colors.primary }]} />
-            <Text style={s.sectionTitle}>Event Stats</Text>
-          </View>
-          <View style={s.quickStats}>
+        <View style={s.bodySection}>
+          <View style={s.statsRow}>
             {[
-              { label: 'Total', value: stats.total || 0, icon: '💺', color: colors.textPrimary, bg: 'rgba(108,92,231,0.1)' },
-              { label: 'Available', value: stats.available || 0, icon: '✅', color: '#00E676', bg: 'rgba(0,230,118,0.1)' },
-              { label: 'Booked', value: stats.booked || 0, icon: '🎟️', color: '#FFB300', bg: 'rgba(255,179,0,0.1)' },
-              { label: 'Sold', value: `${occupancyPct}%`, icon: '📊', color: '#00B0FF', bg: 'rgba(0,176,255,0.1)' },
-            ].map((st) => (
-              <View key={st.label} style={[s.statCard, { borderColor: `${st.color}20` }]}>
-                <View style={[s.statIconWrap, { backgroundColor: st.bg }]}>
-                  <Text style={s.statIcon}>{st.icon}</Text>
+              { label: 'Available', value: stats.available || 0, color: '#00E676' },
+              { label: 'Booked', value: stats.booked || 0, color: '#FFB300' },
+              { label: 'Sold', value: `${occupancyPct}%`, color: '#00B0FF' },
+            ].map((st, i) => (
+              <React.Fragment key={st.label}>
+                {i > 0 && <View style={s.statDivider} />}
+                <View style={s.statCell}>
+                  <Text style={[s.statValue, { color: st.color }]}>{st.value}</Text>
+                  <Text style={s.statLabel}>{st.label}</Text>
                 </View>
-                <Text style={[s.statValue, { color: st.color }]}>{st.value}</Text>
-                <Text style={s.statLabel}>{st.label}</Text>
-              </View>
+              </React.Fragment>
             ))}
           </View>
+          {stats.total > 0 && (
+            <View style={s.occupancyBar}>
+              <LinearGradient
+                colors={occupancyPct > 80 ? ['#FF3B30', '#FFB300'] : ['#00D4AA', '#00B0FF']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={[s.occupancyFill, { width: `${occupancyPct}%` }]}
+              />
+            </View>
+          )}
         </View>
 
         {/* ═══════════════════════════════════════════════
-            OCCUPANCY — Gradient progress bar
+            PRICING — Simple row
             ═══════════════════════════════════════════════ */}
-        {stats.total > 0 && (
-          <View style={s.section}>
-            <View style={s.occupancyCard}>
-              <View style={s.occupancyHeader}>
-                <View>
-                  <Text style={s.occupancyTitle}>Ticket Sales</Text>
-                  <Text style={s.occupancySub}>{stats.booked || 0} of {stats.total || 0} seats booked</Text>
-                </View>
-                <Text style={[s.occupancyPct, { color: occupancyPct > 80 ? '#FF6B61' : '#00D4AA' }]}>{occupancyPct}%</Text>
-              </View>
-              <View style={s.occupancyBar}>
-                <LinearGradient
-                  colors={occupancyPct > 80 ? ['#FF3B30', '#FFB300'] : ['#00D4AA', '#00B0FF']}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={[s.occupancyFill, { width: `${occupancyPct}%` }]}
-                />
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* ═══════════════════════════════════════════════
-            PRICING TIERS — Colored glow borders
-            ═══════════════════════════════════════════════ */}
-        <View style={s.section}>
-          <View style={s.sectionHeader}>
-            <View style={[s.sectionDot, { backgroundColor: '#FFD700' }]} />
-            <Text style={s.sectionTitle}>Ticket Pricing</Text>
-          </View>
+        <View style={s.bodySection}>
+          <Text style={s.bodyLabel}>Pricing</Text>
           <View style={s.pricingRow}>
             {PRICING_TIERS.map((p) => (
-              <View key={p.label} style={[s.priceCard, { borderColor: `${p.color}30`, shadowColor: p.color }]}>
-                <LinearGradient colors={[`${p.color}15`, `${p.color}05`]} style={s.priceCardInner}>
-                  <Text style={s.priceIcon}>{p.icon}</Text>
-                  <Text style={[s.priceValue, { color: p.color }]}>Rs.{p.value}</Text>
-                  <Text style={s.priceLabel}>{p.label}</Text>
-                  <Text style={s.priceSeats}>{p.seats} seats</Text>
-                  <Text style={s.priceDesc}>{p.desc}</Text>
-                </LinearGradient>
+              <View key={p.label} style={s.priceCell}>
+                <Text style={s.priceIcon}>{p.icon}</Text>
+                <Text style={[s.priceValue, { color: p.color }]}>Rs.{p.value.toLocaleString()}</Text>
+                <Text style={s.priceLabel}>{p.label}</Text>
               </View>
             ))}
           </View>
         </View>
 
         {/* ═══════════════════════════════════════════════
-            STADIUM LAYOUT
+            STADIUM — One-liner
             ═══════════════════════════════════════════════ */}
-        <View style={s.section}>
-          <View style={s.sectionHeader}>
-            <View style={[s.sectionDot, { backgroundColor: '#00B0FF' }]} />
-            <Text style={s.sectionTitle}>Stadium Layout</Text>
-          </View>
-          <View style={s.layoutCard}>
-            <View style={s.layoutRow}>
-              {[
-                { label: 'Rows', value: match.seatLayout?.rows ?? 0 },
-                { label: 'Seats/Row', value: match.seatLayout?.seatsPerRow ?? 0 },
-                { label: 'VIP Rows', value: match.seatLayout?.vipRows ?? 0 },
-              ].map((item, idx) => (
-                <React.Fragment key={item.label}>
-                  {idx > 0 && <View style={s.layoutDivider} />}
-                  <View style={s.layoutItem}>
-                    <Text style={s.layoutLabel}>{item.label}</Text>
-                    <Text style={s.layoutValue}>{item.value}</Text>
-                  </View>
-                </React.Fragment>
-              ))}
-            </View>
+        <View style={s.bodySection}>
+          <Text style={s.bodyLabel}>Stadium</Text>
+          <View style={s.infoRow}>
+            <Text style={s.infoText}>{match.seatLayout?.rows ?? 0} Rows</Text>
+            <View style={s.infoDot} />
+            <Text style={s.infoText}>{match.seatLayout?.seatsPerRow ?? 0} Seats/Row</Text>
+            <View style={s.infoDot} />
+            <Text style={s.infoText}>{match.seatLayout?.vipRows ?? 0} VIP Rows</Text>
           </View>
         </View>
 
@@ -287,14 +247,9 @@ export default function MatchDetailScreen({ route, navigation }) {
             ABOUT
             ═══════════════════════════════════════════════ */}
         {match.description ? (
-          <View style={s.section}>
-            <View style={s.sectionHeader}>
-              <View style={[s.sectionDot, { backgroundColor: '#94A3B8' }]} />
-              <Text style={s.sectionTitle}>About This Match</Text>
-            </View>
-            <View style={s.aboutCard}>
-              <Text style={s.aboutText}>{match.description}</Text>
-            </View>
+          <View style={s.bodySection}>
+            <Text style={s.bodyLabel}>About</Text>
+            <Text style={s.aboutText}>{match.description}</Text>
           </View>
         ) : null}
 
@@ -479,102 +434,65 @@ const s = StyleSheet.create({
   metaMono: { color: '#00D4AA', fontSize: typography.small.fontSize, fontWeight: '700', fontFamily: 'Menlo' },
 
   /* ═══════════════════════════════════════════════
-     SECTIONS — Shared
+     BODY SECTIONS — Clean & minimal
      ═══════════════════════════════════════════════ */
-  section: { paddingHorizontal: spacing.xl, marginBottom: spacing.xl },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
-  sectionDot: { width: 8, height: 8, borderRadius: 4 },
-  sectionTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800', letterSpacing: -0.3 },
+  bodySection: { paddingHorizontal: spacing.xl, marginBottom: spacing.xl },
+  bodyLabel: { color: colors.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 0.8, marginBottom: spacing.sm },
 
-  /* ═══════════════════════════════════════════════
-     QUICK STATS — Colored accent cards
-     ═══════════════════════════════════════════════ */
-  quickStats: { flexDirection: 'row', gap: spacing.sm },
-  statCard: {
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(26,29,42,0.8)',
+    borderRadius: radii.xl,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.08)' },
+  statCell: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: typography.h3.fontSize, fontWeight: '900', marginBottom: 2 },
+  statLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '600' },
+
+  occupancyBar: { height: 4, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden', marginTop: spacing.md },
+  occupancyFill: { height: '100%', borderRadius: 2 },
+
+  pricingRow: { flexDirection: 'row', gap: spacing.sm },
+  priceCell: {
     flex: 1,
+    alignItems: 'center',
     backgroundColor: 'rgba(26,29,42,0.8)',
     borderRadius: radii.lg,
     padding: spacing.md,
     borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  priceIcon: { fontSize: 18, marginBottom: spacing.xs },
+  priceValue: { fontSize: typography.bodyMedium.fontSize, fontWeight: '900', marginBottom: 2 },
+  priceLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '600' },
+
+  infoRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(26,29,42,0.8)',
+    borderRadius: radii.xl,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    gap: spacing.md,
   },
-  statIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  statIcon: { fontSize: 14 },
-  statValue: { fontSize: typography.h3.fontSize, fontWeight: '900', marginBottom: 1 },
-  statLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '600', textAlign: 'center' },
+  infoDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
+  infoText: { color: colors.textSecondary, fontSize: typography.small.fontSize, fontWeight: '600' },
 
-  /* ═══════════════════════════════════════════════
-     OCCUPANCY
-     ═══════════════════════════════════════════════ */
-  occupancyCard: {
+  aboutText: {
+    color: colors.textSecondary,
+    fontSize: typography.caption.fontSize,
+    lineHeight: 20,
     backgroundColor: 'rgba(26,29,42,0.8)',
     borderRadius: radii.xl,
     padding: spacing.xl,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
   },
-  occupancyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
-  occupancyTitle: { color: colors.textPrimary, fontWeight: '700', fontSize: typography.captionMedium.fontSize },
-  occupancySub: { color: colors.textMuted, fontSize: typography.small.fontSize, marginTop: 2 },
-  occupancyPct: { fontWeight: '900', fontSize: 28 },
-  occupancyBar: { height: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' },
-  occupancyFill: { height: '100%', borderRadius: 3 },
-
-  /* ═══════════════════════════════════════════════
-     PRICING — Glow borders
-     ═══════════════════════════════════════════════ */
-  pricingRow: { flexDirection: 'row', gap: spacing.md },
-  priceCard: {
-    flex: 1,
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    overflow: 'hidden',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  priceCardInner: { padding: spacing.lg, alignItems: 'center' },
-  priceIcon: { fontSize: 24, marginBottom: spacing.sm },
-  priceValue: { fontSize: typography.h3.fontSize, fontWeight: '900', marginBottom: spacing.xxs },
-  priceLabel: { color: colors.textPrimary, fontSize: typography.tiny.fontSize, fontWeight: '700', marginBottom: spacing.xs },
-  priceSeats: { color: colors.textMuted, fontSize: 9, fontWeight: '600', marginBottom: spacing.xs },
-  priceDesc: { color: colors.textMuted, fontSize: 8, fontWeight: '500', textAlign: 'center' },
-
-  /* ═══════════════════════════════════════════════
-     LAYOUT
-     ═══════════════════════════════════════════════ */
-  layoutCard: {
-    backgroundColor: 'rgba(26,29,42,0.8)',
-    borderRadius: radii.xl,
-    padding: spacing.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  layoutRow: { flexDirection: 'row', alignItems: 'center' },
-  layoutItem: { flex: 1, alignItems: 'center' },
-  layoutDivider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.08)' },
-  layoutLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '600', marginBottom: spacing.xs },
-  layoutValue: { color: colors.textPrimary, fontSize: typography.h2.fontSize, fontWeight: '900' },
-
-  /* ═══════════════════════════════════════════════
-     ABOUT
-     ═══════════════════════════════════════════════ */
-  aboutCard: {
-    backgroundColor: 'rgba(26,29,42,0.8)',
-    borderRadius: radii.xl,
-    padding: spacing.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  aboutText: { color: colors.textSecondary, fontSize: typography.caption.fontSize, lineHeight: 20 },
 
   /* ═══════════════════════════════════════════════
      STICKY CTA — Gradient + glow

@@ -7,6 +7,7 @@ import {
   FlatList,
   Image,
   Modal,
+  Platform,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -19,7 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import TicketProHeader, { AdminFilterPills, AdminPageTitle, AdminSearchBar } from '../../components/admin/TicketProHeader';
 import EmptyState from '../../components/EmptyState';
-import { cancelMatch, fetchMatches } from '../../services/matchService';
+import { fetchMatches } from '../../services/matchService';
 import { spacing, radii, typography, glass, colors } from '../../constants/theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -29,13 +30,6 @@ const FILTERS = [
   { key: 'live', label: 'Live' },
   { key: 'on_sale', label: 'On Sale' },
   { key: 'upcoming', label: 'Upcoming' },
-];
-
-const ZONE_CONFIG = [
-  { key: 'vip', label: 'NORTH STAND', sub: 'VIP Zone', color: glass.neonMagenta, glow: glass.neonMagentaGlow, rows: 'A-B' },
-  { key: 'premium', label: 'SOUTH STAND', sub: 'Premium Circle', color: glass.neonCyan, glow: glass.neonCyanGlow, rows: 'C-E' },
-  { key: 'general_west', label: 'WEST STAND', sub: 'Public Pass', color: 'rgba(148,163,184,0.7)', glow: 'rgba(148,163,184,0.15)', rows: 'F-H' },
-  { key: 'general_east', label: 'EAST STAND', sub: 'Public Pass', color: 'rgba(148,163,184,0.7)', glow: 'rgba(148,163,184,0.15)', rows: 'I-J' },
 ];
 
 function matchesFilter(match, filterKey) {
@@ -172,16 +166,6 @@ export default function AdminMatchListScreen({ navigation }) {
     });
   };
 
-  const handleDelete = async (match) => {
-    try {
-      await cancelMatch(match._id);
-      setMatches((prev) => prev.map((item) => item._id === match._id ? { ...item, status: 'cancelled' } : item));
-      if (selectedMatch?._id === match._id) setSelectedMatch((prev) => prev ? { ...prev, status: 'cancelled' } : prev);
-    } catch {
-      // silent
-    }
-  };
-
   const renderHeader = () => (
     <View style={s.headerSection}>
       <TicketProHeader showLive={liveCount > 0} />
@@ -200,15 +184,10 @@ export default function AdminMatchListScreen({ navigation }) {
   );
 
   /* ═══════════════════════════════════════════════
-     MAIN LIST CARD — glass panel, touchable
+     MAIN LIST CARD — full-bleed image, fan-aligned
      ═══════════════════════════════════════════════ */
   const renderMatchCard = ({ item }) => {
     const status = getStatusConfig(item.status, item.seatStats);
-    const stats = item.seatStats || {};
-    const total = stats.total || item.totalSeats || 0;
-    const available = stats.available ?? 0;
-    const sold = total - available;
-    const pct = total > 0 ? Math.round((sold / total) * 100) : 0;
     const revenue = computeRevenue(item);
     const dt = formatDateTime(item.matchDate);
     const hasImage = Boolean(item.imageUrl);
@@ -217,71 +196,58 @@ export default function AdminMatchListScreen({ navigation }) {
     return (
       <TouchableOpacity style={s.card} onPress={() => openDetail(item)} activeOpacity={0.88}>
         <View style={s.cardInner}>
-          {hasImage && (
+          {hasImage ? (
             <Image source={{ uri: item.imageUrl }} style={s.cardBanner} resizeMode="cover" />
+          ) : (
+            <LinearGradient colors={[`${glass.brandPurple}22`, 'rgba(7,8,11,0.95)']} style={s.cardBanner} />
           )}
-
-          <View style={s.cardTop}>
-            <View style={s.cardTopLeft}>
-              <View style={[s.statusBadge, { backgroundColor: status.bg }]}>
-                {status.dot && <View style={[s.statusDot, { backgroundColor: status.color }]} />}
-                <Text style={[s.statusText, { color: status.color }]}>{status.label}</Text>
+          <LinearGradient
+            colors={hasImage ? ['rgba(7,8,11,0.3)', 'rgba(7,8,11,0.92)'] : ['rgba(0,0,0,0)', 'rgba(0,0,0,0.6)']}
+            locations={hasImage ? [0, 0.6] : undefined}
+            style={s.cardOverlay}
+          >
+            <View style={s.cardTop}>
+              <View style={s.cardTopLeft}>
+                <View style={[s.statusBadge, { backgroundColor: status.bg }]}>
+                  {status.dot && <View style={[s.statusDot, { backgroundColor: status.color }]} />}
+                  <Text style={[s.statusText, { color: status.color }]}>{status.label}</Text>
+                </View>
+              </View>
+              <View style={s.cardPrice}>
+                <Text style={s.cardPriceValue}>Rs.{revenue.toLocaleString()}</Text>
+                <Text style={s.cardPriceLabel}>Revenue</Text>
               </View>
             </View>
-            <View style={s.cardPrice}>
-              <Text style={s.cardPriceValue}>Rs.{revenue.toLocaleString()}</Text>
-              <Text style={s.cardPriceLabel}>Revenue</Text>
+
+            <View style={s.cardMiddle}>
+              <View style={s.cardTeamsRow}>
+                {item.teamALogo ? (
+                  <Image source={{ uri: item.teamALogo }} style={s.miniLogo} resizeMode="contain" />
+                ) : (
+                  <View style={s.miniLogoFallback}><Text style={s.miniLogoText}>{(item.teamA || '?')[0]}</Text></View>
+                )}
+                <Text style={s.cardVs}>vs</Text>
+                {item.teamBLogo ? (
+                  <Image source={{ uri: item.teamBLogo }} style={s.miniLogo} resizeMode="contain" />
+                ) : (
+                  <View style={s.miniLogoFallback}><Text style={s.miniLogoText}>{(item.teamB || '?')[0]}</Text></View>
+                )}
+              </View>
+              <Text style={s.cardTitle} numberOfLines={1}>{title}</Text>
             </View>
-          </View>
 
-          <Text style={s.cardTitle} numberOfLines={1}>{title}</Text>
-
-          <View style={s.cardMetaRow}>
-            <Text style={s.cardMeta}>📍 {item.venue || 'TBD'}</Text>
-            <Text style={s.cardMetaMono}>{dt.time}</Text>
-          </View>
-
-          <View style={s.cardTeamsRow}>
-            {item.teamALogo ? (
-              <Image source={{ uri: item.teamALogo }} style={s.miniLogo} resizeMode="contain" />
-            ) : (
-              <View style={s.miniLogoFallback}><Text style={s.miniLogoText}>{(item.teamA || '?')[0]}</Text></View>
-            )}
-            <Text style={s.cardVs}>vs</Text>
-            {item.teamBLogo ? (
-              <Image source={{ uri: item.teamBLogo }} style={s.miniLogo} resizeMode="contain" />
-            ) : (
-              <View style={s.miniLogoFallback}><Text style={s.miniLogoText}>{(item.teamB || '?')[0]}</Text></View>
-            )}
-          </View>
-
-          <View style={s.cardProgressSection}>
-            <View style={s.cardProgressHeader}>
-              <Text style={s.cardProgressLabel}>Occupancy</Text>
-              <Text style={s.cardProgressStats}>{pct}% · {sold.toLocaleString()}/{total.toLocaleString()}</Text>
+            <View style={s.cardBottom}>
+              <Text style={s.cardMeta}>📍 {item.venue || 'TBD'}</Text>
+              <View style={s.cardBottomRight}>
+                <Text style={s.cardMetaMono}>{dt.time}</Text>
+                {revenue > 0 && (
+                  <View style={s.cardRevenuePill}>
+                    <Text style={s.cardRevenueText}>Rs.{revenue.toLocaleString()}</Text>
+                  </View>
+                )}
+              </View>
             </View>
-            <View style={s.progressTrack}>
-              <LinearGradient
-                colors={pct > 80 ? [colors.danger, colors.warning] : [glass.occupancyTeal, glass.neonCyan]}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={[s.progressFill, { width: `${pct}%` }]}
-              />
-            </View>
-          </View>
-
-          <View style={s.cardActions}>
-            <TouchableOpacity style={s.cardActionBtn} onPress={() => navigation.navigate('AdminMatchDetail', { matchId: item._id })} activeOpacity={0.7}>
-              <Text style={s.cardActionText}>Manage</Text>
-            </TouchableOpacity>
-            <View style={s.cardActionDivider} />
-            <TouchableOpacity style={s.cardActionBtn} onPress={() => openDetail(item)} activeOpacity={0.7}>
-              <Text style={[s.cardActionText, { color: glass.brandPurple }]}>Details</Text>
-            </TouchableOpacity>
-            <View style={s.cardActionDivider} />
-            <TouchableOpacity style={s.cardActionBtn} onPress={() => handleDelete(item)} activeOpacity={0.7}>
-              <Text style={[s.cardActionText, { color: glass.statusDangerText }]}>Delete</Text>
-            </TouchableOpacity>
-          </View>
+          </LinearGradient>
         </View>
       </TouchableOpacity>
     );
@@ -373,7 +339,7 @@ export default function AdminMatchListScreen({ navigation }) {
               <View style={s.revenueStrip}>
                 <View style={s.revenueItem}>
                   <Text style={s.revenueValue}>Rs.{revenue.toLocaleString()}</Text>
-                  <Text style={s.revenueLabel}>Est. Revenue</Text>
+                  <Text style={s.revenueLabel}>Revenue</Text>
                 </View>
                 <View style={s.revenueDivider} />
                 <View style={s.revenueItem}>
@@ -383,74 +349,13 @@ export default function AdminMatchListScreen({ navigation }) {
                 <View style={s.revenueDivider} />
                 <View style={s.revenueItem}>
                   <Text style={[s.revenueValue, { color: glass.neonCyan }]}>{sold.toLocaleString()}</Text>
-                  <Text style={s.revenueLabel}>Tickets Sold</Text>
+                  <Text style={s.revenueLabel}>Sold</Text>
                 </View>
               </View>
 
-              {/* ── STADIUM ZONE BLUEPRINT ── */}
-              <View style={s.sectionCard}>
-                <View style={s.sectionHeader}>
-                  <View style={[s.sectionDot, { backgroundColor: glass.brandPurple }]} />
-                  <Text style={s.sectionTitle}>Stadium Zone Blueprint</Text>
-                </View>
-
-                <View style={s.stadiumMap}>
-                  {/* Pitch center */}
-                  <View style={s.pitchCenter}>
-                    <Text style={s.pitchLabel}>PITCH</Text>
-                  </View>
-
-                  {/* North Stand */}
-                  <View style={[s.zoneCard, { borderColor: `${glass.neonMagenta}40` }]}>
-                    <View style={[s.zoneAccent, { backgroundColor: glass.neonMagenta }]} />
-                    <View style={s.zoneContent}>
-                      <Text style={[s.zoneLabel, { color: glass.neonMagenta }]}>NORTH STAND</Text>
-                      <Text style={s.zoneSub}>VIP Zone</Text>
-                      <Text style={s.zoneRows}>Rows {ZONE_CONFIG[0].rows}</Text>
-                    </View>
-                  </View>
-
-                  {/* South Stand */}
-                  <View style={[s.zoneCard, { borderColor: `${glass.neonCyan}40` }]}>
-                    <View style={[s.zoneAccent, { backgroundColor: glass.neonCyan }]} />
-                    <View style={s.zoneContent}>
-                      <Text style={[s.zoneLabel, { color: glass.neonCyan }]}>SOUTH STAND</Text>
-                      <Text style={s.zoneSub}>Premium Circle</Text>
-                      <Text style={s.zoneRows}>Rows {ZONE_CONFIG[1].rows}</Text>
-                    </View>
-                  </View>
-
-                  <View style={s.zoneRow}>
-                    {/* West Stand */}
-                    <View style={[s.zoneCardHalf, { borderColor: 'rgba(148,163,184,0.25)' }]}>
-                      <View style={[s.zoneAccent, { backgroundColor: 'rgba(148,163,184,0.7)' }]} />
-                      <View style={s.zoneContent}>
-                        <Text style={[s.zoneLabel, { color: 'rgba(148,163,184,0.9)' }]}>WEST</Text>
-                        <Text style={s.zoneSub}>Public Pass</Text>
-                        <Text style={s.zoneRows}>Rows F-H</Text>
-                      </View>
-                    </View>
-
-                    {/* East Stand */}
-                    <View style={[s.zoneCardHalf, { borderColor: 'rgba(148,163,184,0.25)' }]}>
-                      <View style={[s.zoneAccent, { backgroundColor: 'rgba(148,163,184,0.7)' }]} />
-                      <View style={s.zoneContent}>
-                        <Text style={[s.zoneLabel, { color: 'rgba(148,163,184,0.9)' }]}>EAST</Text>
-                        <Text style={s.zoneSub}>Public Pass</Text>
-                        <Text style={s.zoneRows}>Rows I-J</Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              </View>
-
-              {/* ── CATEGORY ALLOCATION CONTROLS ── */}
-              <View style={s.sectionCard}>
-                <View style={s.sectionHeader}>
-                  <View style={[s.sectionDot, { backgroundColor: glass.occupancyTeal }]} />
-                  <Text style={s.sectionTitle}>Category Allocation</Text>
-                </View>
-
+              {/* ── STATS ROW (matches fan) ── */}
+              <View style={s.bodySection}>
+                <Text style={s.bodyLabel}>Category Allocation</Text>
                 {[
                   { key: 'vip', label: 'VIP', price: m.pricing?.vip ?? 0, color: '#FFD700', zoneKey: 'vip' },
                   { key: 'premium', label: 'Premium', price: m.pricing?.premium ?? 0, color: glass.brandPurple, zoneKey: 'premium' },
@@ -464,52 +369,31 @@ export default function AdminMatchListScreen({ navigation }) {
                   const pctCat = totalCat > 0 ? Math.round((soldCat / totalCat) * 100) : 0;
 
                   return (
-                    <View key={cat.key} style={s.allocationCard}>
-                      <View style={s.allocationHeader}>
-                        <View style={s.allocationLeft}>
-                          <View style={[s.allocationDot, { backgroundColor: cat.color }]} />
-                          <View>
-                            <Text style={s.allocationLabel}>{cat.label}</Text>
-                            <Text style={s.allocationPrice}>Rs.{cat.price.toLocaleString()}/seat</Text>
-                          </View>
-                        </View>
-                        <View style={s.allocationRight}>
-                          <Text style={[s.allocationQuota, { fontFamily: glass.monoFont }]}>{soldCat}/{totalCat}</Text>
-                          <Text style={[s.allocationPct, { color: pctCat > 80 ? colors.danger : glass.occupancyTeal }]}>{pctCat}%</Text>
-                        </View>
+                    <View key={cat.key} style={s.allocRow}>
+                      <View style={[s.allocDot, { backgroundColor: cat.color }]} />
+                      <Text style={s.allocLabel}>{cat.label}</Text>
+                      <Text style={s.allocPrice}>Rs.{cat.price.toLocaleString()}</Text>
+                      <View style={s.allocBarWrap}>
+                        <View style={[s.allocBar, { width: `${pctCat}%`, backgroundColor: cat.color }]} />
                       </View>
-
-                      <View style={s.sliderTrack}>
-                        <View style={[s.sliderBg, { backgroundColor: `${cat.color}15` }]} />
-                        <View style={[s.sliderBg, { width: `${pctCat}%`, backgroundColor: `${cat.color}40` }]} />
-                        <View style={[s.sliderFill, { width: `${pctCat}%`, backgroundColor: cat.color }]} />
-                      </View>
-
-                      <View style={s.sliderLabels}>
-                        <Text style={s.sliderLabel}>{soldCat} registered</Text>
-                        <Text style={s.sliderLabel}>{totalCat - soldCat} remaining</Text>
-                      </View>
+                      <Text style={s.allocQuota}>{soldCat}/{totalCat}</Text>
                     </View>
                   );
                 })}
               </View>
 
-              {/* ── PRICING TIERS ── */}
-              <View style={s.sectionCard}>
-                <View style={s.sectionHeader}>
-                  <View style={[s.sectionDot, { backgroundColor: glass.neonAmber }]} />
-                  <Text style={s.sectionTitle}>Pricing Tiers</Text>
-                </View>
-
+              {/* ── PRICING ROW (matches fan) ── */}
+              <View style={s.bodySection}>
+                <Text style={s.bodyLabel}>Pricing</Text>
                 <View style={s.pricingRow}>
                   {[
                     { label: 'VIP', value: m.pricing?.vip ?? 0, icon: '👑', color: '#FFD700' },
                     { label: 'Premium', value: m.pricing?.premium ?? 0, icon: '⭐', color: glass.brandPurple },
                     { label: 'General', value: m.pricing?.general ?? 0, icon: '🎫', color: '#78909C' },
                   ].map((p) => (
-                    <View key={p.label} style={[s.pricingCard, { borderColor: `${p.color}30` }]}>
+                    <View key={p.label} style={s.pricingCell}>
                       <Text style={s.pricingIcon}>{p.icon}</Text>
-                      <Text style={[s.pricingValue, { color: p.color, fontFamily: glass.monoFont }]}>Rs.{p.value.toLocaleString()}</Text>
+                      <Text style={[s.pricingValue, { color: p.color }]}>Rs.{p.value.toLocaleString()}</Text>
                       <Text style={s.pricingLabel}>{p.label}</Text>
                     </View>
                   ))}
@@ -518,11 +402,8 @@ export default function AdminMatchListScreen({ navigation }) {
 
               {/* ── DESCRIPTION ── */}
               {m.description ? (
-                <View style={s.sectionCard}>
-                  <View style={s.sectionHeader}>
-                    <View style={[s.sectionDot, { backgroundColor: glass.textMuted }]} />
-                    <Text style={s.sectionTitle}>About</Text>
-                  </View>
+                <View style={s.bodySection}>
+                  <Text style={s.bodyLabel}>About</Text>
                   <Text style={s.aboutText}>{m.description}</Text>
                 </View>
               ) : null}
@@ -632,31 +513,38 @@ const s = StyleSheet.create({
   newButtonText: { color: '#FFF', fontSize: typography.caption.fontSize, fontWeight: '800' },
 
   /* ═══════════════════════════════════════════════════
-     LIST CARD
+     LIST CARD — full-bleed image, fan-aligned
      ═══════════════════════════════════════════════════ */
   card: {
     marginBottom: spacing.lg,
     borderRadius: radii.xl,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: glass.border,
-    backgroundColor: 'rgba(18, 21, 34, 0.65)',
+    ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }, android: { elevation: 6 } }),
   },
-  cardInner: { padding: spacing.xl },
-
+  cardInner: {
+    borderRadius: radii.xl,
+    overflow: 'hidden',
+  },
   cardBanner: {
     width: '100%',
-    height: 120,
-    borderRadius: radii.lg,
-    marginBottom: spacing.lg,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    height: 170,
+    borderRadius: radii.xl,
+  },
+  cardOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'space-between',
+    padding: spacing.lg,
+    borderRadius: radii.xl,
   },
 
   cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: spacing.md,
   },
   cardTopLeft: { flex: 1 },
   statusBadge: {
@@ -673,96 +561,79 @@ const s = StyleSheet.create({
 
   cardPrice: { alignItems: 'flex-end' },
   cardPriceValue: {
-    color: colors.textPrimary,
-    fontSize: 22,
+    color: '#FFF',
+    fontSize: 18,
     fontWeight: '900',
     letterSpacing: -0.3,
-    fontFamily: glass.monoFont,
   },
   cardPriceLabel: {
-    color: glass.textMuted,
+    color: 'rgba(255,255,255,0.5)',
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
 
-  cardTitle: {
-    color: colors.textPrimary,
-    fontSize: typography.h3.fontSize,
-    fontWeight: '800',
-    marginBottom: spacing.sm,
-  },
-
-  cardMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  cardMiddle: {
     alignItems: 'center',
-    marginBottom: spacing.md,
+    gap: 2,
   },
-  cardMeta: { color: glass.textMuted, fontSize: typography.small.fontSize, flex: 1 },
-  cardMetaMono: {
-    color: glass.brandPurple,
-    fontSize: typography.small.fontSize,
-    fontWeight: '700',
-    fontFamily: glass.monoFont,
-  },
-
   cardTeamsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: 2,
   },
-  miniLogo: { width: 32, height: 32, borderRadius: radii.sm },
+  miniLogo: { width: 28, height: 28 },
   miniLogoFallback: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     borderRadius: radii.sm,
-    backgroundColor: glass.brandPurpleSurface,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  miniLogoText: { color: glass.brandPurple, fontSize: 14, fontWeight: '800' },
+  miniLogoText: { color: '#FFF', fontSize: 12, fontWeight: '800' },
   cardVs: {
-    color: glass.textMuted,
+    color: 'rgba(255,255,255,0.5)',
     fontSize: typography.tiny.fontSize,
     fontWeight: '800',
     letterSpacing: 1,
   },
+  cardTitle: {
+    color: '#FFF',
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
 
-  cardProgressSection: { marginBottom: spacing.lg },
-  cardProgressHeader: {
+  cardBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
   },
-  cardProgressLabel: { color: glass.textSecondary, fontSize: typography.caption.fontSize, fontWeight: '600' },
-  cardProgressStats: {
-    color: glass.textSecondary,
-    fontSize: typography.caption.fontSize,
-    fontWeight: '600',
-    fontFamily: glass.monoFont,
-  },
-  progressTrack: {
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: { height: '100%', borderRadius: 2 },
-
-  cardActions: {
+  cardMeta: { color: 'rgba(255,255,255,0.6)', fontSize: typography.small.fontSize, flex: 1 },
+  cardBottomRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: glass.border,
-    paddingTop: spacing.md,
+    gap: spacing.sm,
   },
-  cardActionBtn: { flex: 1, alignItems: 'center', paddingVertical: spacing.xs },
-  cardActionDivider: { width: 1, height: 16, backgroundColor: glass.border },
-  cardActionText: { color: glass.textSecondary, fontSize: typography.caption.fontSize, fontWeight: '700' },
+  cardMetaMono: {
+    color: glass.neonCyan,
+    fontSize: typography.small.fontSize,
+    fontWeight: '700',
+  },
+  cardRevenuePill: {
+    backgroundColor: 'rgba(255,215,0,0.2)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+  },
+  cardRevenueText: {
+    color: '#FFD700',
+    fontSize: 10,
+    fontWeight: '800',
+  },
 
   /* ═══════════════════════════════════════════════════
      MODAL OVERLAY + SHEET
@@ -941,154 +812,63 @@ const s = StyleSheet.create({
   },
 
   /* ═══════════════════════════════════════════════════
-     SECTION CARD (reusable)
+     BODY SECTIONS — Clean & minimal (matches fan)
      ═══════════════════════════════════════════════════ */
-  sectionCard: {
-    backgroundColor: 'rgba(18,21,34,0.65)',
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: glass.border,
-    padding: spacing.xl,
+  bodySection: {
     marginHorizontal: spacing.xl,
     marginTop: spacing.xl,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  sectionDot: { width: 10, height: 10, borderRadius: 5 },
-  sectionTitle: {
-    color: colors.textPrimary,
-    fontSize: typography.h3.fontSize,
-    fontWeight: '800',
-  },
-
-  /* ═══════════════════════════════════════════════════
-     STADIUM ZONE BLUEPRINT
-     ═══════════════════════════════════════════════════ */
-  stadiumMap: {
-    gap: spacing.sm,
-  },
-  pitchCenter: {
-    height: 48,
-    borderRadius: radii.md,
-    backgroundColor: 'rgba(0,212,170,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(0,212,170,0.2)',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
+  bodyLabel: {
+    color: glass.textMuted,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
     marginBottom: spacing.sm,
   },
-  pitchLabel: {
-    color: glass.occupancyTeal,
-    fontSize: typography.tiny.fontSize,
-    fontWeight: '800',
-    letterSpacing: 2,
-  },
 
-  zoneCard: {
+  /* Allocation row */
+  allocRow: {
     flexDirection: 'row',
-    borderRadius: radii.md,
-    borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    overflow: 'hidden',
-    marginBottom: spacing.sm,
-  },
-  zoneAccent: { width: 4, },
-  zoneContent: { flex: 1, padding: spacing.md },
-  zoneLabel: { fontSize: typography.tiny.fontSize, fontWeight: '900', letterSpacing: 1, marginBottom: 2 },
-  zoneSub: { color: glass.textSecondary, fontSize: typography.small.fontSize, fontWeight: '600' },
-  zoneRows: { color: glass.textMuted, fontSize: typography.tiny.fontSize, fontFamily: glass.monoFont, marginTop: 2 },
-
-  zoneRow: { flexDirection: 'row', gap: spacing.sm },
-  zoneCardHalf: {
-    flex: 1,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    overflow: 'hidden',
-  },
-
-  /* ═══════════════════════════════════════════════════
-     CATEGORY ALLOCATION CONTROLS
-     ═══════════════════════════════════════════════════ */
-  allocationCard: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    alignItems: 'center',
+    backgroundColor: 'rgba(18,21,34,0.65)',
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: glass.border,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  allocationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  allocationLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  allocationDot: { width: 10, height: 10, borderRadius: 5 },
-  allocationLabel: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
-  allocationPrice: { color: glass.textMuted, fontSize: typography.small.fontSize, fontFamily: glass.monoFont },
-  allocationRight: { alignItems: 'flex-end' },
-  allocationQuota: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
-  allocationPct: { fontSize: typography.tiny.fontSize, fontWeight: '800', fontFamily: glass.monoFont },
-
-  sliderTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    overflow: 'hidden',
+    padding: spacing.md,
     marginBottom: spacing.sm,
+    gap: spacing.md,
   },
-  sliderBg: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 3,
-  },
-  sliderFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
+  allocDot: { width: 8, height: 8, borderRadius: 4 },
+  allocLabel: { color: colors.textPrimary, fontSize: typography.small.fontSize, fontWeight: '700', width: 60 },
+  allocPrice: { color: glass.textMuted, fontSize: typography.tiny.fontSize, width: 60 },
+  allocBarWrap: { flex: 1, height: 4, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' },
+  allocBar: { height: '100%', borderRadius: 2 },
+  allocQuota: { color: glass.textSecondary, fontSize: typography.tiny.fontSize, fontWeight: '700', width: 40, textAlign: 'right' },
 
-  sliderLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  sliderLabel: { color: glass.textMuted, fontSize: typography.tiny.fontSize, fontFamily: glass.monoFont },
-
-  /* ═══════════════════════════════════════════════════
-     PRICING TIERS
-     ═══════════════════════════════════════════════════ */
+  /* Pricing row */
   pricingRow: { flexDirection: 'row', gap: spacing.sm },
-  pricingCard: {
+  pricingCell: {
     flex: 1,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    padding: spacing.lg,
     alignItems: 'center',
+    backgroundColor: 'rgba(18,21,34,0.65)',
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: glass.border,
   },
-  pricingIcon: { fontSize: 20, marginBottom: spacing.sm },
-  pricingValue: {
-    fontSize: typography.bodyMedium.fontSize,
-    fontWeight: '900',
-    marginBottom: spacing.xs,
-  },
-  pricingLabel: {
-    color: glass.textMuted,
-    fontSize: typography.tiny.fontSize,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
+  pricingIcon: { fontSize: 18, marginBottom: spacing.xs },
+  pricingValue: { fontSize: typography.bodyMedium.fontSize, fontWeight: '900', marginBottom: 2 },
+  pricingLabel: { color: glass.textMuted, fontSize: 9, fontWeight: '600' },
 
-  /* ── About ── */
   aboutText: {
     color: glass.textSecondary,
     fontSize: typography.caption.fontSize,
     lineHeight: 20,
+    backgroundColor: 'rgba(18,21,34,0.65)',
+    borderRadius: radii.xl,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: glass.border,
   },
 
   /* ═══════════════════════════════════════════════════
