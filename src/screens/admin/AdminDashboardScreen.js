@@ -132,7 +132,7 @@ export default function AdminDashboardScreen({ navigation }) {
           {isLoading ? (
             <ActivityIndicator color={glass.brandPurple} style={{ marginVertical: spacing.lg }} />
           ) : (
-            <Text style={styles.revenueValue}>₹{metrics.revenue.toLocaleString()}</Text>
+            <Text style={styles.revenueValue}>Rs.{metrics.revenue.toLocaleString()}</Text>
           )}
           <Text style={styles.revenueDelta}>↗ +18.4% vs last week</Text>
           <View style={styles.chartArea}>

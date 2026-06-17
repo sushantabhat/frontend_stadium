@@ -24,7 +24,7 @@ const PROMO_CAMPAIGNS = [
   {
     id: 'promo-2',
     title: 'Student Season Pass',
-    subtitle: 'Unlimited general access for ₹4,999',
+    subtitle: 'Unlimited general access for Rs.4,999',
     tag: 'VOUCHER',
     accent: glass.neonCyan,
     impressions: 8200,

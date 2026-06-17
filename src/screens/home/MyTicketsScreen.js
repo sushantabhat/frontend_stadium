@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
@@ -48,7 +48,16 @@ export default function MyTicketsScreen({ navigation }) {
     const isActive = displayStatus === 'active';
 
     return (
-      <View style={[styles.ticketWrapper, !isActive && styles.ticketDimmed]}>
+      <TouchableOpacity
+        style={[styles.ticketWrapper, !isActive && styles.ticketDimmed]}
+        onPress={() => {
+          if (item.match?._id || item.match?.id) {
+            navigation.navigate('MatchDetail', { matchId: item.match._id || item.match.id });
+          }
+        }}
+        activeOpacity={isActive ? 0.88 : 1}
+        disabled={!isActive}
+      >
         <LinearGradient colors={theme.gradient} style={styles.accentStripe} />
 
         <LinearGradient
@@ -94,7 +103,7 @@ export default function MyTicketsScreen({ navigation }) {
           <View style={styles.detailsGrid}>
             {[
               { label: 'SEAT', value: item.seat?.seatLabel || 'N/A' },
-              { label: 'PRICE', value: `\u20B9${item.seat?.price || '\u2014'}` },
+              { label: 'PRICE', value: `Rs.${item.seat?.price || '—'}` },
               { label: 'VENUE', value: item.match?.venue || '\u2014', flex: true },
             ].map((d) => (
               <View key={d.label} style={[styles.detailCell, d.flex && { flex: 1.5 }]}>
@@ -145,7 +154,7 @@ export default function MyTicketsScreen({ navigation }) {
 
         <View style={[styles.notch, styles.notchLeft]} />
         <View style={[styles.notch, styles.notchRight]} />
-      </View>
+      </TouchableOpacity>
     );
   };
 

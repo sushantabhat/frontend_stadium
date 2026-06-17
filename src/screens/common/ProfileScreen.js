@@ -41,7 +41,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.statsRow}>
             {[
               { value: isAdmin ? '12' : isSupervisor ? '8' : isStaff ? '48' : '3', label: isAdmin ? 'Matches' : isSupervisor ? 'Incidents' : isStaff ? 'Scans' : 'Bookings', icon: isAdmin ? '🏟️' : isSupervisor ? '🚨' : isStaff ? '📋' : '🎫' },
-              { value: isAdmin ? '₹2.4L' : isSupervisor ? '94%' : isStaff ? '99%' : '₹4,800', label: isAdmin ? 'Revenue' : isSupervisor ? 'Resolved' : isStaff ? 'Accuracy' : 'Spent', icon: isAdmin ? '💰' : isSupervisor ? '✅' : isStaff ? '✅' : '💳' },
+              { value: isAdmin ? 'Rs.2.4L' : isSupervisor ? '94%' : isStaff ? '99%' : 'Rs.4,800', label: isAdmin ? 'Revenue' : isSupervisor ? 'Resolved' : isStaff ? 'Accuracy' : 'Spent', icon: isAdmin ? '💰' : isSupervisor ? '✅' : isStaff ? '✅' : '💳' },
               { value: isAdmin ? '186' : isSupervisor ? '4' : isStaff ? '6' : '12', label: isAdmin ? 'Users' : isSupervisor ? 'Gates' : isStaff ? 'Gates' : 'Tickets', icon: isAdmin ? '👥' : isSupervisor ? '🚪' : isStaff ? '🚪' : '🎟️' },
             ].map((stat) => (
               <View key={stat.label} style={styles.statCard}>

@@ -112,7 +112,7 @@ export default function TicketValidationScreen() {
               <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
             </View>
           </View>
-          <Text style={styles.ticketPrice}>₹{item.price.toLocaleString()}</Text>
+          <Text style={styles.ticketPrice}>Rs.{item.price.toLocaleString()}</Text>
         </View>
 
         <Text style={styles.eventTitle} numberOfLines={1}>{item.title}</Text>

@@ -1,7 +1,8 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { fetchMatchRecommendations } from '../../services/aiService';
@@ -24,21 +25,25 @@ export default function FanDashboardScreen({ navigation }) {
   const [recommendations, setRecommendations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
-  const loadData = async () => {
+  const loadData = useCallback(async (refreshing = false) => {
+    if (refreshing) setIsRefreshing(true);
+    else setIsLoading(true);
     try {
+      setLoadError('');
       const data = await fetchMatchRecommendations();
       setRecommendations(data);
-    } catch (e) {
-      console.log('Error:', e.message);
+    } catch {
+      setLoadError('Failed to load matches. Pull down to retry.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, []);
+  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  useEffect(() => { loadData(); }, []);
-  const onRefresh = () => { setIsRefreshing(true); loadData(); };
+  const onRefresh = useCallback(() => { loadData(true); }, [loadData]);
 
   const firstName = userInfo?.name?.split(' ')[0] || 'Fan';
   const initials = (userInfo?.name || 'F').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -198,13 +203,13 @@ export default function FanDashboardScreen({ navigation }) {
         {/* Empty state */}
         {recommendations.length === 0 && !isLoading && (
           <View style={styles.emptyWrap}>
-            <Text style={styles.emptyIcon}>🏟️</Text>
-            <Text style={styles.emptyTitle}>Nothing here yet</Text>
-            <Text style={styles.emptyText}>Matches will appear once the admin creates them</Text>
+            <Text style={styles.emptyIcon}>{loadError ? '⚠️' : '🏟️'}</Text>
+            <Text style={styles.emptyTitle}>{loadError ? 'Something went wrong' : 'Nothing here yet'}</Text>
+            <Text style={styles.emptyText}>{loadError || 'Matches will appear once the admin creates them'}</Text>
           </View>
         )}
 
-        <View style={{ height: spacing.xxxl + 20 }} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -342,5 +347,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.caption.fontSize,
     textAlign: 'center',
+  },
+  bottomSpacer: {
+    height: 52,
   },
 });

@@ -200,7 +200,6 @@ export default function SeatSelectionScreen({ route, navigation }) {
                     if (seat.status === 'booked') seatBg = colors.borderLight;
                     else if (seat.status === 'locked') seatBg = colors.warning;
                     else if (isSelected) seatBg = colors.primary;
-                    const cat = CATEGORY_COLORS[seat.category] || CATEGORY_COLORS.general;
                     return (
                       <TouchableOpacity
                         key={seat.id}
@@ -231,7 +230,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
             ].map(p => (
               <View key={p.key} style={[styles.pricingCell, { borderColor: CATEGORY_COLORS[p.key].border, backgroundColor: CATEGORY_COLORS[p.key].bg }]}>
                 <Text style={styles.pricingIcon}>{p.icon}</Text>
-                <Text style={[styles.pricingPrice, { color: CATEGORY_COLORS[p.key].accent }]}>₹{p.price}</Text>
+                <Text style={[styles.pricingPrice, { color: CATEGORY_COLORS[p.key].accent }]}>Rs.{p.price}</Text>
                 <Text style={styles.pricingCat}>{p.cat}</Text>
               </View>
             ))}
@@ -286,7 +285,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
           disabled={isSubmitting || selectedSeats.length === 0}
         >
           {isSubmitting ? <ActivityIndicator color="#FFF" /> : (
-            <Text style={styles.payBtnText}>Pay ₹{totalAmount}</Text>
+            <Text style={styles.payBtnText}>Pay Rs.{totalAmount}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -364,7 +363,7 @@ const styles = StyleSheet.create({
   // Checkout Bar
   checkoutBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: colors.surface, borderTopWidth: 1, borderColor: colors.border,
+    backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border,
     paddingHorizontal: spacing.xl, paddingVertical: spacing.lg,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     ...shadows.xl,

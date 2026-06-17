@@ -128,7 +128,7 @@ export default function AdminSettingsScreen({ navigation }) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionDot, { backgroundColor: glass.neonCyan }]} />
-            <Text style={styles.sectionTitle}>Seat Pricing (₹)</Text>
+            <Text style={styles.sectionTitle}>Seat Pricing (Rs.)</Text>
           </View>
           <View style={styles.card}>
             <LinearGradient
@@ -143,7 +143,7 @@ export default function AdminSettingsScreen({ navigation }) {
                 min={500}
                 max={5000}
                 step={100}
-                unit="₹"
+                unit="Rs."
                 accentColor={glass.neonAmber}
                 onValueChange={(v) => updateConfig('vipPrice', v)}
               />
@@ -153,7 +153,7 @@ export default function AdminSettingsScreen({ navigation }) {
                 min={300}
                 max={3000}
                 step={100}
-                unit="₹"
+                unit="Rs."
                 accentColor={glass.neonPurple}
                 onValueChange={(v) => updateConfig('premiumPrice', v)}
               />
@@ -163,7 +163,7 @@ export default function AdminSettingsScreen({ navigation }) {
                 min={200}
                 max={2000}
                 step={50}
-                unit="₹"
+                unit="Rs."
                 accentColor={glass.statusSuccessText}
                 onValueChange={(v) => updateConfig('generalPrice', v)}
               />
@@ -328,15 +328,15 @@ export default function AdminSettingsScreen({ navigation }) {
           <View style={styles.sheetSummary}>
             <View style={styles.sheetSummaryRow}>
               <Text style={styles.sheetSummaryLabel}>VIP Price</Text>
-              <Text style={styles.sheetSummaryValue}>₹{config.vipPrice.toLocaleString()}</Text>
+              <Text style={styles.sheetSummaryValue}>Rs.{config.vipPrice.toLocaleString()}</Text>
             </View>
             <View style={styles.sheetSummaryRow}>
               <Text style={styles.sheetSummaryLabel}>Premium Price</Text>
-              <Text style={styles.sheetSummaryValue}>₹{config.premiumPrice.toLocaleString()}</Text>
+              <Text style={styles.sheetSummaryValue}>Rs.{config.premiumPrice.toLocaleString()}</Text>
             </View>
             <View style={styles.sheetSummaryRow}>
               <Text style={styles.sheetSummaryLabel}>General Price</Text>
-              <Text style={styles.sheetSummaryValue}>₹{config.generalPrice.toLocaleString()}</Text>
+              <Text style={styles.sheetSummaryValue}>Rs.{config.generalPrice.toLocaleString()}</Text>
             </View>
             <View style={styles.sheetSummaryRow}>
               <Text style={styles.sheetSummaryLabel}>Surge Multiplier</Text>

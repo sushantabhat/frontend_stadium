@@ -114,7 +114,7 @@ export default function AdminEventCard({ match, onManage, onEdit, onDelete }) {
           </View>
         </View>
 
-        <Text style={styles.revenueValue}>₹{revenue.toLocaleString()}</Text>
+        <Text style={styles.revenueValue}>Rs.{revenue.toLocaleString()}</Text>
         <Text style={styles.metaLine}>
           {formatEventDate(match.matchDate)}
           {total > 0 ? ` · ${total.toLocaleString()} capacity` : ''}

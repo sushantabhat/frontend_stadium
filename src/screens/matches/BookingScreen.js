@@ -18,7 +18,7 @@ import { confirmBooking, unlockSeats } from '../../services/bookingService';
 import { fetchDynamicPricingSuggestions } from '../../services/aiService';
 
 export default function BookingScreen({ route, navigation }) {
-  const { matchId, selectedSeats } = route.params;
+  const { matchId, selectedSeats = [] } = route.params || {};
   const [match, setMatch] = useState(null);
   const [pricingSuggestions, setPricingSuggestions] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +57,13 @@ export default function BookingScreen({ route, navigation }) {
   };
 
   const handleCancel = async () => {
-    try { await unlockSeats(matchId, selectedSeats.map(s => s.id || s._id)); } catch {} navigation.goBack();
+    try {
+      await unlockSeats(matchId, selectedSeats.map(s => s.id || s._id));
+    } catch {
+      Alert.alert('Error', 'Failed to release seats. Please try again.');
+      return;
+    }
+    navigation.goBack();
   };
 
   const handleDone = () => { navigation.popToTop(); };
@@ -112,7 +118,7 @@ export default function BookingScreen({ route, navigation }) {
                   </View>
                   <View style={styles.ticketDetailCol}>
                     <Text style={styles.detailLabel}>AMOUNT PAID</Text>
-                    <Text style={[styles.detailValue, { color: colors.accent }]}>₹{Math.round(totalAmount)}</Text>
+                    <Text style={[styles.detailValue, { color: colors.accent }]}>Rs.{Math.round(totalAmount)}</Text>
                   </View>
                 </View>
                 <View style={{ marginTop: spacing.md }}>
@@ -139,8 +145,19 @@ export default function BookingScreen({ route, navigation }) {
         {/* Event Card */}
         <View style={styles.card}>
           <LinearGradient colors={[`${colors.primary}15`, `${colors.primary}05`]} style={styles.cardGradient}>
+            {match?.imageUrl ? (
+              <Image source={{ uri: match.imageUrl }} style={styles.cardBanner} resizeMode="cover" />
+            ) : null}
             <Text style={styles.cardHeader}>EVENT DETAILS</Text>
-            <Text style={styles.matchTitle}>{match?.title}</Text>
+            <View style={styles.eventTeamsRow}>
+              {match?.teamALogo ? (
+                <Image source={{ uri: match.teamALogo }} style={styles.eventTeamLogo} resizeMode="contain" />
+              ) : null}
+              <Text style={styles.matchTitle}>{match?.title}</Text>
+              {match?.teamBLogo ? (
+                <Image source={{ uri: match.teamBLogo }} style={styles.eventTeamLogo} resizeMode="contain" />
+              ) : null}
+            </View>
             <View style={styles.metaRow}>
               <Text style={styles.metaText}>📍 {match?.venue}</Text>
             </View>
@@ -169,7 +186,7 @@ export default function BookingScreen({ route, navigation }) {
                     <Text style={styles.seatCategory}>{(seat.category || 'general').toUpperCase()}</Text>
                   </View>
                 </View>
-                <Text style={styles.seatPrice}>₹{Math.round(price)}</Text>
+                <Text style={styles.seatPrice}>Rs.{Math.round(price)}</Text>
               </View>
             );
           })}
@@ -195,18 +212,18 @@ export default function BookingScreen({ route, navigation }) {
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal ({selectedSeats.length} seat{selectedSeats.length > 1 ? 's' : ''})</Text>
-            <Text style={styles.summaryValue}>₹{Math.round(totalAmount / multiplier)}</Text>
+            <Text style={styles.summaryValue}>Rs.{Math.round(totalAmount / multiplier)}</Text>
           </View>
-          {multiplier !== 1.0 && (
+        {Math.abs(multiplier - 1.0) > 0.001 && (
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Demand Surcharge</Text>
-              <Text style={[styles.summaryValue, { color: colors.warning }]}>+₹{Math.round(totalAmount - totalAmount / multiplier)}</Text>
+              <Text style={[styles.summaryValue, { color: colors.warning }]}>+Rs.{Math.round(totalAmount - totalAmount / multiplier)}</Text>
             </View>
           )}
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>₹{Math.round(totalAmount)}</Text>
+            <Text style={styles.totalValue}>Rs.{Math.round(totalAmount)}</Text>
           </View>
         </View>
 
@@ -219,7 +236,7 @@ export default function BookingScreen({ route, navigation }) {
           <Text style={styles.cancelBtnText}>Cancel</Text>
         </TouchableOpacity>
         <GradientButton
-          title={isPaying ? 'Processing...' : `Pay ₹${Math.round(totalAmount)}`}
+          title={isPaying ? 'Processing...' : `Pay Rs.${Math.round(totalAmount)}`}
           onPress={handleCheckout}
           disabled={isPaying}
           style={{ flex: 1 }}
@@ -236,7 +253,10 @@ const styles = StyleSheet.create({
 
   // Cards
   card: { backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg, overflow: 'hidden' },
-  cardGradient: { padding: spacing.xl },
+  cardGradient: { padding: spacing.xl, position: 'relative' },
+  cardBanner: { width: '100%', height: 120, borderRadius: radii.lg, marginBottom: spacing.md },
+  eventTeamsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  eventTeamLogo: { width: 28, height: 28 },
   cardHeader: { color: colors.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: 1.5, marginBottom: spacing.md },
   matchTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800', marginBottom: spacing.sm },
   metaRow: { marginBottom: spacing.xs },

@@ -174,7 +174,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
                 { label: 'Ticket Code', value: forensics.ticket.code, mono: true },
                 { label: 'Purchased By', value: forensics.ticket.purchaser },
                 { label: 'Purchase Date', value: new Date(forensics.ticket.purchaseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) },
-                { label: 'Payment', value: `✅ Paid ₹${forensics.ticket.amount.toLocaleString()}` },
+                { label: 'Payment', value: `✅ Paid Rs.${forensics.ticket.amount.toLocaleString()}` },
                 { label: 'Seat', value: `${forensics.ticket.seat} (${forensics.ticket.category})` },
                 { label: 'Match', value: forensics.ticket.match },
               ].map((item, idx, arr) => (

@@ -18,9 +18,9 @@ import { fetchAdminAnalytics, fetchFraudLogs } from '../../services/adminService
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
 function formatRevenue(value) {
-  if (value >= 1000000) return `₹${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `₹${Math.round(value / 1000)}K`;
-  return `₹${value}`;
+  if (value >= 1000000) return `Rs.${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `Rs.${Math.round(value / 1000)}K`;
+  return `Rs.${value}`;
 }
 
 export default function StatisticsScreen({ navigation }) {
@@ -102,7 +102,7 @@ export default function StatisticsScreen({ navigation }) {
 
         <View style={styles.grid}>
           {[
-            { label: 'Avg Ticket Price', value: `₹${avgTicket}`, delta: '+₹12', positive: true },
+            { label: 'Avg Ticket Price', value: `Rs.${avgTicket}`, delta: '+Rs.12', positive: true },
             { label: 'Occupancy Rate', value: `${occupancy}%`, delta: '+3.1%', positive: true },
             { label: 'Refund Rate', value: `${refundRate}%`, delta: '-0.4%', positive: true },
             { label: 'Tickets Sold', value: totalTickets.toLocaleString(), delta: '+4%', positive: true },
@@ -160,7 +160,7 @@ export default function StatisticsScreen({ navigation }) {
                     <Text style={styles.catCount}>{data.count} sold</Text>
                   </View>
                 </View>
-                <Text style={[styles.catRevenue, { color: colors_map[idx] }]}>₹{data.revenue.toLocaleString()}</Text>
+                <Text style={[styles.catRevenue, { color: colors_map[idx] }]}>Rs.{data.revenue.toLocaleString()}</Text>
               </View>
             );
           })}
@@ -173,7 +173,7 @@ export default function StatisticsScreen({ navigation }) {
               <View key={match.matchId} style={[styles.breakdownRow, idx < 3 && styles.breakdownBorder]}>
                 <View style={styles.breakdownLeft}>
                   <Text style={styles.matchName} numberOfLines={1}>{match.title}</Text>
-                  <Text style={styles.catCount}>₹{match.revenue.toLocaleString()} revenue</Text>
+                  <Text style={styles.catCount}>Rs.{match.revenue.toLocaleString()} revenue</Text>
                 </View>
                 <Text style={styles.occupancy}>{match.occupancy}%</Text>
               </View>

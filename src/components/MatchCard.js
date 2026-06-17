@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography, shadows } from '../constants/theme';
 
@@ -23,7 +23,7 @@ function getStatusConfig(status) {
 }
 
 export default function MatchCard({ match, onPress, variant = 'horizontal', tintIndex = 0 }) {
-  const date = new Date(match.matchDate);
+  const date = match.matchDate ? new Date(match.matchDate) : new Date();
   const day = date.getDate();
   const month = date.toLocaleString('default', { month: 'short' }).toUpperCase();
   const time = date.toLocaleTimeString('default', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -34,52 +34,66 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
   const tint = TINT_THEMES[tintIndex % TINT_THEMES.length];
 
   if (variant === 'hero') {
+    const hasBanner = Boolean(match.imageUrl);
     return (
       <TouchableOpacity style={styles.heroCard} onPress={onPress} activeOpacity={0.92}>
-        <LinearGradient colors={tint} style={styles.heroInner}>
-          {/* Overlapping live badge */}
-          <View style={styles.heroTop}>
-            <View style={styles.heroDateBlock}>
-              <Text style={styles.heroDay}>{day}</Text>
-              <Text style={styles.heroMonth}>{month}</Text>
-            </View>
-            <View style={[styles.liveBadge, statusConfig.pulse && styles.livePulse]}>
-              {statusConfig.pulse && <View style={styles.liveDot} />}
-              <Text style={styles.liveText}>{statusConfig.label}</Text>
-            </View>
-          </View>
-
-          {/* Teams — asymmetric layout */}
-          <View style={styles.heroTeamsRow}>
-            <View style={styles.heroTeam}>
-              <Text style={styles.heroTeamEmoji}>{TEAM_EMOJIS[match.teamA] || '🏏'}</Text>
-              <Text style={styles.heroTeamName}>{match.teamA}</Text>
-            </View>
-            <View style={styles.heroVsBadge}>
-              <Text style={styles.heroVs}>VS</Text>
-            </View>
-            <View style={styles.heroTeam}>
-              <Text style={styles.heroTeamEmoji}>{TEAM_EMOJIS[match.teamB] || '🏏'}</Text>
-              <Text style={styles.heroTeamName}>{match.teamB}</Text>
-            </View>
-          </View>
-
-          <Text style={styles.heroTitle}>{match.title}</Text>
-          <Text style={styles.heroVenue}>📍 {match.venue}</Text>
-
-          {/* Bottom bar with progress */}
-          <View style={styles.heroBottom}>
-            <Text style={styles.heroTime}>⏰ {time}</Text>
-            {total > 0 && (
-              <View style={styles.heroSoldWrap}>
-                <View style={styles.heroSoldBar}>
-                  <View style={[styles.heroSoldFill, { width: `${soldPct}%` }]} />
-                </View>
-                <Text style={styles.heroSoldText}>{soldPct}% sold</Text>
+        <View style={styles.heroInner}>
+          {hasBanner && (
+            <Image source={{ uri: match.imageUrl }} style={styles.heroBanner} resizeMode="cover" />
+          )}
+          <LinearGradient colors={hasBanner ? ['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.85)'] : tint} style={[styles.heroOverlay, !hasBanner && { backgroundColor: 'transparent' }]}>
+            {/* Overlapping live badge */}
+            <View style={styles.heroTop}>
+              <View style={styles.heroDateBlock}>
+                <Text style={styles.heroDay}>{day}</Text>
+                <Text style={styles.heroMonth}>{month}</Text>
               </View>
-            )}
-          </View>
-        </LinearGradient>
+              <View style={[styles.liveBadge, statusConfig.pulse && styles.livePulse]}>
+                {statusConfig.pulse && <View style={styles.liveDot} />}
+                <Text style={styles.liveText}>{statusConfig.label}</Text>
+              </View>
+            </View>
+
+            {/* Teams — with logos if available */}
+            <View style={styles.heroTeamsRow}>
+              <View style={styles.heroTeam}>
+                {match.teamALogo ? (
+                  <Image source={{ uri: match.teamALogo }} style={styles.heroTeamLogo} resizeMode="contain" />
+                ) : (
+                  <Text style={styles.heroTeamEmoji}>{TEAM_EMOJIS[match.teamA] || '🏏'}</Text>
+                )}
+                <Text style={styles.heroTeamName}>{match.teamA}</Text>
+              </View>
+              <View style={styles.heroVsBadge}>
+                <Text style={styles.heroVs}>VS</Text>
+              </View>
+              <View style={styles.heroTeam}>
+                {match.teamBLogo ? (
+                  <Image source={{ uri: match.teamBLogo }} style={styles.heroTeamLogo} resizeMode="contain" />
+                ) : (
+                  <Text style={styles.heroTeamEmoji}>{TEAM_EMOJIS[match.teamB] || '🏏'}</Text>
+                )}
+                <Text style={styles.heroTeamName}>{match.teamB}</Text>
+              </View>
+            </View>
+
+            <Text style={styles.heroTitle}>{match.title}</Text>
+            <Text style={styles.heroVenue}>📍 {match.venue}</Text>
+
+            {/* Bottom bar with progress */}
+            <View style={styles.heroBottom}>
+              <Text style={styles.heroTime}>⏰ {time}</Text>
+              {total > 0 && (
+                <View style={styles.heroSoldWrap}>
+                  <View style={styles.heroSoldBar}>
+                    <View style={[styles.heroSoldFill, { width: `${soldPct}%` }]} />
+                  </View>
+                  <Text style={styles.heroSoldText}>{soldPct}% sold</Text>
+                </View>
+              )}
+            </View>
+          </LinearGradient>
+        </View>
 
         {/* Overlapping badge — breaks the card edge */}
         {available > 0 && available <= 20 && (
@@ -91,47 +105,84 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
     );
   }
 
-  // Horizontal variant
+  // Horizontal variant — full-bleed image card
+  const hasThumb = Boolean(match.imageUrl);
+  const pricing = match.pricing || {};
+  const lowestPrice = Math.min(pricing.vip || Infinity, pricing.premium || Infinity, pricing.general || Infinity);
+
   return (
     <TouchableOpacity style={styles.hCard} onPress={onPress} activeOpacity={0.92}>
-      <LinearGradient colors={tint} style={styles.hCardInner}>
-        {/* Date block — large, prominent */}
-        <View style={styles.hDateBlock}>
-          <Text style={styles.hDay}>{day}</Text>
-          <Text style={styles.hMonth}>{month}</Text>
-          <Text style={styles.hTime}>{time}</Text>
-        </View>
-
-        {/* Content */}
-        <View style={styles.hContent}>
-          <View style={styles.hTop}>
-            <View style={[styles.hStatusDot, { backgroundColor: statusConfig.bg }]} />
-            <Text style={[styles.hStatus, { color: statusConfig.color }]}>{statusConfig.label}</Text>
+      <View style={styles.hCardInner}>
+        {/* Full background image or gradient fallback */}
+        {hasThumb ? (
+          <Image source={{ uri: match.imageUrl }} style={styles.hBgImage} resizeMode="cover" />
+        ) : (
+          <LinearGradient colors={tint} style={styles.hBgImage} />
+        )}
+        <LinearGradient
+          colors={hasThumb
+            ? ['rgba(7,8,11,0.3)', 'rgba(7,8,11,0.92)']
+            : ['rgba(0,0,0,0)', 'rgba(0,0,0,0.6)']}
+          style={styles.hOverlay}
+          locations={hasThumb ? [0, 0.6] : undefined}
+        >
+          {/* Top row: status + availability */}
+          <View style={styles.hTopRow}>
+            <View style={styles.hTopLeft}>
+              <View style={[styles.hStatusDot, { backgroundColor: statusConfig.bg }]} />
+              <Text style={[styles.hStatus, { color: statusConfig.color }]}>{statusConfig.label}</Text>
+            </View>
+            {available === 0 && total > 0 ? (
+              <View style={[styles.hAvailBadge, { backgroundColor: 'rgba(255,23,68,0.25)' }]}>
+                <Text style={[styles.hAvailText, { color: '#FF5252' }]}>SOLD OUT</Text>
+              </View>
+            ) : available > 0 && available <= 50 ? (
+              <View style={[styles.hAvailBadge, { backgroundColor: 'rgba(255,179,0,0.2)' }]}>
+                <Text style={[styles.hAvailText, { color: '#FFB300' }]}>Only {available} left</Text>
+              </View>
+            ) : available > 0 ? (
+              <View style={[styles.hAvailBadge, { backgroundColor: 'rgba(0,212,170,0.2)' }]}>
+                <Text style={[styles.hAvailText, { color: '#00D4AA' }]}>Seats Available</Text>
+              </View>
+            ) : null}
           </View>
-          <Text style={styles.hTeams}>{match.teamA} vs {match.teamB}</Text>
-          <Text style={styles.hTitle} numberOfLines={1}>{match.title}</Text>
-          <Text style={styles.hVenue} numberOfLines={1}>📍 {match.venue}</Text>
-        </View>
 
-        {/* Availability pill — right aligned */}
-        <View style={styles.hAvailWrap}>
-          {available > 0 ? (
-            <>
-              <Text style={styles.hAvailCount}>{available}</Text>
-              <Text style={styles.hAvailLabel}>seats{'\n'}left</Text>
-            </>
-          ) : (
-            <Text style={styles.hSoldOut}>SOLD{'\n'}OUT</Text>
-          )}
-        </View>
-      </LinearGradient>
+          {/* Middle: teams + title */}
+          <View style={styles.hMiddle}>
+            <View style={styles.hTeamsRow}>
+              {match.teamALogo ? (
+                <Image source={{ uri: match.teamALogo }} style={styles.hTeamLogo} resizeMode="contain" />
+              ) : (
+                <Text style={styles.hTeamEmoji}>{TEAM_EMOJIS[match.teamA] || '🏏'}</Text>
+              )}
+              <Text style={styles.hTeams}>{match.teamA} vs {match.teamB}</Text>
+              {match.teamBLogo ? (
+                <Image source={{ uri: match.teamBLogo }} style={styles.hTeamLogo} resizeMode="contain" />
+              ) : (
+                <Text style={styles.hTeamEmoji}>{TEAM_EMOJIS[match.teamB] || '🏏'}</Text>
+              )}
+            </View>
+            <Text style={styles.hTitle} numberOfLines={1}>{match.title}</Text>
+          </View>
 
-      {/* Overlapping few-seats badge */}
-      {available > 0 && available <= 15 && (
-        <View style={styles.hFewBadge}>
-          <Text style={styles.hFewText}>🔥</Text>
-        </View>
-      )}
+          {/* Bottom row: venue + date + price */}
+          <View style={styles.hBottomRow}>
+            <Text style={styles.hVenue} numberOfLines={1}>📍 {match.venue}</Text>
+            <View style={styles.hBottomRight}>
+              {match.matchDate && (
+                <Text style={styles.hDate}>
+                  {new Date(match.matchDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </Text>
+              )}
+              {lowestPrice !== Infinity && lowestPrice > 0 && (
+                <View style={styles.hPricePill}>
+                  <Text style={styles.hPriceText}>Rs.{lowestPrice.toLocaleString()}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -148,6 +199,19 @@ const styles = StyleSheet.create({
     padding: spacing.xxl,
     paddingBottom: spacing.xl,
     overflow: 'hidden',
+    position: 'relative',
+  },
+  heroBanner: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+    borderRadius: radii.xxl,
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: radii.xxl,
+    padding: spacing.xxl,
+    paddingBottom: spacing.xl,
   },
   heroTop: {
     flexDirection: 'row',
@@ -215,6 +279,11 @@ const styles = StyleSheet.create({
   },
   heroTeamEmoji: {
     fontSize: 42,
+    marginBottom: spacing.sm,
+  },
+  heroTeamLogo: {
+    width: 56,
+    height: 56,
     marginBottom: spacing.sm,
   },
   heroTeamName: {
@@ -300,52 +369,40 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  // ========= HORIZONTAL =========
+  // ========= HORIZONTAL (full-bleed image) =========
   hCard: {
     borderRadius: radii.xl,
-    overflow: 'visible',
+    overflow: 'hidden',
     ...shadows.md,
   },
   hCardInner: {
-    flexDirection: 'row',
     borderRadius: radii.xl,
     overflow: 'hidden',
   },
-  hDateBlock: {
-    width: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    paddingVertical: spacing.lg,
+  hBgImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: radii.xl,
   },
-  hDay: {
-    color: '#FFF',
-    fontSize: 24,
-    fontWeight: '900',
-    lineHeight: 28,
-  },
-  hMonth: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-  },
-  hTime: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 8,
-    fontWeight: '600',
-    marginTop: spacing.xs,
-  },
-  hContent: {
-    flex: 1,
+  hOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'space-between',
     padding: spacing.lg,
-    justifyContent: 'center',
+    borderRadius: radii.xl,
   },
-  hTop: {
+  hTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  hTopLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginBottom: spacing.xs,
   },
   hStatusDot: {
     width: 6,
@@ -357,64 +414,72 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
+  hAvailBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+  },
+  hAvailText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  hMiddle: {
+    alignItems: 'flex-start',
+    gap: 2,
+  },
+  hTeamsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: 2,
+  },
+  hTeamEmoji: {
+    fontSize: 18,
+  },
+  hTeamLogo: {
+    width: 24,
+    height: 24,
+  },
   hTeams: {
     color: '#FFF',
     fontSize: typography.captionMedium.fontSize,
     fontWeight: '800',
-    marginBottom: 2,
   },
   hTitle: {
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(255,255,255,0.9)',
     fontSize: typography.small.fontSize,
-    marginBottom: 2,
+    fontWeight: '700',
+  },
+  hBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   hVenue: {
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.6)',
     fontSize: typography.tiny.fontSize,
+    flex: 1,
   },
-
-  hAvailWrap: {
-    width: 72,
+  hBottomRight: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,200,83,0.15)',
+    gap: spacing.sm,
   },
-  hAvailCount: {
-    color: colors.successLight,
-    fontSize: 22,
-    fontWeight: '900',
-    lineHeight: 24,
-  },
-  hAvailLabel: {
-    color: colors.success,
-    fontSize: 8,
+  hDate: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: typography.tiny.fontSize,
     fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 12,
   },
-  hSoldOut: {
-    color: colors.dangerLight,
+  hPricePill: {
+    backgroundColor: 'rgba(255,215,0,0.2)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+  },
+  hPriceText: {
+    color: '#FFD700',
     fontSize: 10,
-    fontWeight: '900',
-    textAlign: 'center',
-    letterSpacing: 0.5,
-    lineHeight: 14,
-  },
-
-  // Overlapping fire badge
-  hFewBadge: {
-    position: 'absolute',
-    top: -6,
-    right: spacing.md,
-    backgroundColor: colors.accent,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.accent,
-  },
-  hFewText: {
-    fontSize: 12,
+    fontWeight: '800',
   },
 });
