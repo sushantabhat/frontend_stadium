@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, FlatList, Image, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
+import QRCode from 'react-native-qrcode-svg';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchMyTickets } from '../../services/ticketService';
 
@@ -23,10 +24,9 @@ export default function MyTicketsScreen({ navigation }) {
 
   useFocusEffect(useCallback(() => { loadTickets(); }, [loadTickets]));
 
-  const upcoming = tickets.filter(t => !t.scanned);
+  const upcoming = tickets.filter(t => t.status === 'active');
 
   const renderTicket = ({ item, index }) => {
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(item.ticketCode)}&color=FFFFFF&bgcolor=6C5CE7`;
     const category = (item.seat?.category || 'general').toLowerCase();
     const theme = CATEGORY_THEMES[category] || CATEGORY_THEMES.general;
     const matchDate = item.match?.matchDate ? new Date(item.match.matchDate) : null;
@@ -100,7 +100,13 @@ export default function MyTicketsScreen({ navigation }) {
           {/* QR Section */}
           <View style={styles.qrSection}>
             <View style={styles.qrBox}>
-              <Image source={{ uri: qrUrl }} style={styles.qrImage} />
+              <QRCode
+                value={item.ticketCode}
+                size={120}
+                color="#FFFFFF"
+                backgroundColor="transparent"
+                level="M"
+              />
               <View style={[styles.qrCorner, styles.qrCornerTL]} />
               <View style={[styles.qrCorner, styles.qrCornerTR]} />
               <View style={[styles.qrCorner, styles.qrCornerBL]} />
@@ -111,9 +117,9 @@ export default function MyTicketsScreen({ navigation }) {
           </View>
 
           {/* Status */}
-          <View style={[styles.statusBanner, item.scanned ? styles.statusScanned : styles.statusValid]}>
-            <Text style={[styles.statusBannerText, item.scanned ? styles.statusTextScanned : styles.statusTextValid]}>
-              {item.scanned ? '⚠️ ALREADY SCANNED' : '✅ VALID TICKET'}
+          <View style={[styles.statusBanner, item.status === 'used' ? styles.statusScanned : styles.statusValid]}>
+            <Text style={[styles.statusBannerText, item.status === 'used' ? styles.statusTextScanned : styles.statusTextValid]}>
+              {item.status === 'used' ? 'ALREADY USED' : 'VALID TICKET'}
             </Text>
           </View>
         </LinearGradient>
@@ -224,7 +230,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.sm,
     position: 'relative',
   },
-  qrImage: { width: 120, height: 120, borderRadius: radii.md },
   qrCorner: { position: 'absolute', width: 12, height: 12, borderColor: 'rgba(255,255,255,0.3)' },
   qrCornerTL: { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 4 },
   qrCornerTR: { top: -1, right: -1, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 4 },

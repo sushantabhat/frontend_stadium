@@ -23,7 +23,7 @@ export default function AdminDashboardScreen({ navigation }) {
       ]);
       const live = matches.filter(m => m.status === 'live' || m.status === 'upcoming').length;
       const booked = analytics.attendance?.totalTickets || 0;
-      const fraud = Object.values(analytics.fraudAlerts || {}).reduce((a, b) => a + b, 0);
+      const fraud = Object.values(analytics.securityAlerts || {}).reduce((a, b) => a + b, 0);
       setMetrics({
         liveMatches: live,
         bookedSeats: booked,

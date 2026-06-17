@@ -55,7 +55,7 @@ export default function StatisticsScreen({ navigation }) {
 
   const sales = analytics?.salesByCategory || {};
   const attendance = analytics?.attendance || {};
-  const fraudAlerts = analytics?.fraudAlerts || {};
+  const securityAlerts = analytics?.securityAlerts || {};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -85,56 +85,28 @@ export default function StatisticsScreen({ navigation }) {
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionDot, { backgroundColor: colors.danger }]} />
-            <Text style={styles.sectionTitle}>AI Security & Fraud Monitors</Text>
+            <Text style={styles.sectionTitle}>Security Alerts</Text>
           </View>
           <View style={styles.fraudGrid}>
             <View style={styles.fraudBox}>
-              <Text style={styles.fraudValue}>{fraudAlerts.duplicate_scan || 0}</Text>
+              <Text style={styles.fraudValue}>{securityAlerts.duplicate_scan || 0}</Text>
               <Text style={styles.fraudLabel}>Duplicate Scans</Text>
             </View>
             <View style={styles.fraudBox}>
-              <Text style={styles.fraudValue}>{fraudAlerts.invalid_ticket || 0}</Text>
-              <Text style={styles.fraudLabel}>Fake QR Attempts</Text>
+              <Text style={styles.fraudValue}>{securityAlerts.invalid_ticket || 0}</Text>
+              <Text style={styles.fraudLabel}>Invalid Tickets</Text>
             </View>
             <View style={styles.fraudBox}>
-              <Text style={styles.fraudValue}>{fraudAlerts.unauthorized_attempt || 0}</Text>
-              <Text style={styles.fraudLabel}>Behavioral Anomalies</Text>
+              <Text style={styles.fraudValue}>{securityAlerts.unauthorized_attempt || 0}</Text>
+              <Text style={styles.fraudLabel}>Unauthorized</Text>
             </View>
           </View>
           <View style={styles.fraudSummary}>
             <Text style={styles.fraudSummaryText}>
-              Total Fraud Attempts: {(fraudAlerts.duplicate_scan || 0) + (fraudAlerts.invalid_ticket || 0) + (fraudAlerts.unauthorized_attempt || 0)}
-            </Text>
-            <Text style={styles.fraudSummaryText}>
-              Detection Rate: 100% (Rule-based + Behavioral Analysis)
+              Total Security Events: {(securityAlerts.duplicate_scan || 0) + (securityAlerts.invalid_ticket || 0) + (securityAlerts.unauthorized_attempt || 0)}
             </Text>
           </View>
         </View>
-
-        {analytics?.aiStats && (
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionDot, { backgroundColor: colors.primary }]} />
-              <Text style={styles.sectionTitle}>AI Model Performance</Text>
-            </View>
-            <View style={styles.aiStatsGrid}>
-              {analytics.aiStats.predictions?.map((pred) => (
-                <View key={pred._id} style={styles.aiStatBox}>
-                  <Text style={styles.aiStatValue}>{pred.count}</Text>
-                  <Text style={styles.aiStatLabel}>
-                    {pred._id === 'matchRecommendation' ? 'Recommendations' :
-                     pred._id === 'smartSeat' ? 'Seat Suggestions' :
-                     pred._id === 'dynamicPricing' ? 'Price Calculations' :
-                     pred._id === 'fraudDetection' ? 'Fraud Checks' : pred._id}
-                  </Text>
-                  <Text style={styles.aiStatConfidence}>
-                    Confidence: {(pred.avgConfidence * 100).toFixed(0)}%
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
 
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
@@ -339,35 +311,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: typography.small.fontSize,
     lineHeight: 18,
-  },
-  aiStatsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  aiStatBox: {
-    width: '48%',
-    backgroundColor: colors.primarySurface,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  aiStatValue: {
-    color: colors.primary,
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  aiStatLabel: {
-    color: colors.textSecondary,
-    fontSize: typography.tiny.fontSize,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  aiStatConfidence: {
-    color: colors.textSecondary,
-    fontSize: typography.tiny.fontSize,
-    marginTop: 4,
-    fontWeight: '600',
   },
   categoryRow: {
     flexDirection: 'row',
