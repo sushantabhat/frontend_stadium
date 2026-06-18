@@ -57,7 +57,12 @@ export default function PolygonEditor({
 
   const layoutRef = useRef({ w: 380, h: 330 });
 
-  const emit = useCallback((pts) => onPolygonChange?.(toPath(pts)), [onPolygonChange]);
+  const emitRef = useRef(null);
+  const emit = useCallback((pts) => {
+    const path = toPath(pts);
+    if (emitRef.current) clearTimeout(emitRef.current);
+    emitRef.current = setTimeout(() => onPolygonChange?.(path), 0);
+  }, [onPolygonChange]);
 
   const selectPreset = useCallback((preset) => {
     const pts = parsePath(preset.path);
