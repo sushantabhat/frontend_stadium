@@ -24,7 +24,7 @@ export default function BookingScreen({ route, navigation }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPaying, setIsPaying] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
-  const [bookedTicket, setBookedTicket] = useState(null);
+  const [bookedTickets, setBookedTickets] = useState([]);
 
   useEffect(() => {
     async function loadData() {
@@ -51,7 +51,7 @@ export default function BookingScreen({ route, navigation }) {
     try {
       const result = await confirmBooking(matchId, selectedSeats.map(s => s.id || s._id));
       setIsBooked(true);
-      setBookedTicket(result.ticket || result);
+      setBookedTickets(result.tickets || []);
     } catch (err) { Alert.alert('Booking failed', err.response?.data?.message || err.message); }
     finally { setIsPaying(false); }
   };
@@ -77,9 +77,9 @@ export default function BookingScreen({ route, navigation }) {
 
   // Success State
   if (isBooked) {
-    const ticket = bookedTicket || {};
-    const qrUrl = ticket.ticketCode
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(ticket.ticketCode)}&color=FFFFFF&bgcolor=6C5CE7`
+    const firstTicket = bookedTickets[0] || {};
+    const qrUrl = firstTicket.ticketCode
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(firstTicket.ticketCode)}&color=FFFFFF&bgcolor=6C5CE7`
       : null;
 
     return (
@@ -110,22 +110,34 @@ export default function BookingScreen({ route, navigation }) {
 
               <View style={styles.dividerDashed} />
 
-              <View style={styles.ticketDetails}>
-                <View style={styles.ticketDetailRow}>
-                  <View style={styles.ticketDetailCol}>
-                    <Text style={styles.detailLabel}>TICKET CODE</Text>
-                    <Text style={styles.detailValue}>{ticket.ticketCode || 'N/A'}</Text>
-                  </View>
-                  <View style={styles.ticketDetailCol}>
-                    <Text style={styles.detailLabel}>AMOUNT PAID</Text>
-                    <Text style={[styles.detailValue, { color: colors.accent }]}>Rs.{Math.round(totalAmount)}</Text>
+                <View style={styles.ticketDetails}>
+                  {bookedTickets.map((t, i) => (
+                    <View key={t._id || i} style={i < bookedTickets.length - 1 ? styles.ticketDetailBorder : undefined}>
+                      <View style={styles.ticketDetailRow}>
+                        <View style={styles.ticketDetailCol}>
+                          <Text style={styles.detailLabel}>TICKET {i + 1}</Text>
+                          <Text style={styles.detailValue}>{t.ticketCode || 'N/A'}</Text>
+                        </View>
+                        <View style={styles.ticketDetailCol}>
+                          <Text style={styles.detailLabel}>SEAT</Text>
+                          <Text style={styles.detailValue}>{selectedSeats[i]?.seatLabel || 'N/A'}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  ))}
+                  <View style={{ marginTop: spacing.md, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.15)', paddingTop: spacing.md }}>
+                    <View style={styles.ticketDetailRow}>
+                      <View style={styles.ticketDetailCol}>
+                        <Text style={styles.detailLabel}>TICKETS</Text>
+                        <Text style={styles.detailValue}>{selectedSeats.length}</Text>
+                      </View>
+                      <View style={styles.ticketDetailCol}>
+                        <Text style={styles.detailLabel}>AMOUNT PAID</Text>
+                        <Text style={[styles.detailValue, { color: colors.accent }]}>Rs.{Math.round(totalAmount)}</Text>
+                      </View>
+                    </View>
                   </View>
                 </View>
-                <View style={{ marginTop: spacing.md }}>
-                  <Text style={styles.detailLabel}>SEATS</Text>
-                  <Text style={styles.detailValue}>{selectedSeats.map(s => s.seatLabel).join(', ')}</Text>
-                </View>
-              </View>
             </LinearGradient>
           </View>
 
@@ -331,4 +343,5 @@ const styles = StyleSheet.create({
   ticketDetailCol: { flex: 1 },
   detailLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.xs },
   detailValue: { color: '#FFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
+  ticketDetailBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)', marginBottom: spacing.sm, paddingBottom: spacing.sm },
 });

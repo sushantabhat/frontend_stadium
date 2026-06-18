@@ -177,7 +177,7 @@ export default function StadiumMap({
                       }
                     }}
                   >
-                    €{section.pricePerTicket}
+                    Rs.{section.pricePerTicket}
                   </SvgText>
                 )}
               </G>

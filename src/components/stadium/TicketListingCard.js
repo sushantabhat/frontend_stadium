@@ -41,7 +41,7 @@ export default function TicketListingCard({ section, seats, onSelect, isSelected
         <View style={[styles.detailItem, styles.priceItem]}>
           <Text style={styles.priceLabel}>From</Text>
           <Text style={[styles.priceValue, { color: catInfo.accent }]}>
-            {lowestPrice > 0 ? `€${lowestPrice}` : '—'}
+            {lowestPrice > 0 ? `Rs.${lowestPrice}` : '—'}
           </Text>
         </View>
       </View>

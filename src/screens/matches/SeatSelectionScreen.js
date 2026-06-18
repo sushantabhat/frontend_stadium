@@ -1,7 +1,9 @@
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  PanResponder,
   Platform,
   ScrollView,
   StyleSheet,
@@ -22,6 +24,8 @@ import { colors, spacing, radii, typography, shadows, CATEGORY_COLORS } from '..
 import { fetchMatchById, fetchMatchSeats } from '../../services/matchService';
 import { lockSeats } from '../../services/bookingService';
 
+const { height: SCREEN_H } = Dimensions.get('window');
+
 export default function SeatSelectionScreen({ route, navigation }) {
   const { matchId } = route.params;
   const [match, setMatch] = useState(null);
@@ -32,7 +36,43 @@ export default function SeatSelectionScreen({ route, navigation }) {
   const [quantity, setQuantity] = useState(2);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [viewMode, setViewMode] = useState('map');
+  const [panelOpen, setPanelOpen] = useState(true);
+  const panelAnim = useRef(new Animated.Value(0)).current;
+  const isOpenRef = useRef(true);
+  const MAX_SLIDE = SCREEN_H * 0.42;
+  const panelPan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 5,
+      onPanResponderGrant: () => panelAnim.stopAnimation(),
+      onPanResponderMove: (_, g) => {
+        let val;
+        if (isOpenRef.current) {
+          val = Math.max(0, Math.min(1, g.dy / MAX_SLIDE));
+        } else {
+          val = Math.max(0, Math.min(1, 1 + g.dy / MAX_SLIDE));
+        }
+        panelAnim.setValue(val);
+      },
+      onPanResponderRelease: (_, g) => {
+        const isTap = Math.abs(g.dy) < 10;
+        let shouldOpen;
+        if (isTap) {
+          shouldOpen = !isOpenRef.current;
+        } else {
+          const dist = isOpenRef.current ? g.dy : -g.dy;
+          shouldOpen = dist < MAX_SLIDE * 0.3;
+        }
+        Animated.timing(panelAnim, {
+          toValue: shouldOpen ? 0 : 1,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+        isOpenRef.current = shouldOpen;
+        setPanelOpen(shouldOpen);
+      },
+    })
+  ).current;
   const [isCompact, setIsCompact] = useState(() => {
     const { height } = Dimensions.get('window');
     return height < 700;
@@ -147,7 +187,13 @@ export default function SeatSelectionScreen({ route, navigation }) {
       const sectionSeats = (selectedSection.seats || [])
         .filter((s) => s.status === 'available')
         .slice(0, quantity)
-        .map((s) => s.id);
+        .map((s) => ({
+          id: s.id || s._id,
+          seatLabel: s.seatLabel,
+          category: s.category,
+          sectionId: selectedSection.sectionId,
+          price: selectedSection.pricePerTicket || match?.pricing?.[s.category] || 0,
+        }));
 
       if (sectionSeats.length < quantity) {
         Alert.alert('Not Enough Seats', `Only ${sectionSeats.length} seats available in this section.`);
@@ -155,8 +201,8 @@ export default function SeatSelectionScreen({ route, navigation }) {
         return;
       }
 
-      await lockSeats(matchId, sectionSeats);
-      navigation.navigate('Booking', { matchId, selectedSeats: sectionSeats.map((id) => ({ id, sectionId: selectedSection.sectionId })) });
+      await lockSeats(matchId, sectionSeats.map((s) => s.id));
+      navigation.navigate('Booking', { matchId, selectedSeats: sectionSeats });
     } catch (error) {
       Alert.alert('Booking Error', error.response?.data?.message || 'Could not lock seats');
     } finally {
@@ -193,8 +239,8 @@ export default function SeatSelectionScreen({ route, navigation }) {
 
       {hasStadiumSections ? (
         <View style={styles.layout}>
-          {/* Map Panel */}
-          <View style={[styles.mapPanel, isCompact && styles.mapPanelCompact]}>
+          {/* Map Panel — fills all space, listing overlays from bottom */}
+          <View style={styles.mapPanelFull}>
             <CategoryFilterBar
               sections={sections}
               activeFilter={activeCategory}
@@ -232,9 +278,27 @@ export default function SeatSelectionScreen({ route, navigation }) {
             </View>
           </View>
 
-          {/* Bottom Sheet: Listings */}
-          <View style={[styles.listingPanel, isCompact && styles.listingPanelCompact]}>
-            <View style={styles.bottomSheetHandle} />
+          {/* Bottom Sheet: Listings — overlays map, slides down on toggle */}
+          <Animated.View
+            style={[
+              styles.listingOverlay,
+                {
+                  transform: [{
+                    translateY: panelAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, MAX_SLIDE],
+                    }),
+                  }],
+                },
+            ]}
+          >
+            <View
+              style={styles.listingHandle}
+              {...panelPan.panHandlers}
+            >
+              <View style={styles.bottomSheetHandle} />
+            </View>
+
             <FilterChips
               filters={filters}
               onRemove={handleFilterRemove}
@@ -261,7 +325,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
                 </View>
               )}
             </ScrollView>
-          </View>
+          </Animated.View>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
@@ -283,7 +347,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
               Section {selectedSection.sectionId}
             </Text>
             <Text style={styles.checkoutDetails}>
-              {quantity} × €{selectedSection.pricePerTicket}
+              {quantity} × Rs.{selectedSection.pricePerTicket}
             </Text>
           </View>
 
@@ -306,7 +370,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
           </View>
 
           <View style={styles.checkoutRight}>
-            <Text style={styles.checkoutTotal}>€{totalAmount}</Text>
+            <Text style={styles.checkoutTotal}>Rs.{totalAmount}</Text>
             <TouchableOpacity
               style={[styles.payBtn, isSubmitting && styles.payBtnDisabled]}
               activeOpacity={0.8}
@@ -335,14 +399,10 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
   },
-  mapPanel: {
-    flex: 0,
-    height: '45%',
+  mapPanelFull: {
+    flex: 1,
     padding: spacing.lg,
     paddingBottom: 0,
-  },
-  mapPanelCompact: {
-    height: '38%',
   },
   mapContainer: {
     flex: 1,
@@ -350,29 +410,33 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderRadius: radii.xl,
   },
-  listingPanel: {
-    flex: 1,
-    padding: spacing.lg,
-    paddingTop: 0,
+  listingOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    maxHeight: SCREEN_H * 0.55,
     backgroundColor: colors.surface,
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
     borderWidth: 1,
     borderBottomWidth: 0,
     borderColor: colors.border,
+    padding: spacing.lg,
+    paddingTop: 0,
     ...shadows.lg,
   },
-  listingPanelCompact: {
-    paddingTop: 0,
+  listingHandle: {
+    alignSelf: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.xs,
   },
   bottomSheetHandle: {
     width: 40,
     height: 4,
     borderRadius: 2,
     backgroundColor: colors.textMuted,
-    alignSelf: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
   },
   listingContent: {
     paddingBottom: 120,

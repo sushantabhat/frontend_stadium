@@ -60,6 +60,8 @@ function TicketsNavigator() {
     <TicketsStack.Navigator screenOptions={screenOptions}>
       <TicketsStack.Screen name="MyTickets" component={MyTicketsScreen} />
       <TicketsStack.Screen name="MatchDetail" component={MatchDetailScreen} />
+      <TicketsStack.Screen name="SeatSelection" component={SeatSelectionScreen} />
+      <TicketsStack.Screen name="Booking" component={BookingScreen} />
     </TicketsStack.Navigator>
   );
 }
