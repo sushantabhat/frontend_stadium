@@ -108,7 +108,8 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
   // Horizontal variant — full-bleed image card
   const hasThumb = Boolean(match.imageUrl);
   const pricing = match.pricing || {};
-  const lowestPrice = Math.min(pricing.vip || Infinity, pricing.premium || Infinity, pricing.general || Infinity);
+  const prices = Object.values(pricing).filter((p) => typeof p === 'number' && p > 0);
+  const lowestPrice = prices.length > 0 ? Math.min(...prices) : 0;
 
   return (
     <TouchableOpacity style={styles.hCard} onPress={onPress} activeOpacity={0.92}>

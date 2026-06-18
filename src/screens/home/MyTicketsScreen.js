@@ -9,6 +9,11 @@ import { fetchMyTickets } from '../../services/ticketService';
 
 const CATEGORY_THEMES = {
   vip: { gradient: ['#FFD700', '#E6A800'], label: 'VIP' },
+  category1: { gradient: ['#FFD700', '#E6A800'], label: 'CATEGORY 1' },
+  category2: { gradient: ['#FF6B6B', '#E53935'], label: 'CATEGORY 2' },
+  category3: { gradient: ['#6C5CE7', '#4834D4'], label: 'CATEGORY 3' },
+  category4: { gradient: ['#EF5350', '#C62828'], label: 'CATEGORY 4' },
+  supporters: { gradient: ['#2E7D32', '#1B5E20'], label: 'SUPPORTERS' },
   premium: { gradient: [colors.primary, '#5A4BD1'], label: 'PREMIUM' },
   general: { gradient: ['#6B7B8D', '#4A5568'], label: 'GENERAL' },
 };

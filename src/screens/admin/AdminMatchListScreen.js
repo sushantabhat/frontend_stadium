@@ -77,29 +77,12 @@ function formatDateTime(dateStr) {
 function computeZoneQuota(stats, zoneKey) {
   const total = stats?.total ?? 0;
   if (total === 0) return { sold: 0, capacity: 0, pct: 0 };
-  const vipCount = stats?.vip ?? 0;
-  const premiumCount = stats?.premium ?? 0;
-  const generalCount = stats?.general ?? 0;
+
   const booked = stats?.booked ?? 0;
-
-  const vipRatio = total > 0 ? vipCount / total : 0;
-  const premiumRatio = total > 0 ? premiumCount / total : 0;
-
-  let capacity = 0;
-  switch (zoneKey) {
-    case 'vip': capacity = vipCount; break;
-    case 'premium': capacity = premiumCount; break;
-    case 'general_west': capacity = Math.floor(generalCount / 2); break;
-    case 'general_east': capacity = Math.ceil(generalCount / 2); break;
-    default: capacity = 0;
-  }
-
-  const sold = Math.round(booked * (
-    zoneKey === 'vip' ? vipRatio
-      : zoneKey === 'premium' ? premiumRatio
-        : (1 - vipRatio - premiumRatio)
-  ));
-
+  const zoneCount = stats?.[zoneKey] ?? 0;
+  const capacity = zoneCount;
+  const ratio = total > 0 ? zoneCount / total : 0;
+  const sold = Math.round(booked * ratio);
   const pct = capacity > 0 ? Math.round((sold / capacity) * 100) : 0;
   return { sold, capacity, pct };
 }
@@ -110,12 +93,16 @@ function computeRevenue(match) {
   const total = stats.total || match.totalSeats || 0;
   const booked = stats.booked || 0;
   if (total === 0 || booked === 0) return 0;
-  const vipRatio = (stats.vip || 0) / total;
-  const premiumRatio = (stats.premium || 0) / total;
-  const bookedVip = Math.round(booked * vipRatio);
-  const bookedPremium = Math.round(booked * premiumRatio);
-  const bookedGeneral = Math.max(0, booked - bookedVip - bookedPremium);
-  return bookedVip * (pricing.vip || 0) + bookedPremium * (pricing.premium || 0) + bookedGeneral * (pricing.general || 0);
+
+  let revenue = 0;
+  for (const [category, price] of Object.entries(pricing)) {
+    if (typeof price !== 'number') continue;
+    const catCount = stats[category] || 0;
+    const ratio = total > 0 ? catCount / total : 0;
+    const bookedCat = Math.round(booked * ratio);
+    revenue += bookedCat * price;
+  }
+  return revenue;
 }
 
 export default function AdminMatchListScreen({ navigation }) {
@@ -356,47 +343,72 @@ export default function AdminMatchListScreen({ navigation }) {
               {/* ── STATS ROW (matches fan) ── */}
               <View style={s.bodySection}>
                 <Text style={s.bodyLabel}>Category Allocation</Text>
-                {[
-                  { key: 'vip', label: 'VIP', price: m.pricing?.vip ?? 0, color: '#FFD700', zoneKey: 'vip' },
-                  { key: 'premium', label: 'Premium', price: m.pricing?.premium ?? 0, color: glass.brandPurple, zoneKey: 'premium' },
-                  { key: 'general', label: 'General', price: m.pricing?.general ?? 0, color: '#78909C', zoneKey: 'general_west' },
-                ].map((cat) => {
-                  const zoneStats = computeZoneQuota(stats, cat.zoneKey);
-                  const generalWest = computeZoneQuota(stats, 'general_west');
-                  const generalEast = computeZoneQuota(stats, 'general_east');
-                  const totalCat = cat.key === 'general' ? generalWest.capacity + generalEast.capacity : zoneStats.capacity;
-                  const soldCat = cat.key === 'general' ? generalWest.sold + generalEast.sold : zoneStats.sold;
-                  const pctCat = totalCat > 0 ? Math.round((soldCat / totalCat) * 100) : 0;
+                {(() => {
+                  const pricingObj = m.pricing || {};
+                  const CATEGORY_CONFIG = {
+                    vip: { label: 'VIP', color: '#FFD700' },
+                    category1: { label: 'Category 1', color: '#FFD700' },
+                    category2: { label: 'Category 2', color: '#FF6B6B' },
+                    category3: { label: 'Category 3', color: '#A29BFE' },
+                    category4: { label: 'Category 4', color: '#EF5350' },
+                    supporters: { label: 'Supporters', color: '#81C784' },
+                    premium: { label: 'Premium', color: glass.brandPurple },
+                    general: { label: 'General', color: '#78909C' },
+                  };
+                  return Object.entries(pricingObj)
+                    .filter(([, price]) => typeof price === 'number')
+                    .map(([key, price]) => {
+                      const catConfig = CATEGORY_CONFIG[key] || { label: key, color: '#888' };
+                      const zoneStats = computeZoneQuota(stats, key);
+                      const totalCat = zoneStats.capacity;
+                      const soldCat = zoneStats.sold;
+                      const pctCat = totalCat > 0 ? Math.round((soldCat / totalCat) * 100) : 0;
 
-                  return (
-                    <View key={cat.key} style={s.allocRow}>
-                      <View style={[s.allocDot, { backgroundColor: cat.color }]} />
-                      <Text style={s.allocLabel}>{cat.label}</Text>
-                      <Text style={s.allocPrice}>Rs.{cat.price.toLocaleString()}</Text>
-                      <View style={s.allocBarWrap}>
-                        <View style={[s.allocBar, { width: `${pctCat}%`, backgroundColor: cat.color }]} />
-                      </View>
-                      <Text style={s.allocQuota}>{soldCat}/{totalCat}</Text>
-                    </View>
-                  );
-                })}
+                      return (
+                        <View key={key} style={s.allocRow}>
+                          <View style={[s.allocDot, { backgroundColor: catConfig.color }]} />
+                          <Text style={s.allocLabel}>{catConfig.label}</Text>
+                          <Text style={s.allocPrice}>Rs.{price.toLocaleString()}</Text>
+                          <View style={s.allocBarWrap}>
+                            <View style={[s.allocBar, { width: `${pctCat}%`, backgroundColor: catConfig.color }]} />
+                          </View>
+                          <Text style={s.allocQuota}>{soldCat}/{totalCat}</Text>
+                        </View>
+                      );
+                    });
+                })()}
               </View>
 
               {/* ── PRICING ROW (matches fan) ── */}
               <View style={s.bodySection}>
                 <Text style={s.bodyLabel}>Pricing</Text>
                 <View style={s.pricingRow}>
-                  {[
-                    { label: 'VIP', value: m.pricing?.vip ?? 0, icon: '👑', color: '#FFD700' },
-                    { label: 'Premium', value: m.pricing?.premium ?? 0, icon: '⭐', color: glass.brandPurple },
-                    { label: 'General', value: m.pricing?.general ?? 0, icon: '🎫', color: '#78909C' },
-                  ].map((p) => (
-                    <View key={p.label} style={s.pricingCell}>
-                      <Text style={s.pricingIcon}>{p.icon}</Text>
-                      <Text style={[s.pricingValue, { color: p.color }]}>Rs.{p.value.toLocaleString()}</Text>
-                      <Text style={s.pricingLabel}>{p.label}</Text>
-                    </View>
-                  ))}
+                  {(() => {
+                    const pricingObj = m.pricing || {};
+                    const CATEGORY_ICONS = {
+                      vip: { icon: '👑', color: '#FFD700' },
+                      category1: { icon: '⭐', color: '#FFD700' },
+                      category2: { icon: '🎫', color: '#FF6B6B' },
+                      category3: { icon: '🎫', color: '#A29BFE' },
+                      category4: { icon: '🎫', color: '#EF5350' },
+                      supporters: { icon: '💚', color: '#81C784' },
+                      premium: { icon: '⭐', color: glass.brandPurple },
+                      general: { icon: '🎫', color: '#78909C' },
+                    };
+                    return Object.entries(pricingObj)
+                      .filter(([, price]) => typeof price === 'number')
+                      .slice(0, 3)
+                      .map(([key, price]) => {
+                        const catIcon = CATEGORY_ICONS[key] || { icon: '🎫', color: '#888' };
+                        return (
+                          <View key={key} style={s.pricingCell}>
+                            <Text style={s.pricingIcon}>{catIcon.icon}</Text>
+                            <Text style={[s.pricingValue, { color: catIcon.color }]}>Rs.{price.toLocaleString()}</Text>
+                            <Text style={s.pricingLabel}>{key}</Text>
+                          </View>
+                        );
+                      });
+                })()}
                 </View>
               </View>
 

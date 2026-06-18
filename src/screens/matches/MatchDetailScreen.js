@@ -90,11 +90,26 @@ export default function MatchDetailScreen({ route, navigation }) {
   const occupancyPct = stats.total > 0 ? Math.round(((stats.total - (stats.available || 0)) / stats.total) * 100) : 0;
   const hasImage = Boolean(match.imageUrl);
 
-  const PRICING_TIERS = [
-    { label: 'VIP', value: match.pricing?.vip ?? 0, color: '#FFD700', glow: 'rgba(255,215,0,0.25)', icon: '👑', desc: 'Best views, premium lounge', seats: stats.vip || 0 },
-    { label: 'Premium', value: match.pricing?.premium ?? 0, color: '#A29BFE', glow: 'rgba(162,155,254,0.25)', icon: '⭐', desc: 'Great sightlines', seats: stats.premium || 0 },
-    { label: 'General', value: match.pricing?.general ?? 0, color: '#00B0FF', glow: 'rgba(0,176,255,0.25)', icon: '🎫', desc: 'Standard seating', seats: stats.general || 0 },
-  ];
+  const CATEGORY_DISPLAY = {
+    vip: { label: 'VIP', color: '#FFD700', glow: 'rgba(255,215,0,0.25)', icon: '👑', desc: 'Best views, premium lounge' },
+    category1: { label: 'Category 1', color: '#FFD700', glow: 'rgba(255,215,0,0.25)', icon: '⭐', desc: 'Great sightlines' },
+    category2: { label: 'Category 2', color: '#FF6B6B', glow: 'rgba(255,107,107,0.25)', icon: '🎫', desc: 'Standard seating' },
+    category3: { label: 'Category 3', color: '#A29BFE', glow: 'rgba(162,155,254,0.25)', icon: '🎫', desc: 'Standard seating' },
+    category4: { label: 'Category 4', color: '#EF5350', glow: 'rgba(239,83,80,0.25)', icon: '🎫', desc: 'Standard seating' },
+    supporters: { label: 'Supporters', color: '#81C784', glow: 'rgba(129,199,132,0.25)', icon: '💚', desc: 'Supporters tier' },
+    premium: { label: 'Premium', color: '#A29BFE', glow: 'rgba(162,155,254,0.25)', icon: '⭐', desc: 'Great sightlines' },
+    general: { label: 'General', color: '#00B0FF', glow: 'rgba(0,176,255,0.25)', icon: '🎫', desc: 'Standard seating' },
+  };
+
+  const pricingObj = match.pricing || {};
+  const PRICING_TIERS = Object.entries(pricingObj)
+    .filter(([, value]) => typeof value === 'number' && value > 0)
+    .map(([key, value]) => ({
+      key,
+      value,
+      seats: stats[key] || 0,
+      ...(CATEGORY_DISPLAY[key] || { label: key, color: '#888', glow: 'rgba(136,136,136,0.25)', icon: '🎫', desc: '' }),
+    }));
 
   return (
     <View style={s.container}>
@@ -235,11 +250,19 @@ export default function MatchDetailScreen({ route, navigation }) {
         <View style={s.bodySection}>
           <Text style={s.bodyLabel}>Stadium</Text>
           <View style={s.infoRow}>
-            <Text style={s.infoText}>{match.seatLayout?.rows ?? 0} Rows</Text>
-            <View style={s.infoDot} />
-            <Text style={s.infoText}>{match.seatLayout?.seatsPerRow ?? 0} Seats/Row</Text>
-            <View style={s.infoDot} />
-            <Text style={s.infoText}>{match.seatLayout?.vipRows ?? 0} VIP Rows</Text>
+            {match.stadiumSections && match.stadiumSections.length > 0 ? (
+              <>
+                <Text style={s.infoText}>{match.stadiumSections.length} Sections</Text>
+                <View style={s.infoDot} />
+                <Text style={s.infoText}>{stats.total || match.totalSeats || 0} Seats</Text>
+              </>
+            ) : (
+              <>
+                <Text style={s.infoText}>{match.seatLayout?.rows ?? 0} Rows</Text>
+                <View style={s.infoDot} />
+                <Text style={s.infoText}>{match.seatLayout?.seatsPerRow ?? 0} Seats/Row</Text>
+              </>
+            )}
           </View>
         </View>
 

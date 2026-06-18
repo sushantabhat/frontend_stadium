@@ -16,8 +16,11 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenHeader from '../../components/ScreenHeader';
+import PolygonEditor from '../../components/stadium/PolygonEditor';
 import { fetchMatchById, updateMatch } from '../../services/matchService';
-import { colors, spacing, radii, typography, glass } from '../../constants/theme';
+import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
+
+const CATEGORY_OPTIONS = ['category1', 'category2', 'category3', 'category4', 'vip', 'supporters'];
 
 const MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -92,14 +95,13 @@ export default function AdminEditMatchScreen({ route, navigation }) {
     imageUrl: '',
     teamALogo: '',
     teamBLogo: '',
-    vipPrice: '',
-    premiumPrice: '',
-    generalPrice: '',
-    rows: '',
-    seatsPerRow: '',
-    vipRows: '',
-    premiumRows: '',
   });
+
+  const [pricing, setPricing] = useState({
+    category1: '', category2: '', category3: '', category4: '', vip: '', supporters: '',
+  });
+
+  const [sections, setSections] = useState([]);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(CURRENT_YEAR);
@@ -107,6 +109,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
   const [pickerDay, setPickerDay] = useState(new Date().getDate());
   const [pickerHour, setPickerHour] = useState(18);
   const [pickerMinute, setPickerMinute] = useState(0);
+  const [polygonEditorIndex, setPolygonEditorIndex] = useState(null);
 
   const maxDays = getDaysInMonth(pickerYear, pickerMonth);
   const clampedDay = Math.min(pickerDay, maxDays);
@@ -119,6 +122,29 @@ export default function AdminEditMatchScreen({ route, navigation }) {
       const hasSeats = (match.seatStats?.booked || 0) + (match.seatStats?.locked || 0) > 0;
       setHasBookedSeats(hasSeats);
 
+      const pricingObj = match.pricing || {};
+      setPricing({
+        category1: String(pricingObj.category1 ?? ''),
+        category2: String(pricingObj.category2 ?? ''),
+        category3: String(pricingObj.category3 ?? ''),
+        category4: String(pricingObj.category4 ?? ''),
+        vip: String(pricingObj.vip ?? ''),
+        supporters: String(pricingObj.supporters ?? ''),
+      });
+
+      setSections(
+        (match.stadiumSections || []).map((s) => ({
+          sectionId: s.sectionId || '',
+          category: s.category || 'category1',
+          label: s.label || '',
+          color: s.color || '#888888',
+          pricePerTicket: String(s.pricePerTicket ?? ''),
+          totalSeats: String(s.totalSeats ?? ''),
+          rows: Array.isArray(s.rows) ? s.rows.join(',') : '',
+          polygon: s.polygon || '',
+        }))
+      );
+
       setForm({
         title: match.title || '',
         teamA: match.teamA || '',
@@ -129,13 +155,6 @@ export default function AdminEditMatchScreen({ route, navigation }) {
         imageUrl: match.imageUrl || '',
         teamALogo: match.teamALogo || '',
         teamBLogo: match.teamBLogo || '',
-        vipPrice: String(match.pricing?.vip ?? ''),
-        premiumPrice: String(match.pricing?.premium ?? ''),
-        generalPrice: String(match.pricing?.general ?? ''),
-        rows: String(match.seatLayout?.rows ?? ''),
-        seatsPerRow: String(match.seatLayout?.seatsPerRow ?? ''),
-        vipRows: String(match.seatLayout?.vipRows ?? ''),
-        premiumRows: String(match.seatLayout?.premiumRows ?? ''),
       });
 
       const comps = parseDateToComponents(match.matchDate);
@@ -174,6 +193,11 @@ export default function AdminEditMatchScreen({ route, navigation }) {
 
     setIsSubmitting(true);
     try {
+      const pricingObj = {};
+      for (const [key, val] of Object.entries(pricing)) {
+        pricingObj[key] = Number(val) || 0;
+      }
+
       const payload = {
         title: form.title.trim(),
         teamA: form.teamA.trim(),
@@ -184,20 +208,30 @@ export default function AdminEditMatchScreen({ route, navigation }) {
         imageUrl: form.imageUrl.trim(),
         teamALogo: form.teamALogo.trim(),
         teamBLogo: form.teamBLogo.trim(),
-        pricing: {
-          vip: Number(form.vipPrice),
-          premium: Number(form.premiumPrice),
-          general: Number(form.generalPrice),
-        },
+        pricing: pricingObj,
       };
 
       if (!hasBookedSeats) {
-        payload.seatLayout = {
-          rows: Number(form.rows),
-          seatsPerRow: Number(form.seatsPerRow),
-          vipRows: Number(form.vipRows),
-          premiumRows: Number(form.premiumRows),
-        };
+        const stadiumSections = sections
+          .filter((s) => s.sectionId.trim())
+          .map((s) => ({
+            sectionId: s.sectionId.trim(),
+            category: s.category,
+            label: s.label.trim() || s.sectionId.trim(),
+            color: s.color || CATEGORY_COLORS[s.category]?.accent || '#888888',
+            pricePerTicket: Number(s.pricePerTicket) || 0,
+            totalSeats: Number(s.totalSeats) || 0,
+            availableSeats: Number(s.totalSeats) || 0,
+            rows: s.rows
+              .split(',')
+              .map((r) => r.trim())
+              .filter(Boolean),
+            polygon: s.polygon || '',
+          }));
+
+        if (stadiumSections.length > 0) {
+          payload.stadiumSections = stadiumSections;
+        }
       }
 
       const result = await updateMatch(matchId, payload);
@@ -397,107 +431,208 @@ export default function AdminEditMatchScreen({ route, navigation }) {
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionDot, { backgroundColor: glass.statusSuccessText }]} />
-              <Text style={styles.sectionTitle}>Pricing (Rs.)</Text>
+              <Text style={styles.sectionTitle}>Category Pricing</Text>
             </View>
 
-            <View style={styles.row}>
-              <View style={styles.halfField}>
-                <Text style={styles.inputLabel}>VIP</Text>
+            {CATEGORY_OPTIONS.map((cat) => (
+              <View key={cat} style={styles.priceRow}>
+                <View style={[styles.priceDot, { backgroundColor: CATEGORY_COLORS[cat].accent }]} />
+                <Text style={styles.priceLabel}>{CATEGORY_COLORS[cat].label}</Text>
                 <TextInput
-                  style={styles.inputField}
+                  style={styles.priceInput}
                   keyboardType="numeric"
-                  value={form.vipPrice}
-                  onChangeText={(v) => updateField('vipPrice', v)}
+                  value={pricing[cat]}
+                  onChangeText={(v) => setPricing((prev) => ({ ...prev, [cat]: v }))}
+                  editable={!hasBookedSeats}
                 />
               </View>
-              <View style={styles.halfField}>
-                <Text style={styles.inputLabel}>Premium</Text>
-                <TextInput
-                  style={styles.inputField}
-                  keyboardType="numeric"
-                  value={form.premiumPrice}
-                  onChangeText={(v) => updateField('premiumPrice', v)}
-                />
-              </View>
-            </View>
-
-            <Text style={styles.inputLabel}>General</Text>
-            <TextInput
-              style={styles.inputField}
-              keyboardType="numeric"
-              value={form.generalPrice}
-              onChangeText={(v) => updateField('generalPrice', v)}
-            />
+            ))}
           </View>
 
-          {/* ═══ SEAT LAYOUT ═══ */}
+          {/* ═══ STADIUM SECTIONS ═══ */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionDot, { backgroundColor: glass.statusWarningText }]} />
-              <Text style={styles.sectionTitle}>Seat Layout</Text>
+              <Text style={styles.sectionTitle}>Stadium Sections</Text>
             </View>
 
             {hasBookedSeats ? (
               <View style={styles.lockedCard}>
                 <Text style={styles.lockedIcon}>🔒</Text>
                 <Text style={styles.lockedText}>
-                  Seat layout is locked because some seats are booked or locked. Complete or cancel those bookings before modifying the layout.
+                  Sections are locked because some seats are booked or locked. Complete or cancel those bookings first.
                 </Text>
               </View>
             ) : null}
 
-            <View style={styles.row}>
-              <View style={styles.halfField}>
-                <Text style={styles.inputLabel}>Total Rows</Text>
-                <TextInput
-                  style={[styles.inputField, hasBookedSeats && styles.inputDisabled]}
-                  keyboardType="numeric"
-                  value={form.rows}
-                  onChangeText={(v) => updateField('rows', v)}
-                  editable={!hasBookedSeats}
-                />
-              </View>
-              <View style={styles.halfField}>
-                <Text style={styles.inputLabel}>Seats / Row</Text>
-                <TextInput
-                  style={[styles.inputField, hasBookedSeats && styles.inputDisabled]}
-                  keyboardType="numeric"
-                  value={form.seatsPerRow}
-                  onChangeText={(v) => updateField('seatsPerRow', v)}
-                  editable={!hasBookedSeats}
-                />
-              </View>
-            </View>
+            {sections.map((section, index) => (
+              <View key={index} style={styles.sectionItem}>
+                <View style={styles.sectionItemHeader}>
+                  <Text style={styles.sectionItemTitle}>Section {index + 1}</Text>
+                  <TouchableOpacity
+                    onPress={() => setSections((prev) => prev.filter((_, i) => i !== index))}
+                    style={styles.removeBtn}
+                  >
+                    <Text style={styles.removeBtnText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
 
-            <View style={styles.row}>
-              <View style={styles.halfField}>
-                <Text style={styles.inputLabel}>VIP Rows</Text>
-                <TextInput
-                  style={[styles.inputField, hasBookedSeats && styles.inputDisabled]}
-                  keyboardType="numeric"
-                  value={form.vipRows}
-                  onChangeText={(v) => updateField('vipRows', v)}
-                  editable={!hasBookedSeats}
-                />
-              </View>
-              <View style={styles.halfField}>
-                <Text style={styles.inputLabel}>Premium Rows</Text>
-                <TextInput
-                  style={[styles.inputField, hasBookedSeats && styles.inputDisabled]}
-                  keyboardType="numeric"
-                  value={form.premiumRows}
-                  onChangeText={(v) => updateField('premiumRows', v)}
-                  editable={!hasBookedSeats}
-                />
-              </View>
-            </View>
+                <View style={styles.row}>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Section ID</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      placeholder="318"
+                      placeholderTextColor={glass.textMuted}
+                      value={section.sectionId}
+                      onChangeText={(v) => {
+                        setSections((prev) => {
+                          const next = [...prev];
+                          next[index] = { ...next[index], sectionId: v };
+                          return next;
+                        });
+                      }}
+                    />
+                  </View>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Category</Text>
+                    <View style={styles.categoryPicker}>
+                      {CATEGORY_OPTIONS.map((cat) => (
+                        <TouchableOpacity
+                          key={cat}
+                          style={[
+                            styles.categoryChip,
+                            section.category === cat && {
+                              borderColor: CATEGORY_COLORS[cat].accent,
+                              backgroundColor: CATEGORY_COLORS[cat].bg,
+                            },
+                          ]}
+                          onPress={() => {
+                            setSections((prev) => {
+                              const next = [...prev];
+                              next[index] = { ...next[index], category: cat, color: CATEGORY_COLORS[cat].accent };
+                              return next;
+                            });
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <View style={[styles.categoryDot, { backgroundColor: CATEGORY_COLORS[cat].accent }]} />
+                          <Text
+                            style={[
+                              styles.categoryChipText,
+                              section.category === cat && { color: CATEGORY_COLORS[cat].accent },
+                            ]}
+                          >
+                            {CATEGORY_COLORS[cat].label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                </View>
 
-            <View style={styles.hintCard}>
-              <Text style={styles.hint}>
-                Total seats: {Number(form.rows || 0) * Number(form.seatsPerRow || 0)} · General
-                rows are auto-calculated from remaining rows.
-              </Text>
-            </View>
+                <View style={styles.row}>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Price / Ticket</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      keyboardType="numeric"
+                      value={section.pricePerTicket}
+                      onChangeText={(v) => {
+                        setSections((prev) => {
+                          const next = [...prev];
+                          next[index] = { ...next[index], pricePerTicket: v };
+                          return next;
+                        });
+                      }}
+                    />
+                  </View>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Total Seats</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      keyboardType="numeric"
+                      value={section.totalSeats}
+                      onChangeText={(v) => {
+                        setSections((prev) => {
+                          const next = [...prev];
+                          next[index] = { ...next[index], totalSeats: v };
+                          return next;
+                        });
+                      }}
+                    />
+                  </View>
+                </View>
+
+                <Text style={styles.inputLabel}>Row Labels (comma separated)</Text>
+                <TextInput
+                  style={styles.inputField}
+                  placeholder="A,B,C,D"
+                  placeholderTextColor={glass.textMuted}
+                  value={section.rows}
+                  onChangeText={(v) => {
+                    setSections((prev) => {
+                      const next = [...prev];
+                      next[index] = { ...next[index], rows: v };
+                      return next;
+                    });
+                  }}
+                />
+
+                <Text style={styles.inputLabel}>Stadium Map Shape</Text>
+                {section.polygon ? (
+                  <View style={styles.polygonBtns}>
+                    <TouchableOpacity
+                      style={styles.polygonEditBtn}
+                      onPress={() => setPolygonEditorIndex(index)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.polygonEditText}>Edit Shape</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.polygonClearBtn}
+                      onPress={() => {
+                        setSections((prev) => {
+                          const next = [...prev];
+                          next[index] = { ...next[index], polygon: '' };
+                          return next;
+                        });
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.polygonClearText}>Clear</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.polygonDrawBtn}
+                    onPress={() => setPolygonEditorIndex(index)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.polygonDrawText}>Draw on Stadium Map</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+
+            {!hasBookedSeats && (
+              <TouchableOpacity
+                style={styles.addSectionBtn}
+                onPress={() => setSections((prev) => [...prev, { sectionId: '', category: 'category1', label: '', color: '#FFD700', pricePerTicket: '800', totalSeats: '20', rows: 'A,B,C', polygon: '' }])}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.addSectionBtnText}>+ Add Section</Text>
+              </TouchableOpacity>
+            )}
+
+            {sections.length > 0 && (
+              <View style={styles.hintCard}>
+                <Text style={styles.hint}>
+                  {sections.length} section{sections.length > 1 ? 's' : ''} ·{' '}
+                  {sections.reduce((sum, s) => sum + (Number(s.totalSeats) || 0), 0)} total seats
+                </Text>
+              </View>
+            )}
           </View>
 
           <TouchableOpacity
@@ -663,6 +798,39 @@ export default function AdminEditMatchScreen({ route, navigation }) {
           </View>
         </View>
       </Modal>
+
+      {/* POLYGON EDITOR MODAL */}
+      <Modal visible={polygonEditorIndex !== null} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalBackdrop} onPress={() => setPolygonEditorIndex(null)} activeOpacity={1} />
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetActions}>
+              <Text style={styles.sheetTitle}>Draw Section Polygon</Text>
+              <TouchableOpacity onPress={() => setPolygonEditorIndex(null)} activeOpacity={0.7}>
+                <Text style={styles.sheetCancelText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+            {polygonEditorIndex !== null && sections[polygonEditorIndex] && (
+              <PolygonEditor
+                existingSections={sections.filter((_, i) => i !== polygonEditorIndex)}
+                initialPolygon={sections[polygonEditorIndex].polygon || ''}
+                sectionColor={sections[polygonEditorIndex].color || '#FFD700'}
+                sectionLabel={`Section ${polygonEditorIndex + 1} — ${sections[polygonEditorIndex].sectionId || 'New'}`}
+                onPolygonChange={(path) => {
+                  setTimeout(() => {
+                    setSections((prev) => {
+                      const next = [...prev];
+                      next[polygonEditorIndex] = { ...next[polygonEditorIndex], polygon: path };
+                      return next;
+                    });
+                  }, 0);
+                }}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -752,6 +920,48 @@ const styles = StyleSheet.create({
   inputDisabled: {
     opacity: 0.4,
   },
+
+  priceRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm,
+  },
+  priceDot: { width: 12, height: 12, borderRadius: 6 },
+  priceLabel: { color: colors.textSecondary, fontSize: typography.body.fontSize, fontWeight: '600', flex: 1 },
+  priceInput: {
+    backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: radii.md,
+    borderWidth: 1, borderColor: glass.border, padding: spacing.sm,
+    color: colors.textPrimary, fontSize: typography.body.fontSize,
+    width: 80, textAlign: 'right', fontFamily: glass.monoFont,
+  },
+
+  sectionItem: {
+    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: radii.lg,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.lg, marginBottom: spacing.md,
+  },
+  sectionItemHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md,
+  },
+  sectionItemTitle: { color: colors.textPrimary, fontWeight: '700', fontSize: typography.bodyMedium.fontSize },
+  removeBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(255,59,48,0.15)', alignItems: 'center', justifyContent: 'center' },
+  removeBtnText: { color: colors.danger, fontSize: 12, fontWeight: '800' },
+
+  categoryPicker: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.md },
+  categoryChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
+    borderRadius: radii.sm, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  categoryDot: { width: 6, height: 6, borderRadius: 3 },
+  categoryChipText: { color: glass.textMuted, fontSize: 9, fontWeight: '700' },
+
+  addSectionBtn: {
+    paddingVertical: spacing.md, borderRadius: radii.md,
+    borderWidth: 1.5, borderColor: glass.brandPurple, borderStyle: 'dashed',
+    alignItems: 'center', marginBottom: spacing.md,
+  },
+  addSectionBtnText: { color: glass.brandPurple, fontWeight: '700', fontSize: typography.captionMedium.fontSize },
+
   row: {
     flexDirection: 'row',
     gap: spacing.md,
@@ -990,4 +1200,37 @@ const styles = StyleSheet.create({
     fontSize: typography.bodyMedium.fontSize,
     fontWeight: '800',
   },
+
+  polygonBtns: { flexDirection: 'row', gap: spacing.sm },
+  polygonEditBtn: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.sm,
+    alignItems: 'center',
+    backgroundColor: 'rgba(108,92,231,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(108,92,231,0.4)',
+  },
+  polygonEditText: { color: glass.brandPurple, fontSize: 10, fontWeight: '700' },
+  polygonClearBtn: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.sm,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,59,48,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,59,48,0.3)',
+  },
+  polygonClearText: { color: '#FF3B30', fontSize: 10, fontWeight: '700' },
+  polygonDrawBtn: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: glass.border,
+    borderStyle: 'dashed',
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  polygonDrawText: { color: glass.brandPurple, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
 });

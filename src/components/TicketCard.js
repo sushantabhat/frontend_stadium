@@ -8,6 +8,11 @@ const CARD_WIDTH = SCREEN_WIDTH - spacing.xl * 2;
 
 const CATEGORY_THEMES = {
   VIP: { gradient: ['#FFD700', '#E6C200'], accent: '#FFD700', label: 'VIP' },
+  CATEGORY1: { gradient: ['#FFD700', '#E6C200'], accent: '#FFD700', label: 'CATEGORY 1' },
+  CATEGORY2: { gradient: ['#FF6B6B', '#E53935'], accent: '#FF6B6B', label: 'CATEGORY 2' },
+  CATEGORY3: { gradient: ['#6C5CE7', '#4834D4'], accent: '#A29BFE', label: 'CATEGORY 3' },
+  CATEGORY4: { gradient: ['#EF5350', '#C62828'], accent: '#EF5350', label: 'CATEGORY 4' },
+  SUPPORTERS: { gradient: ['#2E7D32', '#1B5E20'], accent: '#81C784', label: 'SUPPORTERS' },
   PREMIUM: { gradient: ['#6C5CE7', '#4834D4'], accent: '#A29BFE', label: 'PREMIUM' },
   GENERAL: { gradient: ['#374151', '#1F2937'], accent: '#9CA3AF', label: 'GENERAL' },
 };

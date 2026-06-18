@@ -175,7 +175,7 @@ export default function BookingScreen({ route, navigation }) {
           {selectedSeats.map((seat, idx) => {
             const basePrice = match?.pricing?.[seat.category] || 0;
             const price = basePrice * multiplier;
-            const categoryColors = { vip: '#FFD700', premium: colors.primaryLight, general: colors.info };
+            const categoryColors = { vip: '#FFD700', category1: '#FFD700', category2: '#FF6B6B', category3: '#A29BFE', category4: '#EF5350', supporters: '#81C784', premium: colors.primaryLight, general: colors.info };
             const catColor = categoryColors[seat.category] || colors.info;
             return (
               <View key={seat.id || seat._id} style={[styles.seatRow, idx < selectedSeats.length - 1 && styles.seatRowBorder]}>

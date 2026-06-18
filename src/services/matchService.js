@@ -12,9 +12,13 @@ export async function fetchMatchById(matchId) {
   return response.data.match;
 }
 
-export async function fetchMatchSeats(matchId, category) {
+export async function fetchMatchSeats(matchId, { category, sectionId } = {}) {
+  const params = {};
+  if (category) params.category = category;
+  if (sectionId) params.sectionId = sectionId;
+
   const response = await api.get(`/api/matches/${matchId}/seats`, {
-    params: category ? { category } : undefined,
+    params: Object.keys(params).length > 0 ? params : undefined,
   });
   return response.data.seats;
 }

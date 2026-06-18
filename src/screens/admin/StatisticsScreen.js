@@ -148,22 +148,30 @@ export default function StatisticsScreen({ navigation }) {
 
         <AdminCard style={styles.breakdownCard}>
           <Text style={styles.breakdownTitle}>Category Sales</Text>
-          {['vip', 'premium', 'general'].map((cat, idx) => {
-            const data = sales[cat] || { count: 0, revenue: 0 };
-            const colors_map = [glass.brandPurple, '#F59E0B', '#4F8EF7'];
-            return (
-              <View key={cat} style={[styles.breakdownRow, idx < 2 && styles.breakdownBorder]}>
-                <View style={styles.breakdownLeft}>
-                  <View style={[styles.catDot, { backgroundColor: colors_map[idx] }]} />
-                  <View>
-                    <Text style={styles.catName}>{cat.toUpperCase()}</Text>
-                    <Text style={styles.catCount}>{data.count} sold</Text>
+          {(() => {
+            const CATEGORY_COLORS_MAP = {
+              vip: '#FFD700', category1: '#FFD700', category2: '#FF6B6B', category3: '#A29BFE',
+              category4: '#EF5350', supporters: '#81C784', premium: glass.brandPurple, general: '#4F8EF7',
+            };
+            return Object.entries(sales || {})
+              .filter(([, data]) => data && (data.count > 0 || data.revenue > 0))
+              .slice(0, 6)
+              .map(([cat, data], idx) => {
+                const catColor = CATEGORY_COLORS_MAP[cat] || '#888';
+                return (
+                  <View key={cat} style={[styles.breakdownRow, idx < Object.keys(sales).length - 1 && styles.breakdownBorder]}>
+                    <View style={styles.breakdownLeft}>
+                      <View style={[styles.catDot, { backgroundColor: catColor }]} />
+                      <View>
+                        <Text style={styles.catName}>{cat.toUpperCase()}</Text>
+                        <Text style={styles.catCount}>{data.count} sold</Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.catRevenue, { color: catColor }]}>Rs.{(data.revenue || 0).toLocaleString()}</Text>
                   </View>
-                </View>
-                <Text style={[styles.catRevenue, { color: colors_map[idx] }]}>Rs.{data.revenue.toLocaleString()}</Text>
-              </View>
-            );
-          })}
+                );
+              });
+          })()}
         </AdminCard>
 
         {analytics?.matchPerformance?.length > 0 && (

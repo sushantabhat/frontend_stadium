@@ -49,6 +49,17 @@ const palette = {
   general: '#78909C',
   generalSurface: 'rgba(120, 144, 156, 0.12)',
 
+  category1: '#FFD700',
+  category1Surface: 'rgba(255, 215, 0, 0.12)',
+  category2: '#FF6B6B',
+  category2Surface: 'rgba(255, 107, 107, 0.12)',
+  category3: '#A29BFE',
+  category3Surface: 'rgba(162, 155, 254, 0.12)',
+  category4: '#EF5350',
+  category4Surface: 'rgba(239, 83, 80, 0.12)',
+  supporters: '#81C784',
+  supportersSurface: 'rgba(129, 199, 132, 0.12)',
+
   gradientStart: '#6C5CE7',
   gradientEnd: '#4834D4',
   gradientAccent: '#FFD700',
@@ -289,6 +300,15 @@ export const shadows = {
     shadowRadius: 24,
     elevation: 8,
   },
+};
+
+export const CATEGORY_COLORS = {
+  category1: { accent: palette.category1, bg: palette.category1Surface, label: 'Category 1' },
+  category2: { accent: palette.category2, bg: palette.category2Surface, label: 'Category 2' },
+  category3: { accent: palette.category3, bg: palette.category3Surface, label: 'Category 3' },
+  category4: { accent: palette.category4, bg: palette.category4Surface, label: 'Category 4' },
+  vip: { accent: palette.vip, bg: palette.vipSurface, label: 'VIP' },
+  supporters: { accent: palette.supporters, bg: palette.supportersSurface, label: 'Supporters' },
 };
 
 export const commonStyles = StyleSheet.create({
