@@ -56,8 +56,8 @@ export default function MyTicketsScreen({ navigation }) {
       <TouchableOpacity
         style={[styles.ticketWrapper, !isActive && styles.ticketDimmed]}
         onPress={() => {
-          if (item.match?._id || item.match?.id) {
-            navigation.navigate('MatchDetail', { matchId: item.match._id || item.match.id });
+          if (isActive) {
+            navigation.navigate('TicketDetail', { ticket: item });
           }
         }}
         activeOpacity={isActive ? 0.88 : 1}
@@ -108,9 +108,10 @@ export default function MyTicketsScreen({ navigation }) {
           <View style={styles.detailsGrid}>
             {[
               { label: 'SEAT', value: item.seat?.seatLabel || 'N/A' },
+              item.seat?.gate ? { label: 'GATE', value: item.seat.gate } : null,
               { label: 'PRICE', value: `Rs.${item.seat?.price || '—'}` },
               { label: 'VENUE', value: item.match?.venue || '\u2014', flex: true },
-            ].map((d) => (
+            ].filter(Boolean).map((d) => (
               <View key={d.label} style={[styles.detailCell, d.flex && { flex: 1.5 }]}>
                 <Text style={styles.detailLabel}>{d.label}</Text>
                 <Text style={styles.detailValue} numberOfLines={1}>{d.value}</Text>

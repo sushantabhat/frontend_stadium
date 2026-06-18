@@ -191,6 +191,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
           id: s.id || s._id,
           seatLabel: s.seatLabel,
           category: s.category,
+          gate: s.gate || '',
           sectionId: selectedSection.sectionId,
           price: selectedSection.pricePerTicket || match?.pricing?.[s.category] || 0,
         }));

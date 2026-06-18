@@ -9,6 +9,7 @@ import MatchDetailScreen from '../screens/matches/MatchDetailScreen';
 import SeatSelectionScreen from '../screens/matches/SeatSelectionScreen';
 import BookingScreen from '../screens/matches/BookingScreen';
 import MyTicketsScreen from '../screens/home/MyTicketsScreen';
+import TicketDetailScreen from '../screens/home/TicketDetailScreen';
 import WishlistScreen from '../screens/home/WishlistScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import SettingsScreen from '../screens/common/SettingsScreen';
@@ -59,6 +60,7 @@ function TicketsNavigator() {
   return (
     <TicketsStack.Navigator screenOptions={screenOptions}>
       <TicketsStack.Screen name="MyTickets" component={MyTicketsScreen} />
+      <TicketsStack.Screen name="TicketDetail" component={TicketDetailScreen} />
       <TicketsStack.Screen name="MatchDetail" component={MatchDetailScreen} />
       <TicketsStack.Screen name="SeatSelection" component={SeatSelectionScreen} />
       <TicketsStack.Screen name="Booking" component={BookingScreen} />

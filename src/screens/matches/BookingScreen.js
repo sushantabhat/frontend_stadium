@@ -126,6 +126,15 @@ export default function BookingScreen({ route, navigation }) {
                           <Text style={styles.detailValue}>{selectedSeats[i]?.seatLabel || 'N/A'}</Text>
                         </View>
                       </View>
+                      {selectedSeats[i]?.gate ? (
+                        <View style={styles.ticketDetailRow}>
+                          <View style={styles.ticketDetailCol}>
+                            <Text style={styles.detailLabel}>GATE</Text>
+                            <Text style={styles.detailValue}>{selectedSeats[i].gate}</Text>
+                          </View>
+                          <View style={styles.ticketDetailCol} />
+                        </View>
+                      ) : null}
                     </View>
                   ))}
                   <View style={{ marginTop: spacing.md, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.15)', paddingTop: spacing.md }}>
