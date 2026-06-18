@@ -6,6 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import AdminMatchListScreen from '../screens/admin/AdminMatchListScreen';
 import CreateMatchScreen from '../screens/admin/CreateMatchScreen';
+import AdminEditMatchScreen from '../screens/admin/AdminEditMatchScreen';
 import MatchDetailScreen from '../screens/matches/MatchDetailScreen';
 import StatisticsScreen from '../screens/admin/StatisticsScreen';
 import TicketValidationScreen from '../screens/admin/TicketValidationScreen';
@@ -66,6 +67,7 @@ function MatchesNavigator() {
     <MatchesStack.Navigator screenOptions={screenOptions}>
       <MatchesStack.Screen name="AdminMatchList" component={AdminMatchListScreen} />
       <MatchesStack.Screen name="AdminCreateMatch" component={CreateMatchScreen} />
+      <MatchesStack.Screen name="AdminEditMatch" component={AdminEditMatchScreen} />
       <MatchesStack.Screen name="AdminMatchDetail" component={MatchDetailScreen} />
     </MatchesStack.Navigator>
   );

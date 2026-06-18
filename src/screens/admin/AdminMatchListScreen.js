@@ -415,7 +415,7 @@ export default function AdminMatchListScreen({ navigation }) {
             <View style={s.sheetFooter}>
               <TouchableOpacity
                 style={s.footerBtnSecondary}
-                onPress={() => { closeDetail(); navigation.navigate('AdminMatchDetail', { matchId: m._id }); }}
+                onPress={() => { closeDetail(); navigation.navigate('AdminEditMatch', { matchId: m._id }); }}
                 activeOpacity={0.8}
               >
                 <Text style={s.footerBtnSecondaryText}>Modify Fixture</Text>
