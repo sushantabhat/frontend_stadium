@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import QRCode from 'react-native-qrcode-svg';
 import BookingProgress from '../../components/BookingProgress';
 import GradientButton from '../../components/GradientButton';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
@@ -78,9 +79,6 @@ export default function BookingScreen({ route, navigation }) {
   // Success State
   if (isBooked) {
     const firstTicket = bookedTickets[0] || {};
-    const qrUrl = firstTicket.ticketCode
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(firstTicket.ticketCode)}&color=FFFFFF&bgcolor=6C5CE7`
-      : null;
 
     return (
       <View style={styles.container}>
@@ -95,10 +93,15 @@ export default function BookingScreen({ route, navigation }) {
               <Text style={styles.successTitle}>Booking Confirmed!</Text>
               <Text style={styles.successSubtitle}>Your tickets are ready</Text>
 
-              {qrUrl && (
+              {firstTicket.ticketCode ? (
                 <View style={styles.qrSection}>
                   <View style={styles.qrBox}>
-                    <Image source={{ uri: qrUrl }} style={styles.qrImage} />
+                    <QRCode
+                      value={firstTicket.ticketCode}
+                      size={140}
+                      backgroundColor="transparent"
+                      color="#FFFFFF"
+                    />
                     <View style={[styles.qrCorner, styles.qrCornerTL]} />
                     <View style={[styles.qrCorner, styles.qrCornerTR]} />
                     <View style={[styles.qrCorner, styles.qrCornerBL]} />
@@ -106,7 +109,7 @@ export default function BookingScreen({ route, navigation }) {
                   </View>
                   <Text style={styles.qrHint}>📱 Show this QR at the entry gate</Text>
                 </View>
-              )}
+              ) : null}
 
               <View style={styles.dividerDashed} />
 
@@ -330,7 +333,6 @@ const styles = StyleSheet.create({
   successSubtitle: { color: 'rgba(255,255,255,0.6)', fontSize: typography.caption.fontSize, marginBottom: spacing.xl },
   qrSection: { alignItems: 'center', marginBottom: spacing.xl },
   qrBox: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.sm, position: 'relative' },
-  qrImage: { width: 140, height: 140, borderRadius: radii.md },
   qrCorner: { position: 'absolute', width: 12, height: 12, borderColor: 'rgba(255,255,255,0.3)' },
   qrCornerTL: { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 4 },
   qrCornerTR: { top: -1, right: -1, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 4 },
