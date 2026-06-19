@@ -1,10 +1,36 @@
-export function formatMatchDate(dateString) {
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) {
-    return 'Date TBD';
-  }
+export const NEPAL_TIMEZONE = 'Asia/Kathmandu';
+export const LOCALE = 'en-US';
 
-  return date.toLocaleString(undefined, {
+function toDate(input) {
+  if (!input) return null;
+  const d = input instanceof Date ? input : new Date(input);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export function formatInNepal(input, options = {}) {
+  const d = toDate(input);
+  if (!d) return '—';
+  try {
+    return d.toLocaleDateString(LOCALE, { timeZone: NEPAL_TIMEZONE, ...options });
+  } catch {
+    return '—';
+  }
+}
+
+export function formatTimeInNepal(input, options = {}) {
+  const d = toDate(input);
+  if (!d) return '—';
+  try {
+    return d.toLocaleTimeString(LOCALE, { timeZone: NEPAL_TIMEZONE, ...options });
+  } catch {
+    return '—';
+  }
+}
+
+export function formatMatchDate(dateString) {
+  const d = toDate(dateString);
+  if (!d) return 'Date TBD';
+  return formatInNepal(d, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',

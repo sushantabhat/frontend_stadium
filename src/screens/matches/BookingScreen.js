@@ -14,6 +14,7 @@ import QRCode from 'react-native-qrcode-svg';
 import BookingProgress from '../../components/BookingProgress';
 import GradientButton from '../../components/GradientButton';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
+import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 import { fetchMatchById } from '../../services/matchService';
 import { confirmBooking, unlockSeats } from '../../services/bookingService';
 import { fetchDynamicPricingSuggestions } from '../../services/aiService';
@@ -187,7 +188,7 @@ export default function BookingScreen({ route, navigation }) {
             </View>
             {match?.matchDate && (
               <Text style={styles.metaText}>
-                📅 {new Date(match.matchDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {new Date(match.matchDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                📅 {formatInNepal(match.matchDate, { weekday: 'long', month: 'long', day: 'numeric' })} at {formatTimeInNepal(match.matchDate, { hour: '2-digit', minute: '2-digit', hour12: true })}
               </Text>
             )}
           </LinearGradient>

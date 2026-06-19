@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useKeepAwake } from 'expo-keep-awake';
 import QRCode from 'react-native-qrcode-svg';
 import ScreenHeader from '../../components/ScreenHeader';
+import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 
 const CATEGORY_THEMES = {
@@ -59,10 +60,10 @@ export default function TicketDetailScreen({ route, navigation }) {
           {matchDate && (
             <View style={styles.dateRow}>
               <Text style={styles.dateText}>
-                {matchDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                {formatInNepal(matchDate, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
               </Text>
               <Text style={styles.dateText}>
-                {matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                {formatTimeInNepal(matchDate, { hour: '2-digit', minute: '2-digit', hour12: true })}
               </Text>
             </View>
           )}

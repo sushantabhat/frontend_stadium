@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
+import { formatTimeInNepal } from '../../utils/date';
 
 /* ─── Mock locked seats data ───
  * In production: GET /api/admin/locked-seats */
@@ -92,7 +93,7 @@ export default function OverridePanelScreen({ navigation }) {
                       </View>
                     </View>
                     <Text style={styles.seatMatch}>{seat.match}</Text>
-                    <Text style={styles.seatMeta}>Locked by: {seat.lockedBy} · {new Date(seat.lockedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                    <Text style={styles.seatMeta}>Locked by: {seat.lockedBy} · {formatTimeInNepal(seat.lockedAt, { hour: '2-digit', minute: '2-digit' })}</Text>
                     <View style={[styles.statusBadge, { backgroundColor: seat.status === 'orphaned' ? glass.statusDangerFill : glass.statusWarningFill }]}>
                       <Text style={[styles.statusText, { color: seat.status === 'orphaned' ? glass.statusDangerText : glass.statusWarningText }]}>
                         {seat.status === 'orphaned' ? 'ORPHANED' : 'ACTIVE LOCK'}

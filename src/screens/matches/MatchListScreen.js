@@ -15,6 +15,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../constants/theme';
+import { formatInNepal } from '../../utils/date';
 import { fetchMatches } from '../../services/matchService';
 import MatchCard from '../../components/MatchCard';
 
@@ -199,7 +200,7 @@ export default function MatchListScreen({ navigation }) {
             <View style={s.heroBottom}>
               {match.matchDate && (
                 <Text style={s.heroDate}>
-                  {new Date(match.matchDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  {formatInNepal(match.matchDate, { weekday: 'short', month: 'short', day: 'numeric' })}
                 </Text>
               )}
               {total > 0 && (

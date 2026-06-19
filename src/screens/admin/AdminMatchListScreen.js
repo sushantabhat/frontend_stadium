@@ -68,8 +68,8 @@ function formatDateTime(dateStr) {
   if (!dateStr) return { date: 'TBD', time: '--:--', full: '' };
   const d = new Date(dateStr);
   return {
-    date: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
-    time: d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+    date: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kathmandu' }),
+    time: d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kathmandu' }),
     iso: d.toISOString(),
   };
 }

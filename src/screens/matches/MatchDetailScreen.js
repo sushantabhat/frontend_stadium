@@ -17,6 +17,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { ROLES } from '../../constants/config';
 import { cancelMatch, fetchMatchById } from '../../services/matchService';
 import { colors, spacing, radii, typography } from '../../constants/theme';
+import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 
@@ -84,9 +85,8 @@ export default function MatchDetailScreen({ route, navigation }) {
 
   const stats = match.seatStats || {};
   const status = getStatusConfig(match.status);
-  const date = match.matchDate ? new Date(match.matchDate) : new Date();
-  const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const dateStr = formatInNepal(match.matchDate, { weekday: 'short', month: 'short', day: 'numeric' });
+  const timeStr = formatTimeInNepal(match.matchDate, { hour: '2-digit', minute: '2-digit', hour12: true });
   const occupancyPct = stats.total > 0 ? Math.round(((stats.total - (stats.available || 0)) / stats.total) * 100) : 0;
   const hasImage = Boolean(match.imageUrl);
 

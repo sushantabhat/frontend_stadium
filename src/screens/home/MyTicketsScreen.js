@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchMyTickets } from '../../services/ticketService';
+import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 
 const CATEGORY_THEMES = {
   vip: { gradient: ['#FFD700', '#E6A800'], label: 'VIP' },
@@ -93,10 +94,10 @@ export default function MyTicketsScreen({ navigation }) {
           {matchDate && (
             <View style={styles.dateTimeRow}>
               <Text style={styles.dateTimeText}>
-                {matchDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                {formatInNepal(matchDate, { weekday: 'short', month: 'short', day: 'numeric' })}
               </Text>
               <Text style={styles.dateTimeText}>
-                {matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                {formatTimeInNepal(matchDate, { hour: '2-digit', minute: '2-digit', hour12: true })}
               </Text>
             </View>
           )}

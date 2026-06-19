@@ -77,7 +77,7 @@ function formatDisplayDate(dateStr) {
   try {
     return new Date(dateStr).toLocaleDateString('en-US', {
       weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
+      hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kathmandu',
     });
   } catch { return dateStr; }
 }

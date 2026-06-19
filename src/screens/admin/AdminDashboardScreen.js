@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import TicketProHeader, { AdminCard } from '../../components/admin/TicketProHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
+import { formatInNepal } from '../../utils/date';
 import { fetchAdminAnalytics, fetchUsers } from '../../services/adminService';
 import { fetchMatches } from '../../services/matchService';
 
@@ -209,7 +210,7 @@ export default function AdminDashboardScreen({ navigation }) {
                 const available = match.seatStats?.available ?? 0;
                 const soldOut = available === 0 && (match.seatStats?.total || 0) > 0;
                 const date = match.matchDate
-                  ? new Date(match.matchDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  ? formatInNepal(match.matchDate, { month: 'short', day: 'numeric' })
                   : 'TBD';
                 return (
                   <TouchableOpacity

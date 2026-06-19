@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography } from '../constants/theme';
+import { formatInNepal, formatTimeInNepal } from '../utils/date';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - spacing.xl * 2;
@@ -60,8 +61,8 @@ export default function TicketCard({ ticket, showQR = true }) {
   let timeStr = '';
   if (matchDate) {
     const d = new Date(matchDate);
-    dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    dateStr = formatInNepal(matchDate, { weekday: 'short', month: 'short', day: 'numeric' });
+    timeStr = formatTimeInNepal(matchDate, { hour: '2-digit', minute: '2-digit', hour12: true });
   }
 
   return (

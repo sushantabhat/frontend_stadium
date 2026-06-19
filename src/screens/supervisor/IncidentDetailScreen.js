@@ -4,6 +4,7 @@ import { Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View 
 import { LinearGradient } from 'expo-linear-gradient';
 import ScreenHeader from '../../components/ScreenHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
+import { formatInNepal } from '../../utils/date';
 
 /* ─── Mock forensic data for investigation ───
  * In production, this comes from GET /api/tickets/:code/forensics */
@@ -173,7 +174,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
               {[
                 { label: 'Ticket Code', value: forensics.ticket.code, mono: true },
                 { label: 'Purchased By', value: forensics.ticket.purchaser },
-                { label: 'Purchase Date', value: new Date(forensics.ticket.purchaseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) },
+                { label: 'Purchase Date', value: formatInNepal(forensics.ticket.purchaseDate, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) },
                 { label: 'Payment', value: `✅ Paid Rs.${forensics.ticket.amount.toLocaleString()}` },
                 { label: 'Seat', value: `${forensics.ticket.seat} (${forensics.ticket.category})` },
                 { label: 'Match', value: forensics.ticket.match },
@@ -223,7 +224,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
                 { label: 'Account Status', value: forensics.customerProfile.accountStatus.toUpperCase(), color: glass.statusSuccessText },
                 { label: 'Previous Bookings', value: String(forensics.customerProfile.previousBookings) },
                 { label: 'Fraud Flags', value: String(forensics.customerProfile.previousFraudFlags), color: glass.statusSuccessText },
-                { label: 'Member Since', value: new Date(forensics.customerProfile.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) },
+                { label: 'Member Since', value: formatInNepal(forensics.customerProfile.memberSince, { month: 'short', year: 'numeric' }) },
               ].map((item, idx, arr) => (
                 <View key={item.label} style={[styles.detailRow, idx === arr.length - 1 && { borderBottomWidth: 0 }]}>
                   <Text style={styles.label}>{item.label}</Text>

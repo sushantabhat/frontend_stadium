@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, Platform, ScrollView, StatusBar, StyleSheet, 
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenHeader from '../../components/ScreenHeader';
+import { formatTimeInNepal } from '../../utils/date';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchScanHistory, verifyTicketCode } from '../../services/ticketService';
 
@@ -279,7 +280,7 @@ export default function GateScannerScreen({ navigation }) {
                   </View>
                   <View style={styles.historyRight}>
                     <Text style={styles.historyTime}>
-                      {new Date(item.entryTime || item.createdAt).toLocaleTimeString([], {
+                      {formatTimeInNepal(item.entryTime || item.createdAt, {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}

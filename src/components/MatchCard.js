@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography, shadows } from '../constants/theme';
+import { formatInNepal, formatTimeInNepal } from '../utils/date';
 
 const TEAM_EMOJIS = { India: '🇮🇳', Australia: '🇦🇺', England: '🏴', Pakistan: '🇵🇰', SouthAfrica: '🇿🇦', NewZealand: '🇳🇿', SriLanka: '🇱🇰', Bangladesh: '🇧🇩', WestIndies: '🌴', Afghanistan: '🇦🇫' };
 
@@ -25,8 +26,8 @@ function getStatusConfig(status) {
 export default function MatchCard({ match, onPress, variant = 'horizontal', tintIndex = 0 }) {
   const date = match.matchDate ? new Date(match.matchDate) : new Date();
   const day = date.getDate();
-  const month = date.toLocaleString('default', { month: 'short' }).toUpperCase();
-  const time = date.toLocaleTimeString('default', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const month = formatInNepal(date, { month: 'short' }).toUpperCase();
+  const time = formatTimeInNepal(date, { hour: '2-digit', minute: '2-digit', hour12: true });
   const statusConfig = getStatusConfig(match.status);
   const available = match.seatStats?.available ?? match.totalSeats ?? 0;
   const total = match.seatStats?.total ?? match.totalSeats ?? 0;
@@ -172,7 +173,7 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
             <View style={styles.hBottomRight}>
               {match.matchDate && (
                 <Text style={styles.hDate}>
-                  {new Date(match.matchDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {formatInNepal(match.matchDate, { month: 'short', day: 'numeric' })}
                 </Text>
               )}
               {lowestPrice !== Infinity && lowestPrice > 0 && (
