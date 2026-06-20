@@ -20,7 +20,7 @@ import PolygonEditor from '../../components/stadium/PolygonEditor';
 import { fetchMatchById, updateMatch } from '../../services/matchService';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
-const CATEGORY_OPTIONS = ['category1', 'category2', 'category3', 'category4', 'vip', 'supporters'];
+const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
 
 const MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -99,7 +99,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
   });
 
   const [pricing, setPricing] = useState({
-    category1: '', category2: '', category3: '', category4: '', vip: '', supporters: '',
+    platinum: '', gold: '', silver: '', bronze: '', general: '', supporters: '',
   });
 
   const [sections, setSections] = useState([]);
@@ -125,18 +125,18 @@ export default function AdminEditMatchScreen({ route, navigation }) {
 
       const pricingObj = match.pricing || {};
       setPricing({
-        category1: String(pricingObj.category1 ?? ''),
-        category2: String(pricingObj.category2 ?? ''),
-        category3: String(pricingObj.category3 ?? ''),
-        category4: String(pricingObj.category4 ?? ''),
-        vip: String(pricingObj.vip ?? ''),
+        platinum: String(pricingObj.platinum ?? ''),
+        gold: String(pricingObj.gold ?? ''),
+        silver: String(pricingObj.silver ?? ''),
+        bronze: String(pricingObj.bronze ?? ''),
+        general: String(pricingObj.general ?? ''),
         supporters: String(pricingObj.supporters ?? ''),
       });
 
       setSections(
         (match.stadiumSections || []).map((s) => ({
           sectionId: s.sectionId || '',
-          category: s.category || 'category1',
+          category: s.category || 'platinum',
           label: s.label || '',
           color: s.color || '#888888',
           pricePerTicket: String(s.pricePerTicket ?? ''),
@@ -219,7 +219,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
             sectionId: s.sectionId.trim(),
             category: s.category,
             label: s.label.trim() || s.sectionId.trim(),
-            color: s.color || CATEGORY_COLORS[s.category]?.accent || '#888888',
+            color: s.color || CATEGORY_COLORS[s.category]?.accent || '#E8E8E8',
             pricePerTicket: Number(s.pricePerTicket) || 0,
             totalSeats: Number(s.totalSeats) || 0,
             availableSeats: Number(s.totalSeats) || 0,
@@ -619,7 +619,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
             {!hasBookedSeats && (
               <TouchableOpacity
                 style={styles.addSectionBtn}
-                onPress={() => setSections((prev) => [...prev, { sectionId: '', category: 'category1', label: '', color: '#FFD700', pricePerTicket: '800', totalSeats: '20', rows: 'A,B,C', polygon: '' }])}
+                onPress={() => setSections((prev) => [...prev, { sectionId: '', category: 'platinum', label: '', color: '#E8E8E8', pricePerTicket: '3500', totalSeats: '20', rows: 'A,B,C', polygon: '' }])}
                 activeOpacity={0.7}
               >
                 <Text style={styles.addSectionBtnText}>+ Add Section</Text>

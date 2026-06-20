@@ -346,14 +346,17 @@ export default function AdminMatchListScreen({ navigation }) {
                 {(() => {
                   const pricingObj = m.pricing || {};
                   const CATEGORY_CONFIG = {
-                    vip: { label: 'VIP', color: '#FFD700' },
+                    platinum: { label: 'Platinum', color: '#E8E8E8' },
+                    gold: { label: 'Gold', color: '#FFD700' },
+                    silver: { label: 'Silver', color: '#A8A8A8' },
+                    bronze: { label: 'Bronze', color: '#CD7F32' },
+                    general: { label: 'General', color: '#5B9BD5' },
+                    supporters: { label: 'Supporters', color: '#81C784' },
+                    premium: { label: 'Premium', color: glass.brandPurple },
                     category1: { label: 'Category 1', color: '#FFD700' },
                     category2: { label: 'Category 2', color: '#FF6B6B' },
                     category3: { label: 'Category 3', color: '#A29BFE' },
                     category4: { label: 'Category 4', color: '#EF5350' },
-                    supporters: { label: 'Supporters', color: '#81C784' },
-                    premium: { label: 'Premium', color: glass.brandPurple },
-                    general: { label: 'General', color: '#78909C' },
                   };
                   return Object.entries(pricingObj)
                     .filter(([, price]) => typeof price === 'number')
@@ -386,14 +389,17 @@ export default function AdminMatchListScreen({ navigation }) {
                   {(() => {
                     const pricingObj = m.pricing || {};
                     const CATEGORY_ICONS = {
-                      vip: { icon: '👑', color: '#FFD700' },
+                      platinum: { icon: '💎', color: '#E8E8E8' },
+                      gold: { icon: '⭐', color: '#FFD700' },
+                      silver: { icon: '🎫', color: '#A8A8A8' },
+                      bronze: { icon: '🎫', color: '#CD7F32' },
+                      general: { icon: '🎫', color: '#5B9BD5' },
+                      supporters: { icon: '💚', color: '#81C784' },
+                      premium: { icon: '⭐', color: glass.brandPurple },
                       category1: { icon: '⭐', color: '#FFD700' },
                       category2: { icon: '🎫', color: '#FF6B6B' },
                       category3: { icon: '🎫', color: '#A29BFE' },
                       category4: { icon: '🎫', color: '#EF5350' },
-                      supporters: { icon: '💚', color: '#81C784' },
-                      premium: { icon: '⭐', color: glass.brandPurple },
-                      general: { icon: '🎫', color: '#78909C' },
                     };
                     return Object.entries(pricingObj)
                       .filter(([, price]) => typeof price === 'number')

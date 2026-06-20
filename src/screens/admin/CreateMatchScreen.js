@@ -19,7 +19,7 @@ import PolygonEditor from '../../components/stadium/PolygonEditor';
 import { createMatch } from '../../services/matchService';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
-const CATEGORY_OPTIONS = ['category1', 'category2', 'category3', 'category4', 'vip', 'supporters'];
+const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
 
 const DEFAULT_FORM = {
   title: '',
@@ -34,20 +34,20 @@ const DEFAULT_FORM = {
 };
 
 const DEFAULT_PRICING = {
-  category1: '800',
-  category2: '500',
-  category3: '300',
-  category4: '200',
-  vip: '2500',
+  platinum: '3500',
+  gold: '2500',
+  silver: '1500',
+  bronze: '800',
+  general: '300',
   supporters: '150',
 };
 
 const EMPTY_SECTION = {
   sectionId: '',
-  category: 'category1',
+  category: 'platinum',
   label: '',
-  color: '#FFD700',
-  pricePerTicket: '800',
+  color: '#E8E8E8',
+  pricePerTicket: '3500',
   totalSeats: '20',
   rows: 'A,B,C',
   polygon: '',

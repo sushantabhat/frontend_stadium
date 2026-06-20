@@ -8,14 +8,17 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - spacing.xl * 2;
 
 const CATEGORY_THEMES = {
-  VIP: { gradient: ['#FFD700', '#E6C200'], accent: '#FFD700', label: 'VIP' },
+  PLATINUM: { gradient: ['#E8E8E8', '#D0D0D0'], accent: '#E8E8E8', label: 'PLATINUM' },
+  GOLD: { gradient: ['#FFD700', '#E6C200'], accent: '#FFD700', label: 'GOLD' },
+  SILVER: { gradient: ['#A8A8A8', '#888888'], accent: '#A8A8A8', label: 'SILVER' },
+  BRONZE: { gradient: ['#CD7F32', '#A0652A'], accent: '#CD7F32', label: 'BRONZE' },
+  GENERAL: { gradient: ['#5B9BD5', '#4A7FBA'], accent: '#5B9BD5', label: 'GENERAL' },
+  SUPPORTERS: { gradient: ['#2E7D32', '#1B5E20'], accent: '#81C784', label: 'SUPPORTERS' },
+  PREMIUM: { gradient: ['#6C5CE7', '#4834D4'], accent: '#A29BFE', label: 'PREMIUM' },
   CATEGORY1: { gradient: ['#FFD700', '#E6C200'], accent: '#FFD700', label: 'CATEGORY 1' },
   CATEGORY2: { gradient: ['#FF6B6B', '#E53935'], accent: '#FF6B6B', label: 'CATEGORY 2' },
   CATEGORY3: { gradient: ['#6C5CE7', '#4834D4'], accent: '#A29BFE', label: 'CATEGORY 3' },
   CATEGORY4: { gradient: ['#EF5350', '#C62828'], accent: '#EF5350', label: 'CATEGORY 4' },
-  SUPPORTERS: { gradient: ['#2E7D32', '#1B5E20'], accent: '#81C784', label: 'SUPPORTERS' },
-  PREMIUM: { gradient: ['#6C5CE7', '#4834D4'], accent: '#A29BFE', label: 'PREMIUM' },
-  GENERAL: { gradient: ['#374151', '#1F2937'], accent: '#9CA3AF', label: 'GENERAL' },
 };
 
 function PerforatedEdge() {

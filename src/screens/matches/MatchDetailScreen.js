@@ -91,14 +91,17 @@ export default function MatchDetailScreen({ route, navigation }) {
   const hasImage = Boolean(match.imageUrl);
 
   const CATEGORY_DISPLAY = {
-    vip: { label: 'VIP', color: '#FFD700', glow: 'rgba(255,215,0,0.25)', icon: '👑', desc: 'Best views, premium lounge' },
+    platinum: { label: 'Platinum', color: '#E8E8E8', glow: 'rgba(232,232,232,0.25)', icon: '💎', desc: 'Premium tier' },
+    gold: { label: 'Gold', color: '#FFD700', glow: 'rgba(255,215,0,0.25)', icon: '⭐', desc: 'Great sightlines' },
+    silver: { label: 'Silver', color: '#A8A8A8', glow: 'rgba(168,168,168,0.25)', icon: '🎫', desc: 'Standard seating' },
+    bronze: { label: 'Bronze', color: '#CD7F32', glow: 'rgba(205,127,50,0.25)', icon: '🎫', desc: 'Standard seating' },
+    general: { label: 'General', color: '#5B9BD5', glow: 'rgba(91,155,213,0.25)', icon: '🎫', desc: 'Standard seating' },
+    supporters: { label: 'Supporters', color: '#81C784', glow: 'rgba(129,199,132,0.25)', icon: '💚', desc: 'Supporters tier' },
+    premium: { label: 'Premium', color: '#A29BFE', glow: 'rgba(162,155,254,0.25)', icon: '⭐', desc: 'Great sightlines' },
     category1: { label: 'Category 1', color: '#FFD700', glow: 'rgba(255,215,0,0.25)', icon: '⭐', desc: 'Great sightlines' },
     category2: { label: 'Category 2', color: '#FF6B6B', glow: 'rgba(255,107,107,0.25)', icon: '🎫', desc: 'Standard seating' },
     category3: { label: 'Category 3', color: '#A29BFE', glow: 'rgba(162,155,254,0.25)', icon: '🎫', desc: 'Standard seating' },
     category4: { label: 'Category 4', color: '#EF5350', glow: 'rgba(239,83,80,0.25)', icon: '🎫', desc: 'Standard seating' },
-    supporters: { label: 'Supporters', color: '#81C784', glow: 'rgba(129,199,132,0.25)', icon: '💚', desc: 'Supporters tier' },
-    premium: { label: 'Premium', color: '#A29BFE', glow: 'rgba(162,155,254,0.25)', icon: '⭐', desc: 'Great sightlines' },
-    general: { label: 'General', color: '#00B0FF', glow: 'rgba(0,176,255,0.25)', icon: '🎫', desc: 'Standard seating' },
   };
 
   const pricingObj = match.pricing || {};

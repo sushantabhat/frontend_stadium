@@ -7,7 +7,7 @@ import { colors, spacing, radii, typography, glass } from '../../constants/theme
 
 /* ─── Default pricing configuration ─── */
 const DEFAULT_CONFIG = {
-  vipPrice: 2500,
+  platinumPrice: 3500,
   premiumPrice: 1500,
   generalPrice: 800,
   dynamicMultiplier: 1.0,
@@ -138,14 +138,14 @@ export default function AdminSettingsScreen({ navigation }) {
               style={styles.cardInner}
             >
               <GlassRangeSlider
-                label="VIP Seats"
-                value={config.vipPrice}
+                label="Platinum Seats"
+                value={config.platinumPrice}
                 min={500}
                 max={5000}
                 step={100}
                 unit="Rs."
                 accentColor={glass.neonAmber}
-                onValueChange={(v) => updateConfig('vipPrice', v)}
+                onValueChange={(v) => updateConfig('platinumPrice', v)}
               />
               <GlassRangeSlider
                 label="Premium Seats"
@@ -327,8 +327,8 @@ export default function AdminSettingsScreen({ navigation }) {
           {/* Summary */}
           <View style={styles.sheetSummary}>
             <View style={styles.sheetSummaryRow}>
-              <Text style={styles.sheetSummaryLabel}>VIP Price</Text>
-              <Text style={styles.sheetSummaryValue}>Rs.{config.vipPrice.toLocaleString()}</Text>
+              <Text style={styles.sheetSummaryLabel}>Platinum Price</Text>
+              <Text style={styles.sheetSummaryValue}>Rs.{config.platinumPrice.toLocaleString()}</Text>
             </View>
             <View style={styles.sheetSummaryRow}>
               <Text style={styles.sheetSummaryLabel}>Premium Price</Text>

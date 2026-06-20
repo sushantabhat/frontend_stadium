@@ -42,12 +42,12 @@ const palette = {
   infoLight: '#40C4FF',
   infoSurface: 'rgba(0, 176, 255, 0.12)',
 
-  vip: '#FFD700',
-  vipSurface: 'rgba(255, 215, 0, 0.12)',
+  platinum: '#E8E8E8',
+  platinumSurface: 'rgba(232, 232, 232, 0.12)',
   premium: '#6C5CE7',
   premiumSurface: 'rgba(108, 92, 231, 0.12)',
-  general: '#78909C',
-  generalSurface: 'rgba(120, 144, 156, 0.12)',
+  general: '#5B9BD5',
+  generalSurface: 'rgba(91, 155, 213, 0.12)',
 
   category1: '#FFD700',
   category1Surface: 'rgba(255, 215, 0, 0.12)',
@@ -57,6 +57,12 @@ const palette = {
   category3Surface: 'rgba(162, 155, 254, 0.12)',
   category4: '#EF5350',
   category4Surface: 'rgba(239, 83, 80, 0.12)',
+  gold: '#FFD700',
+  goldSurface: 'rgba(255, 215, 0, 0.12)',
+  silver: '#A8A8A8',
+  silverSurface: 'rgba(168, 168, 168, 0.12)',
+  bronze: '#CD7F32',
+  bronzeSurface: 'rgba(205, 127, 50, 0.12)',
   supporters: '#81C784',
   supportersSurface: 'rgba(129, 199, 132, 0.12)',
 
@@ -303,12 +309,16 @@ export const shadows = {
 };
 
 export const CATEGORY_COLORS = {
+  platinum: { accent: palette.platinum, bg: palette.platinumSurface, label: 'Platinum' },
+  gold: { accent: palette.gold, bg: palette.goldSurface, label: 'Gold' },
+  silver: { accent: palette.silver, bg: palette.silverSurface, label: 'Silver' },
+  bronze: { accent: palette.bronze, bg: palette.bronzeSurface, label: 'Bronze' },
+  general: { accent: palette.general, bg: palette.generalSurface, label: 'General' },
+  supporters: { accent: palette.supporters, bg: palette.supportersSurface, label: 'Supporters' },
   category1: { accent: palette.category1, bg: palette.category1Surface, label: 'Category 1' },
   category2: { accent: palette.category2, bg: palette.category2Surface, label: 'Category 2' },
   category3: { accent: palette.category3, bg: palette.category3Surface, label: 'Category 3' },
   category4: { accent: palette.category4, bg: palette.category4Surface, label: 'Category 4' },
-  vip: { accent: palette.vip, bg: palette.vipSurface, label: 'VIP' },
-  supporters: { accent: palette.supporters, bg: palette.supportersSurface, label: 'Supporters' },
 };
 
 export const commonStyles = StyleSheet.create({

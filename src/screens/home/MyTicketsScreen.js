@@ -9,14 +9,17 @@ import { fetchMyTickets } from '../../services/ticketService';
 import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 
 const CATEGORY_THEMES = {
-  vip: { gradient: ['#FFD700', '#E6A800'], label: 'VIP' },
+  platinum: { gradient: ['#E8E8E8', '#D0D0D0'], label: 'PLATINUM' },
+  gold: { gradient: ['#FFD700', '#E6A800'], label: 'GOLD' },
+  silver: { gradient: ['#A8A8A8', '#888888'], label: 'SILVER' },
+  bronze: { gradient: ['#CD7F32', '#A0652A'], label: 'BRONZE' },
+  general: { gradient: ['#5B9BD5', '#4A7FBA'], label: 'GENERAL' },
+  supporters: { gradient: ['#2E7D32', '#1B5E20'], label: 'SUPPORTERS' },
+  premium: { gradient: [colors.primary, '#5A4BD1'], label: 'PREMIUM' },
   category1: { gradient: ['#FFD700', '#E6A800'], label: 'CATEGORY 1' },
   category2: { gradient: ['#FF6B6B', '#E53935'], label: 'CATEGORY 2' },
   category3: { gradient: ['#6C5CE7', '#4834D4'], label: 'CATEGORY 3' },
   category4: { gradient: ['#EF5350', '#C62828'], label: 'CATEGORY 4' },
-  supporters: { gradient: ['#2E7D32', '#1B5E20'], label: 'SUPPORTERS' },
-  premium: { gradient: [colors.primary, '#5A4BD1'], label: 'PREMIUM' },
-  general: { gradient: ['#6B7B8D', '#4A5568'], label: 'GENERAL' },
 };
 
 function getTicketDisplayStatus(ticket) {

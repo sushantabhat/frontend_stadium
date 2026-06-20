@@ -17,8 +17,6 @@ const PRESETS = [
   { id: 'ne', label: 'NE Corner', color: '#EF5350', path: 'M280,42 L320,55 L312,82 L275,75 Z' },
   { id: 'sw', label: 'SW Corner', color: '#EF5350', path: 'M88,268 L125,275 L120,308 L80,295 Z' },
   { id: 'se', label: 'SE Corner', color: '#EF5350', path: 'M275,275 L312,268 L320,295 L280,308 Z' },
-  { id: 'vip-w', label: 'VIP West', color: '#FFB300', path: 'M50,140 L80,140 L80,210 L50,210 Z' },
-  { id: 'vip-e', label: 'VIP East', color: '#FFB300', path: 'M320,140 L350,140 L350,210 L320,210 Z' },
   { id: 'sup-n', label: 'Supporters N', color: '#81C784', path: 'M140,18 L260,18 L270,35 L130,35 Z' },
   { id: 'sup-s', label: 'Supporters S', color: '#81C784', path: 'M130,315 L270,315 L260,332 L140,332 Z' },
 ];

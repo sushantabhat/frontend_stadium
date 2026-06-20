@@ -150,8 +150,9 @@ export default function StatisticsScreen({ navigation }) {
           <Text style={styles.breakdownTitle}>Category Sales</Text>
           {(() => {
             const CATEGORY_COLORS_MAP = {
-              vip: '#FFD700', category1: '#FFD700', category2: '#FF6B6B', category3: '#A29BFE',
-              category4: '#EF5350', supporters: '#81C784', premium: glass.brandPurple, general: '#4F8EF7',
+              platinum: '#E8E8E8', gold: '#FFD700', silver: '#A8A8A8', bronze: '#CD7F32',
+              general: '#5B9BD5', category1: '#FFD700', category2: '#FF6B6B', category3: '#A29BFE',
+              category4: '#EF5350', supporters: '#81C784', premium: glass.brandPurple,
             };
             return Object.entries(sales || {})
               .filter(([, data]) => data && (data.count > 0 || data.revenue > 0))

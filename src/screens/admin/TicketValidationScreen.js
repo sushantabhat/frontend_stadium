@@ -23,8 +23,8 @@ const FILTERS = [
   { key: 'refunded', label: 'Refunded' },
 ];
 
-const TIER_COLORS = { vip: '#FFD700', category1: '#FFD700', category2: '#FF6B6B', category3: '#A29BFE', category4: '#EF5350', supporters: '#81C784', premium: glass.brandPurple, general: '#4F8EF7' };
-const TIER_LABELS = { vip: 'VIP', category1: 'Category 1', category2: 'Category 2', category3: 'Category 3', category4: 'Category 4', supporters: 'Supporters', premium: 'Premium', general: 'Standard' };
+const TIER_COLORS = { platinum: '#E8E8E8', gold: '#FFD700', silver: '#A8A8A8', bronze: '#CD7F32', general: '#5B9BD5', category1: '#FFD700', category2: '#FF6B6B', category3: '#A29BFE', category4: '#EF5350', supporters: '#81C784', premium: glass.brandPurple };
+const TIER_LABELS = { platinum: 'Platinum', gold: 'Gold', silver: 'Silver', bronze: 'Bronze', general: 'General', category1: 'Category 1', category2: 'Category 2', category3: 'Category 3', category4: 'Category 4', supporters: 'Supporters', premium: 'Premium' };
 
 const STATUS_MAP = {
   valid: { label: 'Valid', color: glass.statusSuccessText, bg: glass.statusSuccessFill },
