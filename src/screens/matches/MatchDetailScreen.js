@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import { ROLES } from '../../constants/config';
@@ -64,14 +65,14 @@ export default function MatchDetailScreen({ route, navigation }) {
   };
 
   if (isLoading) return (
-    <View style={s.container}>
+    <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" />
       <View style={s.center}><ActivityIndicator size="large" color={colors.primary} /></View>
-    </View>
+    </SafeAreaView>
   );
 
   if (error || !match) return (
-    <View style={s.container}>
+    <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" />
       <View style={s.center}>
         <Text style={s.errorIcon}>⚠️</Text>
@@ -80,7 +81,7 @@ export default function MatchDetailScreen({ route, navigation }) {
           <Text style={s.errorBackText}>← Go Back</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 
   const stats = match.seatStats || {};
@@ -115,7 +116,7 @@ export default function MatchDetailScreen({ route, navigation }) {
     }));
 
   return (
-    <View style={s.container}>
+    <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false} bounces={false}>
 
@@ -305,7 +306,7 @@ export default function MatchDetailScreen({ route, navigation }) {
           </View>
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

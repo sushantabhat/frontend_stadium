@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
 import BookingProgress from '../../components/BookingProgress';
@@ -71,10 +72,10 @@ export default function BookingScreen({ route, navigation }) {
   const handleDone = () => { navigation.popToTop(); };
 
   if (isLoading) return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <BookingProgress currentStep="review" />
       <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
-    </View>
+    </SafeAreaView>
   );
 
   // Success State
@@ -82,7 +83,7 @@ export default function BookingScreen({ route, navigation }) {
     const firstTicket = bookedTickets[0] || {};
 
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <BookingProgress currentStep="done" />
         <ScrollView contentContainerStyle={styles.successScroll}>
           {/* Success Hero */}
@@ -156,7 +157,7 @@ export default function BookingScreen({ route, navigation }) {
 
           <GradientButton title="Done" onPress={handleDone} style={{ marginHorizontal: spacing.xl, marginTop: spacing.xl }} />
         </ScrollView>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -164,7 +165,7 @@ export default function BookingScreen({ route, navigation }) {
   const multiplier = pricingSuggestions?.multiplier || 1.0;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <BookingProgress currentStep="pay" />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Event Card */}
@@ -267,7 +268,7 @@ export default function BookingScreen({ route, navigation }) {
           style={{ flex: 1 }}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

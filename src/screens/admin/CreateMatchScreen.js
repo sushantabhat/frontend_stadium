@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import PolygonEditor from '../../components/stadium/PolygonEditor';
 import { createMatch } from '../../services/matchService';
@@ -187,7 +188,7 @@ export default function CreateMatchScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScreenHeader
         title="Create Match"
         subtitle="Define event details, pricing, and stadium layout"
@@ -654,7 +655,7 @@ export default function CreateMatchScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

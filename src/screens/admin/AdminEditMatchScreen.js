@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenHeader from '../../components/ScreenHeader';
 import PolygonEditor from '../../components/stadium/PolygonEditor';
@@ -253,18 +254,18 @@ export default function AdminEditMatchScreen({ route, navigation }) {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <ScreenHeader title="Edit Match" onBack={() => navigation.goBack()} />
         <View style={styles.center}>
           <ActivityIndicator size="large" color={glass.brandPurple} />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <ScreenHeader title="Edit Match" onBack={() => navigation.goBack()} />
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
@@ -272,12 +273,12 @@ export default function AdminEditMatchScreen({ route, navigation }) {
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScreenHeader
         title="Edit Match"
         subtitle="Update event details and pricing"
@@ -832,7 +833,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

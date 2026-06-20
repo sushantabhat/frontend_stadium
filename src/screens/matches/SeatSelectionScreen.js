@@ -12,6 +12,7 @@ import {
   View,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { io } from 'socket.io-client';
 import ScreenHeader from '../../components/ScreenHeader';
 import BookingProgress from '../../components/BookingProgress';
@@ -218,19 +219,19 @@ export default function SeatSelectionScreen({ route, navigation }) {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <ScreenHeader title="Select Seats" onBack={() => navigation.goBack()} />
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primaryLight} />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   const hasStadiumSections = sections.length > 0;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <BookingProgress currentStep="select" />
       <ScreenHeader
         title={`${match?.teamA} vs ${match?.teamB}`}
@@ -387,7 +388,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
           </View>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -1,11 +1,12 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import { colors } from '../../constants/theme';
 
 export default function StaffHomeScreen() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScreenHeader
         title="Staff Gate"
         subtitle="QR scanning tools arrive in Sprint 4"
@@ -18,7 +19,7 @@ export default function StaffHomeScreen() {
           Staff will scan fan QR tickets here to validate stadium entry. This module will be built
           in the next sprint after booking goes live.
         </Text>
-      </View>
+    </SafeAreaView>
     </View>
   );
 }
