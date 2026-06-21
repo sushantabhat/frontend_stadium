@@ -9,7 +9,7 @@ import { validateLoginForm } from '../../utils/validation';
 const DEMO_ACCOUNTS = [
   { label: 'Admin', email: 'admin@stadium.com', password: 'admin123', icon: '👑', color: colors.accent },
   { label: 'Staff', email: 'staff@stadium.com', password: 'staff123', icon: '🛡️', color: colors.info },
-  { label: 'Supervisor', email: 'supervisor@gmail.com', password: 'supervisor123', icon: '🔧', color: colors.magenta },
+  { label: 'Supervisor', email: 'supervisor@gmail.com', password: 'supervisor123', icon: '🔧', color: colors.primaryLight },
   { label: 'Fan', email: 'fan@stadium.com', password: 'fan12345', icon: '🎟️', color: colors.primary },
 ];
 
@@ -56,14 +56,24 @@ export default function LoginScreen({ navigation }) {
           style={styles.flex}
         >
           <View style={styles.scroll}>
-            {/* Brand — left aligned, asymmetric */}
+            {/* Brand — integrated logo + text */}
             <View style={styles.brandSection}>
-              <View style={styles.brandMark}>
-                <LinearGradient colors={colors.gradientPurple} style={styles.brandMarkInner}>
-                  <Text style={styles.brandEmoji}>🏟️</Text>
-                </LinearGradient>
+              <View style={styles.brandRow}>
+                  <View style={styles.logoWrap}>
+                    <View style={styles.logoGlow} />
+                    <View style={styles.stumpL} />
+                    <View style={styles.stumpM} />
+                    <View style={styles.stumpR} />
+                    <View style={styles.bailL} />
+                    <View style={styles.bailR} />
+                  </View>
+                <View style={styles.brandTextWrap}>
+                  <Text style={styles.brandTitle}>
+                    <Text style={styles.brandWordBold}>SMART </Text>
+                    <Text style={styles.brandWordLight}>Stadium</Text>
+                  </Text>
+                </View>
               </View>
-              <Text style={styles.brandTitle}>SMART{'\n'}STADIUM</Text>
               <Text style={styles.brandTagline}>
                 Your seat is waiting.
               </Text>
@@ -183,36 +193,93 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { flex: 1, justifyContent: 'center' },
 
-  // Brand — left aligned, not centered
+  // Brand — integrated side-by-side
   brandSection: {
-    paddingHorizontal: spacing.xxl,
-    marginBottom: spacing.xxxl,
+    marginBottom: spacing.xxl,
+    alignItems: 'center',
   },
-  brandMark: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    marginBottom: spacing.xl,
-    overflow: 'hidden',
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xl,
+    marginBottom: spacing.sm,
   },
-  brandMarkInner: {
-    flex: 1,
+  logoWrap: {
+    width: 56,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brandEmoji: { fontSize: 32 },
+  logoGlow: {
+    position: 'absolute',
+    top: 6, left: 6,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: `${colors.primary}18`,
+  },
+  stumpL: {
+    position: 'absolute',
+    top: 18, left: 14,
+    width: 4,
+    height: 26,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    backgroundColor: '#D4A050',
+  },
+  stumpM: {
+    position: 'absolute',
+    top: 18, left: 26,
+    width: 4,
+    height: 26,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    backgroundColor: '#C4953A',
+  },
+  stumpR: {
+    position: 'absolute',
+    top: 18, left: 38,
+    width: 4,
+    height: 26,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    backgroundColor: '#D4A050',
+  },
+  bailL: {
+    position: 'absolute',
+    top: 14, left: 14,
+    width: 16,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#E8C880',
+  },
+  bailR: {
+    position: 'absolute',
+    top: 14, left: 26,
+    width: 16,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#E8C880',
+  },
+  brandTextWrap: {},
   brandTitle: {
     color: colors.textPrimary,
-    fontSize: 36,
+    fontSize: 28,
+    lineHeight: 34,
+  },
+  brandWordBold: {
     fontWeight: '900',
-    letterSpacing: -1,
-    lineHeight: 40,
-    marginBottom: spacing.sm,
+    letterSpacing: 1,
+  },
+  brandWordLight: {
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   brandTagline: {
     color: colors.textMuted,
     fontSize: typography.body.fontSize,
     fontWeight: '400',
+    textAlign: 'center',
   },
 
   // Form
