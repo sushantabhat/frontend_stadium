@@ -241,7 +241,9 @@ export default function MatchDetailScreen({ route, navigation }) {
             {PRICING_TIERS.map((p) => (
               <View key={p.label} style={[s.priceCell, { borderColor: `${p.color}33` }]}>
                 <View style={s.priceHeader}>
-                  <Text style={s.priceIcon}>{p.icon}</Text>
+                  <View style={[s.priceIconBadge, { backgroundColor: `${p.color}22` }]}>
+                    <Text style={[s.priceIconText, { color: p.color }]}>{p.label.slice(0, 2).toUpperCase()}</Text>
+                  </View>
                   <Text
                     style={[s.priceLabel, { color: p.color }]}
                     numberOfLines={1}
@@ -513,7 +515,8 @@ const s = StyleSheet.create({
     gap: spacing.xs,
     marginBottom: spacing.sm,
   },
-  priceIcon: { fontSize: 16 },
+  priceIconBadge: { width: 26, height: 26, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  priceIconText: { fontSize: 11, fontWeight: '800' },
   priceLabel: { fontSize: 12, fontWeight: '700' },
   priceValue: { fontSize: 22, fontWeight: '900', letterSpacing: -0.3 },
 

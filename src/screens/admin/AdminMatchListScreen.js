@@ -425,7 +425,9 @@ export default function AdminMatchListScreen({ navigation }) {
                         const catIcon = CATEGORY_ICONS[key] || { icon: '🎫', color: '#888' };
                         return (
                           <View key={key} style={s.pricingCell}>
-                            <Text style={s.pricingIcon}>{catIcon.icon}</Text>
+                            <View style={[s.pricingIconBadge, { backgroundColor: `${catIcon.color}22` }]}>
+                              <Text style={[s.pricingIconText, { color: catIcon.color }]}>{key.slice(0, 2).toUpperCase()}</Text>
+                            </View>
                             <Text style={[s.pricingValue, { color: catIcon.color }]}>Rs.{price.toLocaleString()}</Text>
                             <Text style={s.pricingLabel}>{key}</Text>
                           </View>
@@ -890,7 +892,8 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: glass.border,
   },
-  pricingIcon: { fontSize: 18, marginBottom: spacing.xs },
+  pricingIconBadge: { width: 26, height: 26, borderRadius: 6, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },
+  pricingIconText: { fontSize: 11, fontWeight: '800' },
   pricingValue: { fontSize: typography.bodyMedium.fontSize, fontWeight: '900', marginBottom: 2 },
   pricingLabel: { color: glass.textMuted, fontSize: 9, fontWeight: '600' },
 
