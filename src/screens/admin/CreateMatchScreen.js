@@ -117,7 +117,10 @@ export default function CreateMatchScreen({ navigation }) {
   };
 
   const addSection = () => {
-    setSections((prev) => [...prev, { ...EMPTY_SECTION }]);
+    setSections((prev) => {
+      const idx = prev.length;
+      return [...prev, { ...EMPTY_SECTION, sectionId: `S${idx + 1}` }];
+    });
   };
 
   const removeSection = (index) => {
@@ -650,7 +653,11 @@ export default function CreateMatchScreen({ navigation }) {
                 sectionColor={sections[polygonEditorIndex].color || '#FFD700'}
                 sectionLabel={`Section ${polygonEditorIndex + 1} — ${sections[polygonEditorIndex].sectionId || 'New'}`}
                 onPolygonChange={(path) => {
-                  setTimeout(() => updateSection(polygonEditorIndex, 'polygon', path), 0);
+                  setSections((prev) => {
+                    const next = [...prev];
+                    next[polygonEditorIndex] = { ...next[polygonEditorIndex], polygon: path };
+                    return next;
+                  });
                 }}
               />
             )}

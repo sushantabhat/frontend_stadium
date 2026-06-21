@@ -625,7 +625,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
             {!hasBookedSeats && (
               <TouchableOpacity
                 style={styles.addSectionBtn}
-                onPress={() => setSections((prev) => [...prev, { sectionId: '', category: 'platinum', label: '', color: '#E8E8E8', pricePerTicket: '3500', totalSeats: '20', rows: 'A,B,C', polygon: '' }])}
+                onPress={() => setSections((prev) => [...prev, { sectionId: `S${prev.length + 1}`, category: 'platinum', label: '', color: '#E8E8E8', pricePerTicket: '3500', totalSeats: '20', rows: 'A,B,C', polygon: '' }])}
                 activeOpacity={0.7}
               >
                 <Text style={styles.addSectionBtnText}>+ Add Section</Text>
@@ -825,13 +825,11 @@ export default function AdminEditMatchScreen({ route, navigation }) {
                 sectionColor={sections[polygonEditorIndex].color || '#FFD700'}
                 sectionLabel={`Section ${polygonEditorIndex + 1} — ${sections[polygonEditorIndex].sectionId || 'New'}`}
                 onPolygonChange={(path) => {
-                  setTimeout(() => {
-                    setSections((prev) => {
-                      const next = [...prev];
-                      next[polygonEditorIndex] = { ...next[polygonEditorIndex], polygon: path };
-                      return next;
-                    });
-                  }, 0);
+                  setSections((prev) => {
+                    const next = [...prev];
+                    next[polygonEditorIndex] = { ...next[polygonEditorIndex], polygon: path };
+                    return next;
+                  });
                 }}
               />
             )}
