@@ -166,9 +166,22 @@ export default function LoginScreen({ navigation }) {
 
             {/* Demo accounts — horizontal pills */}
             <View style={styles.demoSection}>
-              <Text style={styles.demoLabel}>TRY A DEMO</Text>
+              <Text style={styles.demoLabel}>DEMO MATRA</Text>
               <View style={styles.demoRow}>
-                {DEMO_ACCOUNTS.map((a) => (
+                {DEMO_ACCOUNTS.slice(0, 3).map((a) => (
+                  <TouchableOpacity
+                    key={a.label}
+                    style={styles.demoPill}
+                    onPress={() => { setEmail(a.email); setPassword(a.password); setErrors({ email: null, password: null }); setServerError(null); setSuccessMessage(null); }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.demoIcon}>{a.icon}</Text>
+                    <Text style={styles.demoText}>{a.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={styles.demoRow}>
+                {DEMO_ACCOUNTS.slice(3).map((a) => (
                   <TouchableOpacity
                     key={a.label}
                     style={styles.demoPill}

@@ -243,7 +243,7 @@ export default function GateScannerScreen({ navigation }) {
         <View style={styles.manualEntryCard}>
           <Text style={styles.cardHeader}>MANUAL ENTRY</Text>
           <Text style={styles.cardDesc}>
-            Type or paste a ticket code below as a fallback.
+            Type or paste the ticket code.
           </Text>
 
           <TextInput
