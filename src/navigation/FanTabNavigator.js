@@ -1,5 +1,4 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 
@@ -13,7 +12,8 @@ import TicketDetailScreen from '../screens/home/TicketDetailScreen';
 import WishlistScreen from '../screens/home/WishlistScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import SettingsScreen from '../screens/common/SettingsScreen';
-import { colors, shadows } from '../constants/theme';
+import { colors } from '../constants/theme';
+import TabBar, { tabBarStyle } from '../components/TabBar';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createStackNavigator();
@@ -22,16 +22,6 @@ const TicketsStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
 const screenOptions = { headerShown: false, cardStyle: { backgroundColor: colors.background } };
-
-function TabIcon({ label, focused }) {
-  const icons = { Home: '🏠', Browse: '🔍', 'My Tickets': '🎫', Account: '👤' };
-  return (
-    <View style={tabStyles.iconWrap}>
-      <Text style={[tabStyles.icon, focused && tabStyles.iconFocused]}>{icons[label] || '•'}</Text>
-      <Text style={[tabStyles.label, focused && tabStyles.labelFocused]}>{label}</Text>
-    </View>
-  );
-}
 
 function HomeNavigator() {
   return (
@@ -82,10 +72,8 @@ export default function FanTabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} />,
-        tabBarStyle: tabStyles.bar,
-        tabBarActiveTintColor: colors.primaryLight,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarIcon: ({ focused }) => <TabBar routeName={route.name} focused={focused} />,
+        tabBarStyle,
         tabBarLabel: () => null,
       })}
     >
@@ -96,20 +84,3 @@ export default function FanTabNavigator() {
     </Tab.Navigator>
   );
 }
-
-const tabStyles = StyleSheet.create({
-  bar: {
-    backgroundColor: colors.surface,
-    borderTopColor: colors.borderSubtle,
-    borderTopWidth: 1,
-    height: 85,
-    paddingTop: 8,
-    paddingBottom: 28,
-    ...shadows.xl,
-  },
-  iconWrap: { alignItems: 'center', gap: 3 },
-  icon: { fontSize: 22 },
-  iconFocused: { transform: [{ scale: 1.15 }] },
-  label: { fontSize: 10, fontWeight: '600', color: colors.textMuted },
-  labelFocused: { color: colors.primaryLight, fontWeight: '700' },
-});

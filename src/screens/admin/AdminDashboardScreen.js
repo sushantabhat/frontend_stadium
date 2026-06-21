@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
-import TicketProHeader, { AdminCard } from '../../components/admin/TicketProHeader';
+import { AdminCard } from '../../components/admin/TicketProHeader';
+import DashboardHeader from '../../components/DashboardHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { formatInNepal } from '../../utils/date';
 import { fetchAdminAnalytics, fetchUsers } from '../../services/adminService';
@@ -45,6 +46,7 @@ const sparkStyles = StyleSheet.create({
 
 export default function AdminDashboardScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
+  const initials = (userInfo?.name || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const [metrics, setMetrics] = useState({
     liveMatches: 0,
     bookedSeats: 0,
@@ -111,22 +113,13 @@ export default function AdminDashboardScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <TicketProHeader
-          showLive={metrics.liveMatches > 0}
-          rightAction={
-            <TouchableOpacity
-              style={styles.notifBtn}
-              onPress={() => navigation.navigate('AdminTicketValidation')}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.notifIcon}>🔔</Text>
-              {metrics.fraudCount > 0 && <View style={styles.notifDot} />}
-            </TouchableOpacity>
-          }
+        <DashboardHeader
+          topLabel="SYSTEM OVERVIEW"
+          title={userInfo?.name || 'Admin'}
+          avatarColors={colors.gradientGold}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate('AdminProfile')}
         />
-
-        <Text style={styles.eyebrow}>OVERVIEW</Text>
-        <Text style={styles.pageTitle}>Dashboard</Text>
 
         <AdminCard style={styles.revenueCard}>
           <Text style={styles.cardLabel}>WEEKLY REVENUE</Text>
@@ -236,18 +229,6 @@ export default function AdminDashboardScreen({ navigation }) {
           </>
         )}
 
-        <TouchableOpacity
-          style={styles.profileLink}
-          onPress={() => navigation.navigate('AdminProfile')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.profileAvatar}>
-            <Text style={styles.profileInitials}>
-              {(userInfo?.name || 'A').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)}
-            </Text>
-          </View>
-          <Text style={styles.profileName}>{userInfo?.name || 'Admin'}</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -256,40 +237,6 @@ export default function AdminDashboardScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: glass.canvasStart },
   scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxl * 2 },
-  notifBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: glass.card,
-    borderWidth: 1,
-    borderColor: glass.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notifIcon: { fontSize: 16 },
-  notifDot: {
-    position: 'absolute',
-    top: 7,
-    right: 7,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: glass.brandPurple,
-  },
-  eyebrow: {
-    color: glass.textMuted,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    marginBottom: spacing.xs,
-  },
-  pageTitle: {
-    color: colors.textPrimary,
-    fontSize: typography.h1.fontSize,
-    fontWeight: '900',
-    letterSpacing: -0.4,
-    marginBottom: spacing.xl,
-  },
   revenueCard: { padding: spacing.xl, marginBottom: spacing.md },
   cardLabel: {
     color: glass.textMuted,
@@ -378,20 +325,4 @@ const styles = StyleSheet.create({
   nextBadgeText: { fontSize: 9, fontWeight: '800' },
   nextBadgeTextSale: { color: glass.statusSuccessText },
   nextBadgeTextSold: { color: glass.brandPurple },
-  profileLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingTop: spacing.md,
-  },
-  profileAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: glass.brandPurpleSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileInitials: { color: glass.brandPurple, fontSize: 12, fontWeight: '800' },
-  profileName: { color: glass.textSecondary, fontSize: typography.caption.fontSize, fontWeight: '600' },
 });

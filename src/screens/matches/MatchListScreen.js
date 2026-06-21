@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -14,10 +14,12 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
+import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { formatInNepal } from '../../utils/date';
 import { fetchMatches } from '../../services/matchService';
 import MatchCard from '../../components/MatchCard';
+import DashboardHeader from '../../components/DashboardHeader';
 
 const FILTERS = [
   { key: 'all', label: 'All' },
@@ -44,11 +46,15 @@ function matchesSearch(match, query) {
 }
 
 export default function MatchListScreen({ navigation }) {
+  const { userInfo } = useContext(AuthContext);
   const [matches, setMatches] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const firstName = userInfo?.name?.split(' ')[0] || 'Fan';
+  const initials = (userInfo?.name || 'F').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const loadMatches = useCallback(async (refreshing = false) => {
     if (refreshing) setIsRefreshing(true);
@@ -100,18 +106,13 @@ export default function MatchListScreen({ navigation }) {
 
   const renderHeader = () => (
     <View style={s.headerSection}>
-      <View style={s.titleRow}>
-        <View>
-          <Text style={s.pageEyebrow}>SMART STADIUM</Text>
-          <Text style={s.pageTitle}>Browse Matches</Text>
-        </View>
-        {liveMatches.length > 0 && (
-          <View style={s.liveBadge}>
-            <View style={s.liveDot} />
-            <Text style={s.liveText}>{liveMatches.length} LIVE</Text>
-          </View>
-        )}
-      </View>
+      <DashboardHeader
+        topLabel="BROWSE"
+        title={`${firstName}`}
+        avatarColors={colors.gradientPurple}
+        avatarLabel={initials}
+        onAvatarPress={() => navigation.navigate('Account')}
+      />
       <View style={s.searchBar}>
         <Text style={s.searchIcon}>⌕</Text>
         <TextInput

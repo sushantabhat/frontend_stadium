@@ -19,8 +19,8 @@ export default function StaffHomeScreen() {
           Staff will scan fan QR tickets here to validate stadium entry. This module will be built
           in the next sprint after booking goes live.
         </Text>
+      </View>
     </SafeAreaView>
-    </View>
   );
 }
 

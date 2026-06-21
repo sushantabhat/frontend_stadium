@@ -4,6 +4,7 @@ import {
   Alert,
   Image,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -73,6 +74,7 @@ export default function BookingScreen({ route, navigation }) {
 
   if (isLoading) return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <BookingProgress currentStep="review" />
       <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
     </SafeAreaView>
@@ -84,6 +86,7 @@ export default function BookingScreen({ route, navigation }) {
 
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
         <BookingProgress currentStep="done" />
         <ScrollView contentContainerStyle={styles.successScroll}>
           {/* Success Hero */}
@@ -166,6 +169,7 @@ export default function BookingScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <BookingProgress currentStep="pay" />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Event Card */}

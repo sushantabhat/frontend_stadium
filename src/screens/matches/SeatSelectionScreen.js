@@ -6,6 +6,7 @@ import {
   PanResponder,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -220,6 +221,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
         <ScreenHeader title="Select Seats" onBack={() => navigation.goBack()} />
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primaryLight} />
@@ -232,6 +234,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <BookingProgress currentStep="select" />
       <ScreenHeader
         title={`${match?.teamA} vs ${match?.teamB}`}

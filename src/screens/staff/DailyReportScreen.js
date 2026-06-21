@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import ScreenHeader from '../../components/ScreenHeader';
+import { AuthContext } from '../../context/AuthContext';
+import DashboardHeader from '../../components/DashboardHeader';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 
 const REPORT_DATA = {
@@ -18,13 +19,22 @@ const REPORT_DATA = {
   ],
 };
 
-export default function DailyReportScreen() {
+export default function DailyReportScreen({ navigation }) {
+  const { userInfo } = useContext(AuthContext);
+  const initials = (userInfo?.name || 'S').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const successRate = ((REPORT_DATA.verified / REPORT_DATA.totalScans) * 100).toFixed(1);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScreenHeader title="Daily Report" subtitle="Today's entry statistics" />
+      <DashboardHeader
+        topLabel="REPORTING"
+        title="Daily Report"
+        avatarColors={['#00C853', '#00A844']}
+        avatarLabel={initials}
+        onAvatarPress={() => navigation.navigate('Account')}
+        onBack={() => navigation.goBack()}
+      />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Hero stat */}
         <View style={styles.heroStat}>

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -13,7 +13,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import TicketProHeader, { AdminCard, AdminFilterPills, AdminSearchBar } from '../../components/admin/TicketProHeader';
+import { AuthContext } from '../../context/AuthContext';
+import DashboardHeader from '../../components/DashboardHeader';
+import FAB from '../../components/FAB';
+import { AdminCard, AdminFilterPills, AdminSearchBar } from '../../components/admin/TicketProHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchUsers, createUser, updateUser, deleteUser } from '../../services/adminService';
 
@@ -55,8 +58,11 @@ function isThisMonth(dateStr) {
   return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
 }
 
-export default function UserManagementScreen() {
+export default function UserManagementScreen({ navigation }) {
+  const { userInfo } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
+
+  const initials = (userInfo?.name || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [search, setSearch] = useState('');
@@ -176,17 +182,13 @@ export default function UserManagementScreen() {
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={glass.brandPurple} />}
       >
-        <TicketProHeader showLive />
-
-        <View style={styles.titleRow}>
-          <View>
-            <Text style={styles.eyebrow}>MANAGEMENT</Text>
-            <Text style={styles.pageTitle}>Users</Text>
-          </View>
-          <TouchableOpacity style={styles.addBtn} onPress={() => setShowCreate(true)} activeOpacity={0.85}>
-            <Text style={styles.addBtnText}>+ Add</Text>
-          </TouchableOpacity>
-        </View>
+        <DashboardHeader
+          topLabel="MANAGEMENT"
+          title="Users"
+          avatarColors={['#FFD700', '#FFA000']}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate('AdminProfile')}
+        />
 
         <AdminCard style={styles.statsCard}>
           <View style={styles.statsRow}>
@@ -383,6 +385,8 @@ export default function UserManagementScreen() {
           </View>
         </View>
       </Modal>
+
+      <FAB icon="+" label="Add" onPress={() => setShowCreate(true)} />
     </SafeAreaView>
   );
 }
@@ -390,11 +394,6 @@ export default function UserManagementScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: glass.canvasStart },
   scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxl * 2 },
-  titleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: spacing.xl },
-  eyebrow: { color: glass.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, marginBottom: spacing.xs },
-  pageTitle: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '900', letterSpacing: -0.4 },
-  addBtn: { backgroundColor: glass.brandPurple, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2, borderRadius: radii.full },
-  addBtnText: { color: '#FFF', fontSize: typography.caption.fontSize, fontWeight: '800' },
   statsCard: { marginBottom: spacing.lg },
   statsRow: { flexDirection: 'row', alignItems: 'center', padding: spacing.xl },
   statItem: { flex: 1, alignItems: 'center' },

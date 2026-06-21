@@ -7,6 +7,7 @@ import {
   Modal,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -189,6 +190,7 @@ export default function CreateMatchScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <ScreenHeader
         title="Create Match"
         subtitle="Define event details, pricing, and stadium layout"

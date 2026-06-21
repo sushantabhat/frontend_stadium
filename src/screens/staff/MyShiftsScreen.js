@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import ScreenHeader from '../../components/ScreenHeader';
+import { AuthContext } from '../../context/AuthContext';
+import DashboardHeader from '../../components/DashboardHeader';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 
 const SHIFTS = [
@@ -11,11 +12,21 @@ const SHIFTS = [
   { match: 'Mumbai vs Chennai', date: 'Sun, Jun 22', time: '3:00 PM — 9:00 PM', gate: 'Gate A', status: 'upcoming', checkedIn: false },
 ];
 
-export default function MyShiftsScreen() {
+export default function MyShiftsScreen({ navigation }) {
+  const { userInfo } = useContext(AuthContext);
+  const initials = (userInfo?.name || 'S').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScreenHeader title="My Shifts" subtitle="Work schedule" />
+      <DashboardHeader
+        topLabel="SCHEDULE"
+        title="My Shifts"
+        avatarColors={['#00C853', '#00A844']}
+        avatarLabel={initials}
+        onAvatarPress={() => navigation.navigate('Account')}
+        onBack={() => navigation.goBack()}
+      />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Today's shift highlight */}
         {SHIFTS[0].status === 'active' && (

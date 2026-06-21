@@ -1,12 +1,14 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
+import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchMyTickets } from '../../services/ticketService';
 import { formatInNepal, formatTimeInNepal } from '../../utils/date';
+import DashboardHeader from '../../components/DashboardHeader';
 
 const CATEGORY_THEMES = {
   platinum: { gradient: ['#E8E8E8', '#D0D0D0'], label: 'PLATINUM' },
@@ -38,8 +40,12 @@ const STATUS_CONFIG = {
 };
 
 export default function MyTicketsScreen({ navigation }) {
+  const { userInfo } = useContext(AuthContext);
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const firstName = userInfo?.name?.split(' ')[0] || 'Fan';
+  const initials = (userInfo?.name || 'F').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const loadTickets = useCallback(async () => {
     setIsLoading(true);
@@ -171,14 +177,19 @@ export default function MyTicketsScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+      <DashboardHeader
+        topLabel="MY TICKETS"
+        title={`${firstName}`}
+        avatarColors={colors.gradientPurple}
+        avatarLabel={initials}
+        onAvatarPress={() => navigation.navigate('Account')}
+      />
       <FlatList
         data={tickets}
         renderItem={renderTicket}
         keyExtractor={(item) => item._id || item.ticketCode}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.pageTitle}>My Tickets</Text>
-            <Text style={styles.pageSubtitle}>Present QR codes at the entry gate</Text>
             {tickets.length > 0 && (
               <View style={styles.ticketCount}>
                 <Text style={styles.ticketCountText}>{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</Text>

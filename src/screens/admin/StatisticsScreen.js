@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -11,7 +11,10 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import TicketProHeader, { AdminCard } from '../../components/admin/TicketProHeader';
+import { AuthContext } from '../../context/AuthContext';
+import DashboardHeader from '../../components/DashboardHeader';
+import FAB from '../../components/FAB';
+import { AdminCard } from '../../components/admin/TicketProHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchAdminAnalytics, fetchFraudLogs } from '../../services/adminService';
 
@@ -24,7 +27,10 @@ function formatRevenue(value) {
 }
 
 export default function StatisticsScreen({ navigation }) {
+  const { userInfo } = useContext(AuthContext);
   const [analytics, setAnalytics] = useState(null);
+
+  const initials = (userInfo?.name || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const [fraudLogs, setFraudLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -71,17 +77,13 @@ export default function StatisticsScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <TicketProHeader showLive />
-
-        <View style={styles.titleRow}>
-          <View>
-            <Text style={styles.eyebrow}>ANALYTICS</Text>
-            <Text style={styles.pageTitle}>Reports</Text>
-          </View>
-          <TouchableOpacity style={styles.exportBtn} onPress={handleExport} activeOpacity={0.75}>
-            <Text style={styles.exportText}>↓ Export</Text>
-          </TouchableOpacity>
-        </View>
+        <DashboardHeader
+          topLabel="ANALYTICS"
+          title="Reports"
+          avatarColors={['#FFD700', '#FFA000']}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate('AdminProfile')}
+        />
 
         <AdminCard style={styles.revenueCard}>
           <View style={styles.revenueHeader}>
@@ -190,6 +192,8 @@ export default function StatisticsScreen({ navigation }) {
           </AdminCard>
         )}
       </ScrollView>
+
+      <FAB icon="↓" label="Export" onPress={handleExport} />
     </SafeAreaView>
   );
 }
@@ -198,18 +202,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: glass.canvasStart },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxl * 2 },
-  titleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: spacing.xl },
-  eyebrow: { color: glass.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, marginBottom: spacing.xs },
-  pageTitle: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '900', letterSpacing: -0.4 },
-  exportBtn: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: glass.border,
-    backgroundColor: glass.card,
-  },
-  exportText: { color: glass.textSecondary, fontSize: typography.caption.fontSize, fontWeight: '700' },
   revenueCard: { padding: spacing.xl, marginBottom: spacing.md },
   revenueHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   cardLabel: { color: glass.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1.2 },

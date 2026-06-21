@@ -1,24 +1,15 @@
 import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { fetchMatchRecommendations } from '../../services/aiService';
 import MatchCard from '../../components/MatchCard';
 import BannerCarousel from '../../components/BannerCarousel';
+import DashboardHeader from '../../components/DashboardHeader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const GREETINGS = ['Good morning', 'Good afternoon', 'Good evening'];
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return GREETINGS[0];
-  if (h < 17) return GREETINGS[1];
-  return GREETINGS[2];
-}
 
 export default function FanDashboardScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
@@ -61,21 +52,13 @@ export default function FanDashboardScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
       >
         {/* Top Bar — asymmetric */}
-        <View style={styles.topBar}>
-          <View style={styles.topLeft}>
-            <Text style={styles.greeting}>{getGreeting()},</Text>
-            <Text style={styles.name}>{firstName} 👋</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.avatar}
-            onPress={() => navigation.navigate('Account')}
-            activeOpacity={0.8}
-          >
-            <LinearGradient colors={colors.gradientPurple} style={styles.avatarGradient}>
-              <Text style={styles.avatarText}>{initials}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+        <DashboardHeader
+          topLabel="WELCOME BACK"
+          title={`${firstName} 👋`}
+          avatarColors={colors.gradientPurple}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate('Account')}
+        />
 
         {/* Hero Banner Carousel */}
         <BannerCarousel
@@ -218,44 +201,6 @@ export default function FanDashboardScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingTop: spacing.lg },
-
-  // Top bar
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.lg,
-  },
-  topLeft: {},
-  greeting: {
-    color: colors.textMuted,
-    fontSize: typography.caption.fontSize,
-    fontWeight: '500',
-  },
-  name: {
-    color: colors.textPrimary,
-    fontSize: typography.h1.fontSize,
-    fontWeight: '900',
-    letterSpacing: -0.5,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  avatarGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: '#FFF',
-    fontSize: typography.bodyMedium.fontSize,
-    fontWeight: '800',
-  },
-
   loadingWrap: {
     paddingVertical: spacing.huge,
     alignItems: 'center',

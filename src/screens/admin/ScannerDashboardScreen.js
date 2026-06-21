@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -11,14 +11,15 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import TicketProHeader from '../../components/admin/TicketProHeader';
+import { AuthContext } from '../../context/AuthContext';
+import DashboardHeader from '../../components/DashboardHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchAdminAnalytics, fetchUsers } from '../../services/adminService';
 import { fetchScanHistory } from '../../services/ticketService';
 
 const GATE_LABELS = ['Gate A — Main', 'Gate B — North', 'Gate C — South', 'Gate D — VIP', 'Gate E — Staff'];
 
-function initials(name) {
+function getInitials(name) {
   return (name || '?')
     .split(' ')
     .map((n) => n[0])
@@ -33,8 +34,11 @@ function gateStatus(staff) {
   return { label: 'Standby', color: glass.statusWarningText, border: 'rgba(255,179,0,0.2)' };
 }
 
-export default function ScannerDashboardScreen() {
+export default function ScannerDashboardScreen({ navigation }) {
+  const { userInfo } = useContext(AuthContext);
   const [analytics, setAnalytics] = useState(null);
+
+  const initials = (userInfo?.name || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const [staff, setStaff] = useState([]);
   const [scanLogs, setScanLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,7 +85,7 @@ export default function ScannerDashboardScreen() {
         rate,
         battery: Math.max(18, battery),
         staff: member.name,
-        initials: initials(member.name),
+        initials: getInitials(member.name),
       };
     });
   }, [staff, analytics, scanLogs]);
@@ -106,7 +110,13 @@ export default function ScannerDashboardScreen() {
           <RefreshControl refreshing={isRefreshing} onRefresh={() => loadData(true)} tintColor={glass.brandPurple} />
         }
       >
-        <TicketProHeader showLive />
+        <DashboardHeader
+          topLabel="MONITORING"
+          title="Scanners"
+          avatarColors={['#FFD700', '#FFA000']}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate('AdminProfile')}
+        />
 
         <Text style={styles.heroLabel}>TICKETS SCANNED TODAY</Text>
         {isLoading ? (

@@ -7,6 +7,7 @@ import {
   Modal,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -255,6 +256,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
         <ScreenHeader title="Edit Match" onBack={() => navigation.goBack()} />
         <View style={styles.center}>
           <ActivityIndicator size="large" color={glass.brandPurple} />
@@ -266,6 +268,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
   if (error) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
         <ScreenHeader title="Edit Match" onBack={() => navigation.goBack()} />
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
@@ -279,6 +282,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <ScreenHeader
         title="Edit Match"
         subtitle="Update event details and pricing"

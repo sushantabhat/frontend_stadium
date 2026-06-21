@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -11,7 +11,9 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import TicketProHeader, { AdminCard, AdminFilterPills } from '../../components/admin/TicketProHeader';
+import { AuthContext } from '../../context/AuthContext';
+import DashboardHeader from '../../components/DashboardHeader';
+import { AdminCard, AdminFilterPills } from '../../components/admin/TicketProHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchScanHistory } from '../../services/ticketService';
 import { fetchFraudLogs } from '../../services/adminService';
@@ -57,8 +59,11 @@ function normalizeTicket(log, index) {
   };
 }
 
-export default function TicketValidationScreen() {
+export default function TicketValidationScreen({ navigation }) {
+  const { userInfo } = useContext(AuthContext);
   const [scanLogs, setScanLogs] = useState([]);
+
+  const initials = (userInfo?.name || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const [fraudLogs, setFraudLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -145,9 +150,13 @@ export default function TicketValidationScreen() {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View>
-            <TicketProHeader showLive />
-            <Text style={styles.eyebrow}>MANAGEMENT</Text>
-            <Text style={styles.pageTitle}>Tickets</Text>
+            <DashboardHeader
+              topLabel="MANAGEMENT"
+              title="Tickets"
+              avatarColors={['#FFD700', '#FFA000']}
+              avatarLabel={initials}
+              onAvatarPress={() => navigation.navigate('AdminProfile')}
+            />
             <AdminFilterPills options={FILTERS} value={activeFilter} onChange={setActiveFilter} />
           </View>
         }
@@ -173,8 +182,7 @@ export default function TicketValidationScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: glass.canvasStart },
   list: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxl * 2 },
-  eyebrow: { color: glass.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, marginBottom: spacing.xs },
-  pageTitle: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '900', letterSpacing: -0.4, marginBottom: spacing.lg },
+
   ticketCard: { padding: spacing.xl, marginBottom: spacing.md },
   ticketTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.md },
   ticketTopLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },

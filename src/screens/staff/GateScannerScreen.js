@@ -1,9 +1,10 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useContext, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, Alert, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect } from '@react-navigation/native';
-import ScreenHeader from '../../components/ScreenHeader';
+import { AuthContext } from '../../context/AuthContext';
+import DashboardHeader from '../../components/DashboardHeader';
 import { formatTimeInNepal } from '../../utils/date';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchScanHistory, verifyTicketCode } from '../../services/ticketService';
@@ -14,6 +15,7 @@ const isSecureContext = Platform.OS !== 'web'
   || window.location?.hostname === 'localhost';
 
 export default function GateScannerScreen({ navigation }) {
+  const { userInfo } = useContext(AuthContext);
   const [ticketCode, setTicketCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [scanHistory, setScanHistory] = useState([]);
@@ -205,7 +207,13 @@ export default function GateScannerScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScreenHeader title="Gate Scanner" subtitle="Stadium entry control panel" />
+      <DashboardHeader
+        topLabel="SECURE UTILITY"
+        title="Gate Scanner"
+        avatarColors={['#00E5FF', '#00B8D4']}
+        avatarLabel={(userInfo?.name || 'S').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+        onAvatarPress={() => navigation.navigate('Account')}
+      />
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {scannerActive ? (

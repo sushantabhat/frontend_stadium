@@ -1,5 +1,4 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 
@@ -10,7 +9,8 @@ import GateScannerScreen from '../screens/staff/GateScannerScreen';
 import TicketVerifyScreen from '../screens/staff/TicketVerifyScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import SettingsScreen from '../screens/common/SettingsScreen';
-import { glass, shadows } from '../constants/theme';
+import { glass } from '../constants/theme';
+import TabBar, { tabBarStyle } from '../components/TabBar';
 
 const Tab = createBottomTabNavigator();
 const IncidentsStack = createStackNavigator();
@@ -19,17 +19,6 @@ const ScannerStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
 const screenOptions = { headerShown: false, cardStyle: { backgroundColor: glass.canvasStart } };
-
-function TabIcon({ label, focused }) {
-  const icons = { Incidents: '🚨', Override: '🔓', Scanner: '📸', Account: '👤' };
-  return (
-    <View style={tabStyles.iconWrap}>
-      <Text style={[tabStyles.icon, focused && tabStyles.iconFocused]}>{icons[label] || '•'}</Text>
-      <Text style={[tabStyles.label, focused && tabStyles.labelFocused]}>{label}</Text>
-      {focused && <View style={tabStyles.activeDot} />}
-    </View>
-  );
-}
 
 function IncidentsNavigator() {
   return (
@@ -71,10 +60,8 @@ export default function SupervisorTabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} />,
-        tabBarStyle: tabStyles.bar,
-        tabBarActiveTintColor: glass.neonMagenta,
-        tabBarInactiveTintColor: glass.textMuted,
+        tabBarIcon: ({ focused }) => <TabBar routeName={route.name} focused={focused} />,
+        tabBarStyle,
         tabBarLabel: () => null,
       })}
     >
@@ -85,21 +72,3 @@ export default function SupervisorTabNavigator() {
     </Tab.Navigator>
   );
 }
-
-const tabStyles = StyleSheet.create({
-  bar: {
-    backgroundColor: '#0A0B0E',
-    borderTopColor: glass.border,
-    borderTopWidth: 1,
-    height: 85,
-    paddingTop: 8,
-    paddingBottom: 28,
-    ...shadows.xl,
-  },
-  iconWrap: { alignItems: 'center', gap: 3 },
-  icon: { fontSize: 22 },
-  iconFocused: { transform: [{ scale: 1.15 }] },
-  label: { fontSize: 10, fontWeight: '600', color: glass.textMuted },
-  labelFocused: { color: glass.neonMagenta, fontWeight: '700' },
-  activeDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: glass.neonMagenta, marginTop: 2 },
-});

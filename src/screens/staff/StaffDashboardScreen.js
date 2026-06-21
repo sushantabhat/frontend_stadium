@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchScanHistory } from '../../services/ticketService';
+import DashboardHeader from '../../components/DashboardHeader';
 
 function timeAgo(date) {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -60,25 +61,13 @@ export default function StaffDashboardScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
       >
         {/* Header */}
-        <View style={styles.topBar}>
-          <View style={styles.topLeft}>
-            <View style={styles.rolePill}>
-              <View style={styles.roleDot} />
-              <Text style={styles.roleText}>STAFF</Text>
-            </View>
-            <Text style={styles.name}>Hey, {firstName}</Text>
-            <Text style={styles.subtitle}>Gate Operations</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.avatar}
-            onPress={() => navigation.navigate('Account')}
-            activeOpacity={0.8}
-          >
-            <LinearGradient colors={['#00C853', '#00A844']} style={styles.avatarGradient}>
-              <Text style={styles.avatarText}>{initials}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+        <DashboardHeader
+          topLabel="GATE OPERATIONS"
+          title={`Hey, ${firstName}`}
+          avatarColors={['#00C853', '#00A844']}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate('Account')}
+        />
 
         {/* Scanner CTA */}
         <TouchableOpacity
@@ -274,20 +263,6 @@ export default function StaffDashboardScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingTop: spacing.lg },
-
-  topBar: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: spacing.xl, marginBottom: spacing.xxl,
-  },
-  topLeft: {},
-  rolePill: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
-  roleDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success },
-  roleText: { color: colors.success, fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
-  name: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '900', letterSpacing: -0.5 },
-  subtitle: { color: colors.textMuted, fontSize: typography.caption.fontSize, marginTop: spacing.xs },
-  avatar: { width: 48, height: 48, borderRadius: 16, overflow: 'hidden' },
-  avatarGradient: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#FFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
 
   scannerCta: {
     marginHorizontal: spacing.xl, marginBottom: spacing.xxl,

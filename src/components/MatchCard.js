@@ -4,7 +4,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography, shadows } from '../constants/theme';
 import { formatInNepal, formatTimeInNepal } from '../utils/date';
 
-const TEAM_EMOJIS = { India: '🇮🇳', Australia: '🇦🇺', England: '🏴', Pakistan: '🇵🇰', SouthAfrica: '🇿🇦', NewZealand: '🇳🇿', SriLanka: '🇱🇰', Bangladesh: '🇧🇩', WestIndies: '🌴', Afghanistan: '🇦🇫' };
+function getInitials(name) {
+  if (!name) return '??';
+  return name.split(/\s+/).map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function isValidLogo(uri) {
+  return typeof uri === 'string' && uri.trim().length > 10 && uri.startsWith('http');
+}
 
 const TINT_THEMES = [
   ['#1a0533', '#0d1b3e', '#162040'],
@@ -24,6 +31,7 @@ function getStatusConfig(status) {
 }
 
 export default function MatchCard({ match, onPress, variant = 'horizontal', tintIndex = 0 }) {
+  if (!match) return null;
   const date = match.matchDate ? new Date(match.matchDate) : new Date();
   const day = date.getDate();
   const month = formatInNepal(date, { month: 'short' }).toUpperCase();
@@ -35,55 +43,61 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
   const tint = TINT_THEMES[tintIndex % TINT_THEMES.length];
 
   if (variant === 'hero') {
-    const hasBanner = Boolean(match.imageUrl);
     return (
       <TouchableOpacity style={styles.heroCard} onPress={onPress} activeOpacity={0.92}>
-        <View style={styles.heroInner}>
-          {hasBanner && (
-            <Image source={{ uri: match.imageUrl }} style={styles.heroBanner} resizeMode="cover" />
-          )}
-          <LinearGradient colors={hasBanner ? ['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.85)'] : tint} style={[styles.heroOverlay, !hasBanner && { backgroundColor: 'transparent' }]}>
-            {/* Overlapping live badge */}
-            <View style={styles.heroTop}>
-              <View style={styles.heroDateBlock}>
-                <Text style={styles.heroDay}>{day}</Text>
-                <Text style={styles.heroMonth}>{month}</Text>
-              </View>
-              <View style={[styles.liveBadge, statusConfig.pulse && styles.livePulse]}>
-                {statusConfig.pulse && <View style={styles.liveDot} />}
-                <Text style={styles.liveText}>{statusConfig.label}</Text>
-              </View>
+        {match.imageUrl ? (
+          <Image source={{ uri: match.imageUrl }} style={styles.heroCardBg} resizeMode="cover" />
+        ) : null}
+        <LinearGradient
+          colors={match.imageUrl ? ['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.85)'] : tint}
+          style={styles.heroContent}
+        >
+          {/* Top: date + status */}
+          <View style={styles.heroTop}>
+            <View style={styles.heroDateBlock}>
+              <Text style={styles.heroDay}>{day}</Text>
+              <Text style={styles.heroMonth}>{month}</Text>
             </View>
-
-            {/* Teams — with logos if available */}
-            <View style={styles.heroTeamsRow}>
-              <View style={styles.heroTeam}>
-                {match.teamALogo ? (
-                  <Image source={{ uri: match.teamALogo }} style={styles.heroTeamLogo} resizeMode="contain" />
-                ) : (
-                  <Text style={styles.heroTeamEmoji}>{TEAM_EMOJIS[match.teamA] || '🏏'}</Text>
-                )}
-                <Text style={styles.heroTeamName}>{match.teamA}</Text>
-              </View>
-              <View style={styles.heroVsBadge}>
-                <Text style={styles.heroVs}>VS</Text>
-              </View>
-              <View style={styles.heroTeam}>
-                {match.teamBLogo ? (
-                  <Image source={{ uri: match.teamBLogo }} style={styles.heroTeamLogo} resizeMode="contain" />
-                ) : (
-                  <Text style={styles.heroTeamEmoji}>{TEAM_EMOJIS[match.teamB] || '🏏'}</Text>
-                )}
-                <Text style={styles.heroTeamName}>{match.teamB}</Text>
-              </View>
+            <View style={[styles.liveBadge, statusConfig.pulse && styles.livePulse]}>
+              {statusConfig.pulse && <View style={styles.liveDot} />}
+              <Text style={styles.liveText}>{statusConfig.label}</Text>
             </View>
+          </View>
 
-            <Text style={styles.heroTitle}>{match.title}</Text>
-            <Text style={styles.heroVenue}>📍 {match.venue}</Text>
+          {/* Teams — with logos if available */}
+          <View style={styles.heroTeamsRow}>
+            <View style={styles.heroTeam}>
+              {isValidLogo(match.teamALogo) ? (
+                <Image source={{ uri: match.teamALogo }} style={styles.heroTeamLogo} resizeMode="contain" />
+              ) : (
+                <View style={styles.teamCircleLarge}>
+                  <Text style={styles.teamCircleLargeText}>{getInitials(match.teamA)}</Text>
+                </View>
+              )}
+              <Text style={styles.heroTeamName} numberOfLines={2}>{match.teamA || 'TBA'}</Text>
+            </View>
+            <View style={styles.heroVsCircle}>
+              <Text style={styles.heroVsText}>VS</Text>
+            </View>
+            <View style={styles.heroTeam}>
+              {isValidLogo(match.teamBLogo) ? (
+                <Image source={{ uri: match.teamBLogo }} style={styles.heroTeamLogo} resizeMode="contain" />
+              ) : (
+                <View style={styles.teamCircleLarge}>
+                  <Text style={styles.teamCircleLargeText}>{getInitials(match.teamB)}</Text>
+                </View>
+              )}
+              <Text style={styles.heroTeamName} numberOfLines={2}>{match.teamB || 'TBA'}</Text>
+            </View>
+          </View>
 
-            {/* Bottom bar with progress */}
-            <View style={styles.heroBottom}>
-              <Text style={styles.heroTime}>⏰ {time}</Text>
+          <Text style={styles.heroTitle}>{match.title}</Text>
+          <Text style={styles.heroVenue}>📍 {match.venue}</Text>
+
+          {/* Bottom: time + sold bar */}
+          <View style={styles.heroBottom}>
+            <Text style={styles.heroTime}>⏰ {time}</Text>
+            <View style={styles.heroBottomRight}>
               {total > 0 && (
                 <View style={styles.heroSoldWrap}>
                   <View style={styles.heroSoldBar}>
@@ -92,16 +106,14 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
                   <Text style={styles.heroSoldText}>{soldPct}% sold</Text>
                 </View>
               )}
+              {available > 0 && available <= 20 && (
+                <View style={styles.fewSeatsBadge}>
+                  <Text style={styles.fewSeatsText}>🔥 {available} left!</Text>
+                </View>
+              )}
             </View>
-          </LinearGradient>
-        </View>
-
-        {/* Overlapping badge — breaks the card edge */}
-        {available > 0 && available <= 20 && (
-          <View style={styles.fewSeatsBadge}>
-            <Text style={styles.fewSeatsText}>🔥 Only {available} left!</Text>
           </View>
-        )}
+        </LinearGradient>
       </TouchableOpacity>
     );
   }
@@ -152,16 +164,20 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
           {/* Middle: teams + title */}
           <View style={styles.hMiddle}>
             <View style={styles.hTeamsRow}>
-              {match.teamALogo ? (
+              {isValidLogo(match.teamALogo) ? (
                 <Image source={{ uri: match.teamALogo }} style={styles.hTeamLogo} resizeMode="contain" />
               ) : (
-                <Text style={styles.hTeamEmoji}>{TEAM_EMOJIS[match.teamA] || '🏏'}</Text>
+                <View style={styles.teamCircleSmall}>
+                  <Text style={styles.teamCircleSmallText}>{getInitials(match.teamA)}</Text>
+                </View>
               )}
-              <Text style={styles.hTeams}>{match.teamA} vs {match.teamB}</Text>
-              {match.teamBLogo ? (
+              <Text style={styles.hTeams}>{match.teamA || 'TBA'} vs {match.teamB || 'TBA'}</Text>
+              {isValidLogo(match.teamBLogo) ? (
                 <Image source={{ uri: match.teamBLogo }} style={styles.hTeamLogo} resizeMode="contain" />
               ) : (
-                <Text style={styles.hTeamEmoji}>{TEAM_EMOJIS[match.teamB] || '🏏'}</Text>
+                <View style={styles.teamCircleSmall}>
+                  <Text style={styles.teamCircleSmallText}>{getInitials(match.teamB)}</Text>
+                </View>
               )}
             </View>
             <Text style={styles.hTitle} numberOfLines={1}>{match.title}</Text>
@@ -193,25 +209,15 @@ const styles = StyleSheet.create({
   // ========= HERO =========
   heroCard: {
     borderRadius: radii.xxl,
-    overflow: 'visible',
+    overflow: 'hidden',
     ...shadows.lg,
   },
-  heroInner: {
-    borderRadius: radii.xxl,
-    padding: spacing.xxl,
-    paddingBottom: spacing.xl,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  heroBanner: {
+  heroCardBg: {
     ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
-    borderRadius: radii.xxl,
   },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: radii.xxl,
+  heroContent: {
     padding: spacing.xxl,
     paddingBottom: spacing.xl,
   },
@@ -279,10 +285,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  heroTeamEmoji: {
-    fontSize: 42,
-    marginBottom: spacing.sm,
-  },
   heroTeamLogo: {
     width: 56,
     height: 56,
@@ -294,19 +296,51 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
-  heroVsBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  heroVsCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroVs: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 2,
+  heroVsText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
+  teamCircleLarge: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  teamCircleLargeText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  teamCircleSmall: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  teamCircleSmallText: {
+    color: '#FFF',
+    fontSize: 7,
+    fontWeight: '800',
   },
 
   heroTitle: {
@@ -325,7 +359,12 @@ const styles = StyleSheet.create({
   heroBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+  },
+  heroBottomRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   heroTime: {
     color: 'rgba(255,255,255,0.8)',
@@ -356,14 +395,10 @@ const styles = StyleSheet.create({
 
   // Overlapping badge
   fewSeatsBadge: {
-    position: 'absolute',
-    top: -8,
-    right: spacing.xl,
     backgroundColor: colors.accent,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radii.full,
-    ...shadows.accent,
   },
   fewSeatsText: {
     color: '#000',
@@ -435,9 +470,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     marginBottom: 2,
-  },
-  hTeamEmoji: {
-    fontSize: 18,
   },
   hTeamLogo: {
     width: 24,

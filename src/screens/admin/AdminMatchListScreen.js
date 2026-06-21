@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -18,7 +18,10 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
-import TicketProHeader, { AdminFilterPills, AdminPageTitle, AdminSearchBar } from '../../components/admin/TicketProHeader';
+import { AuthContext } from '../../context/AuthContext';
+import DashboardHeader from '../../components/DashboardHeader';
+import FAB from '../../components/FAB';
+import { AdminFilterPills, AdminSearchBar } from '../../components/admin/TicketProHeader';
 import EmptyState from '../../components/EmptyState';
 import { fetchMatches } from '../../services/matchService';
 import { spacing, radii, typography, glass, colors } from '../../constants/theme';
@@ -78,11 +81,8 @@ function computeZoneQuota(stats, zoneKey) {
   const total = stats?.total ?? 0;
   if (total === 0) return { sold: 0, capacity: 0, pct: 0 };
 
-  const booked = stats?.booked ?? 0;
-  const zoneCount = stats?.[zoneKey] ?? 0;
-  const capacity = zoneCount;
-  const ratio = total > 0 ? zoneCount / total : 0;
-  const sold = Math.round(booked * ratio);
+  const capacity = stats?.[zoneKey] ?? 0;
+  const sold = stats?.[`${zoneKey}_booked`] ?? 0;
   const pct = capacity > 0 ? Math.round((sold / capacity) * 100) : 0;
   return { sold, capacity, pct };
 }
@@ -90,23 +90,20 @@ function computeZoneQuota(stats, zoneKey) {
 function computeRevenue(match) {
   const stats = match.seatStats || {};
   const pricing = match.pricing || {};
-  const total = stats.total || match.totalSeats || 0;
-  const booked = stats.booked || 0;
-  if (total === 0 || booked === 0) return 0;
-
   let revenue = 0;
   for (const [category, price] of Object.entries(pricing)) {
     if (typeof price !== 'number') continue;
-    const catCount = stats[category] || 0;
-    const ratio = total > 0 ? catCount / total : 0;
-    const bookedCat = Math.round(booked * ratio);
+    const bookedCat = stats[`${category}_booked`] || 0;
     revenue += bookedCat * price;
   }
   return revenue;
 }
 
 export default function AdminMatchListScreen({ navigation }) {
+  const { userInfo } = useContext(AuthContext);
   const [matches, setMatches] = useState([]);
+
+  const initials = (userInfo?.name || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -132,8 +129,6 @@ export default function AdminMatchListScreen({ navigation }) {
 
   useFocusEffect(useCallback(() => { loadMatches(); }, [loadMatches]));
 
-  const liveCount = matches.filter((m) => m.status === 'live').length;
-
   const filteredMatches = useMemo(
     () => matches.filter((m) => matchesFilter(m, activeFilter) && matchesSearch(m, searchQuery)),
     [matches, activeFilter, searchQuery]
@@ -155,15 +150,12 @@ export default function AdminMatchListScreen({ navigation }) {
 
   const renderHeader = () => (
     <View style={s.headerSection}>
-      <TicketProHeader showLive={liveCount > 0} />
-      <AdminPageTitle
-        eyebrow="MANAGEMENT"
+      <DashboardHeader
+        topLabel="MANAGEMENT"
         title="Events"
-        action={
-          <TouchableOpacity style={s.newButton} onPress={() => navigation.navigate('AdminCreateMatch')} activeOpacity={0.85}>
-            <Text style={s.newButtonText}>+ New</Text>
-          </TouchableOpacity>
-        }
+        avatarColors={['#FFD700', '#FFA000']}
+        avatarLabel={initials}
+        onAvatarPress={() => navigation.navigate('AdminProfile')}
       />
       <AdminSearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Search events..." onClear={() => setSearchQuery('')} />
       <AdminFilterPills options={FILTERS} value={activeFilter} onChange={setActiveFilter} />
@@ -503,6 +495,8 @@ export default function AdminMatchListScreen({ navigation }) {
       )}
 
       {renderDetailModal()}
+
+      <FAB icon="+" label="New" onPress={() => navigation.navigate('AdminCreateMatch')} />
     </SafeAreaView>
   );
 }
@@ -517,18 +511,6 @@ const s = StyleSheet.create({
   errorWrap: { flex: 1 },
   list: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl * 3 },
   headerSection: { paddingTop: spacing.md, paddingBottom: spacing.lg },
-
-  /* ── New Button ── */
-  newButton: {
-    backgroundColor: glass.brandPurple,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: radii.full,
-    minHeight: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  newButtonText: { color: '#FFF', fontSize: typography.caption.fontSize, fontWeight: '800' },
 
   /* ═══════════════════════════════════════════════════
      LIST CARD — full-bleed image, fan-aligned
