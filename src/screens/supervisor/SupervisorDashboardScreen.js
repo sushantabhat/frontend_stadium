@@ -1,10 +1,9 @@
 import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
-import { colors, spacing, radii, typography, glass } from '../../constants/theme';
+import { colors, spacing, radii, typography } from '../../constants/theme';
 import { fetchFraudLogs } from '../../services/adminService';
 import DashboardHeader from '../../components/DashboardHeader';
 
@@ -18,10 +17,10 @@ const MOCK_GATES = [
 
 /* ─── Severity color mapping ─── */
 const SEVERITY = {
-  critical: { bg: glass.statusDangerFill, text: glass.statusDangerText, label: 'CRITICAL' },
-  high:     { bg: 'rgba(255,152,0,0.12)', text: '#FF9800', label: 'HIGH' },
-  medium:   { bg: glass.statusWarningFill, text: glass.statusWarningText, label: 'MEDIUM' },
-  low:      { bg: glass.statusSuccessFill, text: glass.statusSuccessText, label: 'LOW' },
+  critical: { bg: colors.dangerSurface, text: colors.danger, label: 'CRITICAL' },
+  high:     { bg: colors.warningSurface, text: colors.warning, label: 'HIGH' },
+  medium:   { bg: colors.warningSurface, text: colors.warning, label: 'MEDIUM' },
+  low:      { bg: colors.successSurface, text: colors.success, label: 'LOW' },
 };
 
 export default function SupervisorDashboardScreen({ navigation }) {
@@ -90,13 +89,13 @@ export default function SupervisorDashboardScreen({ navigation }) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => loadData(true)} tintColor={glass.neonCyan} />}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => loadData(true)} tintColor={colors.primary} />}
       >
         {/* ═══ DASHBOARD HEADER ═══ */}
         <DashboardHeader
           topLabel="INCIDENT COMMAND"
           title={`Hey, ${firstName}`}
-          avatarColors={[glass.neonMagenta, glass.neonPurple]}
+          avatarColors={[colors.primary, colors.primaryDark]}
           avatarLabel={initials}
           onAvatarPress={() => navigation.navigate('SupervisorProfile')}
         />
@@ -109,12 +108,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
               activeOpacity={0.9}
               onPress={() => navigation.navigate('SupervisorIncidents')}
             >
-              <LinearGradient
-                colors={[glass.statusDangerFill, 'rgba(255,23,68,0.04)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.alertInner}
-              >
+              <View style={styles.alertInner}>
                 <View style={styles.alertLeft}>
                   <Text style={styles.alertIcon}>🚨</Text>
                   <View>
@@ -125,7 +119,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
                   </View>
                 </View>
                 <Text style={styles.alertArrow}>→</Text>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
           </View>
         )}
@@ -135,10 +129,10 @@ export default function SupervisorDashboardScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Operations Overview</Text>
           <View style={styles.metricsRow}>
             {[
-              { label: 'OPEN', value: openIncidents.length, icon: '📋', color: glass.statusWarningText },
-              { label: 'CRITICAL', value: criticalCount, icon: '🔴', color: glass.statusDangerText },
-              { label: 'TOTAL SCANS', value: totalScans.toLocaleString(), icon: '📸', color: glass.neonCyan },
-              { label: 'GATES DOWN', value: offlineGates, icon: '📡', color: offlineGates > 0 ? glass.statusDangerText : glass.statusSuccessText },
+              { label: 'OPEN', value: openIncidents.length, icon: '📋', color: colors.warning },
+              { label: 'CRITICAL', value: criticalCount, icon: '🔴', color: colors.danger },
+              { label: 'TOTAL SCANS', value: totalScans.toLocaleString(), icon: '📸', color: colors.primary },
+              { label: 'GATES DOWN', value: offlineGates, icon: '📡', color: offlineGates > 0 ? colors.danger : colors.success },
             ].map((m) => (
               <TouchableOpacity key={m.label} style={styles.metricCard} activeOpacity={0.9}>
                 <View style={styles.metricInner}>
@@ -161,7 +155,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
             <View key={gate.id} style={styles.gateCard}>
               <View style={styles.gateInner}>
                 <View style={styles.gateLeft}>
-                  <View style={[styles.gateStatusDot, { backgroundColor: gate.status === 'online' ? glass.statusSuccessText : glass.statusDangerText }]} />
+                  <View style={[styles.gateStatusDot, { backgroundColor: gate.status === 'online' ? colors.success : colors.danger }]} />
                   <View>
                     <Text style={styles.gateName}>{gate.name}</Text>
                     <Text style={styles.gateStaff}>Staff: {gate.staff}</Text>
@@ -185,7 +179,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
             </TouchableOpacity>
           </View>
           {isLoading ? (
-            <ActivityIndicator color={glass.neonCyan} style={{ paddingVertical: spacing.xl }} />
+            <ActivityIndicator color={colors.primary} style={{ paddingVertical: spacing.xl }} />
           ) : incidents.length === 0 ? (
             <View style={styles.emptyWrap}>
               <Text style={styles.emptyIcon}>✅</Text>
@@ -230,44 +224,44 @@ const styles = StyleSheet.create({
   section: { marginBottom: spacing.xxl, paddingHorizontal: spacing.xl },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg },
   sectionTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800', letterSpacing: -0.3, marginBottom: spacing.lg },
-  sectionSub: { color: glass.textMuted, fontSize: typography.small.fontSize, marginBottom: spacing.lg },
-  seeAll: { color: glass.neonCyan, fontSize: typography.small.fontSize, fontWeight: '600', marginBottom: spacing.lg },
+  sectionSub: { color: colors.textMuted, fontSize: typography.small.fontSize, marginBottom: spacing.lg },
+  seeAll: { color: colors.primary, fontSize: typography.small.fontSize, fontWeight: '600', marginBottom: spacing.lg },
 
-  alertCard: { borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: glass.statusDangerFill },
+  alertCard: { borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: colors.dangerSurface },
   alertInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.xl },
   alertLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
   alertIcon: { fontSize: 24 },
-  alertTitle: { color: glass.statusDangerText, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
-  alertDesc: { color: glass.textMuted, fontSize: typography.small.fontSize, marginTop: 2 },
-  alertArrow: { color: glass.statusDangerText, fontSize: 18, fontWeight: '700' },
+  alertTitle: { color: colors.danger, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
+  alertDesc: { color: colors.textMuted, fontSize: typography.small.fontSize, marginTop: 2 },
+  alertArrow: { color: colors.danger, fontSize: 18, fontWeight: '700' },
 
   metricsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   metricCard: { width: '47%', backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border },
   metricInner: { padding: spacing.xl, alignItems: 'center' },
   metricIcon: { fontSize: 18, marginBottom: spacing.sm },
   metricValue: { fontSize: typography.h2.fontSize, fontWeight: '900', marginBottom: spacing.xs },
-  metricLabel: { color: glass.textMuted, fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
+  metricLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
 
   gateCard: { marginBottom: spacing.sm, backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border },
   gateInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.xl },
   gateLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   gateStatusDot: { width: 10, height: 10, borderRadius: 5 },
   gateName: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
-  gateStaff: { color: glass.textMuted, fontSize: 9, marginTop: 2 },
+  gateStaff: { color: colors.textMuted, fontSize: 9, marginTop: 2 },
   gateRight: { alignItems: 'flex-end' },
-  gateScans: { color: glass.neonCyan, fontSize: typography.captionMedium.fontSize, fontWeight: '700', fontFamily: glass.monoFont },
-  gateErrors: { color: glass.statusDangerText, fontSize: 9, marginTop: 2 },
+  gateScans: { color: colors.primary, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
+  gateErrors: { color: colors.danger, fontSize: 9, marginTop: 2 },
 
   incidentCard: { marginBottom: spacing.sm, backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border },
   incidentInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.xl, gap: spacing.md },
   incidentLeft: { flex: 1 },
   incidentTitle: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700', marginBottom: 2 },
-  incidentMeta: { color: glass.textMuted, fontSize: 9, fontFamily: glass.monoFont },
+  incidentMeta: { color: colors.textMuted, fontSize: 9 },
   severityPill: { paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radii.full },
   severityText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.6 },
 
   emptyWrap: { alignItems: 'center', paddingVertical: spacing.xxl },
   emptyIcon: { fontSize: 36, marginBottom: spacing.md },
   emptyTitle: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '700', marginBottom: spacing.xs },
-  emptyDesc: { color: glass.textMuted, fontSize: typography.small.fontSize },
+  emptyDesc: { color: colors.textMuted, fontSize: typography.small.fontSize },
 });

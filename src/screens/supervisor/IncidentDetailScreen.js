@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, radii, typography, glass } from '../../constants/theme';
+import { colors, spacing, radii, typography } from '../../constants/theme';
 import { formatInNepal } from '../../utils/date';
 import DashboardHeader from '../../components/DashboardHeader';
 
@@ -106,9 +105,9 @@ export default function IncidentDetailScreen({ route, navigation }) {
               activeOpacity={0.7}
             >
               {isActive ? (
-                <LinearGradient colors={[glass.neonCyan, glass.neonPurple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.tabGradient}>
+                <View style={styles.tabGradient}>
                   <Text style={styles.tabTextActive}>{tab.label}</Text>
-                </LinearGradient>
+                </View>
               ) : (
                 <Text style={styles.tabText}>{tab.label}</Text>
               )}
@@ -132,7 +131,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.label}>Severity</Text>
-                  <Text style={[styles.value, { color: incident?.severity === 'critical' ? glass.statusDangerText : glass.statusWarningText }]}>
+                  <Text style={[styles.value, { color: incident?.severity === 'critical' ? colors.danger : colors.warning }]}>
                     {(incident?.severity || 'medium').toUpperCase()}
                   </Text>
                 </View>
@@ -142,26 +141,26 @@ export default function IncidentDetailScreen({ route, navigation }) {
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.label}>Ticket Code</Text>
-                  <Text style={[styles.value, { fontFamily: glass.monoFont }]}>{incident?.ticketCode || '—'}</Text>
+                  <Text style={styles.value}>{incident?.ticketCode || '—'}</Text>
                 </View>
                 <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
                   <Text style={styles.label}>Time</Text>
                   <Text style={styles.value}>{timeAgo(incident?.timestamp)}</Text>
                 </View>
-              </LinearGradient>
+              </View>
             </View>
 
             {/* Quick actions */}
             <View style={styles.card}>
-              <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardInner}>
+              <View style={styles.cardInner}>
                 <Text style={styles.cardHeader}>ACTIONS</Text>
                 <TouchableOpacity style={styles.actionBtn} onPress={handleAcknowledge} activeOpacity={0.7}>
-                  <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionBtnInner}>
+                  <View style={styles.actionBtnInner}>
                     <Text style={styles.actionIcon}>👁️</Text>
                     <Text style={styles.actionLabel}>Acknowledge</Text>
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
-              </LinearGradient>
+              </View>
             </View>
           </>
         )}
@@ -169,7 +168,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
         {/* ═══ TICKET TAB ═══ */}
         {activeTab === 'ticket' && (
           <View style={styles.card}>
-            <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardInner}>
+            <View style={styles.cardInner}>
               <Text style={styles.cardHeader}>TICKET FORENSICS</Text>
               {[
                 { label: 'Ticket Code', value: forensics.ticket.code, mono: true },
@@ -181,49 +180,49 @@ export default function IncidentDetailScreen({ route, navigation }) {
               ].map((item, idx, arr) => (
                 <View key={item.label} style={[styles.detailRow, idx === arr.length - 1 && { borderBottomWidth: 0 }]}>
                   <Text style={styles.label}>{item.label}</Text>
-                  <Text style={[styles.value, item.mono && { fontFamily: glass.monoFont }]} numberOfLines={1}>{item.value}</Text>
+                  <Text style={styles.value} numberOfLines={1}>{item.value}</Text>
                 </View>
               ))}
-            </LinearGradient>
+            </View>
           </View>
         )}
 
         {/* ═══ SCAN HISTORY TAB ═══ */}
         {activeTab === 'scans' && (
           <View style={styles.card}>
-            <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardInner}>
+            <View style={styles.cardInner}>
               <Text style={styles.cardHeader}>FULL AUDIT TRAIL</Text>
               {forensics.scanHistory.map((scan, idx) => (
                 <View key={idx} style={[styles.scanRow, idx < forensics.scanHistory.length - 1 && styles.scanRowBorder]}>
                   <View style={styles.scanLeft}>
-                    <View style={[styles.scanDot, { backgroundColor: scan.status === 'approved' ? glass.statusSuccessText : glass.statusDangerText }]} />
+                    <View style={[styles.scanDot, { backgroundColor: scan.status === 'approved' ? colors.success : colors.danger }]} />
                     <View>
                       <Text style={styles.scanGate}>{scan.gate}</Text>
                       <Text style={styles.scanTime}>{timeAgo(scan.time)}</Text>
                     </View>
                   </View>
-                  <View style={[styles.scanStatusPill, { backgroundColor: scan.status === 'approved' ? glass.statusSuccessFill : glass.statusDangerFill }]}>
-                    <Text style={[styles.scanStatusText, { color: scan.status === 'approved' ? glass.statusSuccessText : glass.statusDangerText }]}>
+                  <View style={[styles.scanStatusPill, { backgroundColor: scan.status === 'approved' ? colors.successSurface : colors.dangerSurface }]}>
+                    <Text style={[styles.scanStatusText, { color: scan.status === 'approved' ? colors.success : colors.danger }]}>
                       {scan.status === 'approved' ? 'APPROVED' : 'DUPLICATE'}
                     </Text>
                   </View>
                 </View>
               ))}
-            </LinearGradient>
+            </View>
           </View>
         )}
 
         {/* ═══ CUSTOMER TAB ═══ */}
         {activeTab === 'customer' && (
           <View style={styles.card}>
-            <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardInner}>
+            <View style={styles.cardInner}>
               <Text style={styles.cardHeader}>CUSTOMER PROFILE</Text>
               {[
                 { label: 'Name', value: forensics.customerProfile.name },
                 { label: 'Email', value: forensics.customerProfile.email },
-                { label: 'Account Status', value: forensics.customerProfile.accountStatus.toUpperCase(), color: glass.statusSuccessText },
+                { label: 'Account Status', value: forensics.customerProfile.accountStatus.toUpperCase(), color: colors.success },
                 { label: 'Previous Bookings', value: String(forensics.customerProfile.previousBookings) },
-                { label: 'Fraud Flags', value: String(forensics.customerProfile.previousFraudFlags), color: glass.statusSuccessText },
+                { label: 'Fraud Flags', value: String(forensics.customerProfile.previousFraudFlags), color: colors.success },
                 { label: 'Member Since', value: formatInNepal(forensics.customerProfile.memberSince, { month: 'short', year: 'numeric' }) },
               ].map((item, idx, arr) => (
                 <View key={item.label} style={[styles.detailRow, idx === arr.length - 1 && { borderBottomWidth: 0 }]}>
@@ -231,7 +230,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
                   <Text style={[styles.value, item.color && { color: item.color }]}>{item.value}</Text>
                 </View>
               ))}
-            </LinearGradient>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -239,20 +238,20 @@ export default function IncidentDetailScreen({ route, navigation }) {
       {/* ═══ BOTTOM ACTION BUTTONS ═══ */}
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.bottomBtn} onPress={handleOverride} activeOpacity={0.85}>
-          <LinearGradient colors={[glass.statusSuccessText, '#00C853']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.bottomBtnGradient}>
+          <View style={styles.bottomBtnInner}>
             <Text style={styles.bottomBtnText}>✅ Override & Allow</Text>
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
         <View style={styles.bottomRow}>
           <TouchableOpacity style={styles.bottomBtnHalf} onPress={handleDeny} activeOpacity={0.85}>
-            <LinearGradient colors={[glass.statusDangerFill, 'rgba(255,23,68,0.04)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.bottomBtnHalfGradient}>
-              <Text style={[styles.bottomBtnHalfText, { color: glass.statusDangerText }]}>❌ Deny</Text>
-            </LinearGradient>
+            <View style={styles.bottomBtnHalfInner}>
+              <Text style={styles.bottomBtnHalfText}>❌ Deny</Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.bottomBtnHalf} onPress={handleEscalate} activeOpacity={0.85}>
-            <LinearGradient colors={[glass.statusWarningFill, 'rgba(255,179,0,0.04)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.bottomBtnHalfGradient}>
-              <Text style={[styles.bottomBtnHalfText, { color: glass.statusWarningText }]}>⬆️ Escalate</Text>
-            </LinearGradient>
+            <View style={styles.bottomBtnHalfInnerEscalate}>
+              <Text style={styles.bottomBtnHalfTextEscalate}>⬆️ Escalate</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -267,16 +266,16 @@ const styles = StyleSheet.create({
   tabBar: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl, marginBottom: spacing.md },
   tabItem: { flex: 1, paddingVertical: spacing.sm + 2, borderRadius: radii.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   tabItemActive: { borderWidth: 0, padding: 0 },
-  tabGradient: { flex: 1, width: '100%', paddingVertical: spacing.sm + 2, borderRadius: radii.full, alignItems: 'center', justifyContent: 'center' },
-  tabText: { color: glass.textMuted, fontSize: typography.small.fontSize, fontWeight: '600' },
+  tabGradient: { flex: 1, width: '100%', paddingVertical: spacing.sm + 2, borderRadius: radii.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary },
+  tabText: { color: colors.textMuted, fontSize: typography.small.fontSize, fontWeight: '600' },
   tabTextActive: { color: '#FFFFFF', fontSize: typography.small.fontSize, fontWeight: '800' },
 
   card: { marginHorizontal: spacing.xl, marginBottom: spacing.md, backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border },
   cardInner: { padding: spacing.xl },
-  cardHeader: { color: glass.textMuted, fontSize: 10, fontWeight: '800', letterSpacing: 1.2, marginBottom: spacing.lg },
+  cardHeader: { color: colors.textMuted, fontSize: 10, fontWeight: '800', letterSpacing: 1.2, marginBottom: spacing.lg },
 
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
-  label: { color: glass.textSecondary, fontSize: typography.caption.fontSize, flex: 1 },
+  label: { color: colors.textSecondary, fontSize: typography.caption.fontSize, flex: 1 },
   value: { color: colors.textPrimary, fontSize: typography.caption.fontSize, fontWeight: '700', textAlign: 'right', flex: 1.5, marginLeft: spacing.md },
 
   actionBtn: { borderRadius: radii.lg, overflow: 'hidden' },
@@ -289,16 +288,18 @@ const styles = StyleSheet.create({
   scanLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   scanDot: { width: 10, height: 10, borderRadius: 5 },
   scanGate: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
-  scanTime: { color: glass.textMuted, fontSize: 9, marginTop: 2, fontFamily: glass.monoFont },
+  scanTime: { color: colors.textMuted, fontSize: 9, marginTop: 2 },
   scanStatusPill: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radii.full },
   scanStatusText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.6 },
 
   bottomBar: { padding: spacing.xl, gap: spacing.md, backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
   bottomBtn: { borderRadius: radii.lg, overflow: 'hidden' },
-  bottomBtnGradient: { paddingVertical: spacing.lg, alignItems: 'center', borderRadius: radii.lg },
+  bottomBtnInner: { paddingVertical: spacing.lg, alignItems: 'center', borderRadius: radii.lg, backgroundColor: colors.success },
   bottomBtnText: { color: '#FFFFFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
   bottomRow: { flexDirection: 'row', gap: spacing.md },
   bottomBtnHalf: { flex: 1, borderRadius: radii.lg, overflow: 'hidden' },
-  bottomBtnHalfGradient: { paddingVertical: spacing.lg, alignItems: 'center', borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border },
-  bottomBtnHalfText: { fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
+  bottomBtnHalfInner: { paddingVertical: spacing.lg, alignItems: 'center', borderRadius: radii.lg, borderWidth: 1, borderColor: colors.dangerSurface, backgroundColor: colors.dangerSurface },
+  bottomBtnHalfText: { color: colors.danger, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
+  bottomBtnHalfInnerEscalate: { paddingVertical: spacing.lg, alignItems: 'center', borderRadius: radii.lg, borderWidth: 1, borderColor: colors.warningSurface, backgroundColor: colors.warningSurface },
+  bottomBtnHalfTextEscalate: { color: colors.warning, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
 });

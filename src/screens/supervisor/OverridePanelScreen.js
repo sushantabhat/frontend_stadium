@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, radii, typography, glass } from '../../constants/theme';
+import { colors, spacing, radii, typography } from '../../constants/theme';
 import { formatTimeInNepal } from '../../utils/date';
 import DashboardHeader from '../../components/DashboardHeader';
 
@@ -61,18 +60,18 @@ export default function OverridePanelScreen({ navigation }) {
       <View style={styles.toggleBar}>
         <TouchableOpacity style={styles.toggleItem} onPress={() => setActiveSection('unlock')} activeOpacity={0.7}>
           {activeSection === 'unlock' ? (
-            <LinearGradient colors={[glass.neonCyan, glass.neonPurple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.toggleGradient}>
+            <View style={styles.toggleGradient}>
               <Text style={styles.toggleTextActive}>🔓 Seat Overrides</Text>
-            </LinearGradient>
+            </View>
           ) : (
             <Text style={styles.toggleText}>🔓 Seat Overrides</Text>
           )}
         </TouchableOpacity>
         <TouchableOpacity style={styles.toggleItem} onPress={() => setActiveSection('manual')} activeOpacity={0.7}>
           {activeSection === 'manual' ? (
-            <LinearGradient colors={[glass.neonCyan, glass.neonPurple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.toggleGradient}>
+            <View style={styles.toggleGradient}>
               <Text style={styles.toggleTextActive}>📝 Manual Entry</Text>
-            </LinearGradient>
+            </View>
           ) : (
             <Text style={styles.toggleText}>📝 Manual Entry</Text>
           )}
@@ -91,28 +90,28 @@ export default function OverridePanelScreen({ navigation }) {
 
             {MOCK_LOCKED_SEATS.map((seat) => (
               <View key={seat.id} style={styles.seatCard}>
-                <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.seatInner}>
+                <View style={styles.seatInner}>
                   <View style={styles.seatInfo}>
                     <View style={styles.seatHeader}>
                       <Text style={styles.seatLabel}>{seat.seat}</Text>
                       <View style={[styles.categoryPill, { backgroundColor: seat.category === 'VIP' ? 'rgba(255,215,0,0.15)' : seat.category === 'Premium' ? 'rgba(138,43,226,0.15)' : 'rgba(255,255,255,0.06)' }]}>
-                        <Text style={[styles.categoryText, { color: seat.category === 'VIP' ? glass.neonAmber : seat.category === 'Premium' ? glass.neonPurple : glass.textMuted }]}>{seat.category}</Text>
+                        <Text style={[styles.categoryText, { color: seat.category === 'VIP' ? colors.accent : seat.category === 'Premium' ? colors.primary : colors.textMuted }]}>{seat.category}</Text>
                       </View>
                     </View>
                     <Text style={styles.seatMatch}>{seat.match}</Text>
                     <Text style={styles.seatMeta}>Locked by: {seat.lockedBy} · {formatTimeInNepal(seat.lockedAt, { hour: '2-digit', minute: '2-digit' })}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: seat.status === 'orphaned' ? glass.statusDangerFill : glass.statusWarningFill }]}>
-                      <Text style={[styles.statusText, { color: seat.status === 'orphaned' ? glass.statusDangerText : glass.statusWarningText }]}>
+                    <View style={[styles.statusBadge, { backgroundColor: seat.status === 'orphaned' ? colors.dangerSurface : colors.warningSurface }]}>
+                      <Text style={[styles.statusText, { color: seat.status === 'orphaned' ? colors.danger : colors.warning }]}>
                         {seat.status === 'orphaned' ? 'ORPHANED' : 'ACTIVE LOCK'}
                       </Text>
                     </View>
                   </View>
                   <TouchableOpacity style={styles.unlockBtn} onPress={() => handleForceUnlock(seat)} activeOpacity={0.7}>
-                    <LinearGradient colors={[glass.statusDangerFill, 'rgba(255,23,68,0.04)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.unlockBtnInner}>
+                    <View style={styles.unlockBtnInner}>
                       <Text style={styles.unlockBtnText}>Force{'\n'}Unlock</Text>
-                    </LinearGradient>
+                    </View>
                   </TouchableOpacity>
-                </LinearGradient>
+                </View>
               </View>
             ))}
           </>
@@ -127,12 +126,12 @@ export default function OverridePanelScreen({ navigation }) {
             </View>
 
             <View style={styles.card}>
-              <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardInner}>
+              <View style={styles.cardInner}>
                 <Text style={styles.cardHeader}>TICKET CODE</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Enter ticket code (e.g., TKT-95476f)"
-                  placeholderTextColor={glass.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={ticketCode}
                   onChangeText={setTicketCode}
                   autoCapitalize="characters"
@@ -142,27 +141,27 @@ export default function OverridePanelScreen({ navigation }) {
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   placeholder="Reason for manual entry..."
-                  placeholderTextColor={glass.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={manualNote}
                   onChangeText={setManualNote}
                   multiline
                 />
 
                 <TouchableOpacity style={styles.submitBtn} onPress={handleManualEntry} activeOpacity={0.85}>
-                  <LinearGradient colors={[glass.neonCyan, glass.neonPurple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.submitBtnGradient}>
+                  <View style={styles.submitBtnInner}>
                     <Text style={styles.submitBtnText}>✅ Approve Manual Entry</Text>
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
-              </LinearGradient>
+              </View>
             </View>
 
             <View style={styles.card}>
-              <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardInner}>
+              <View style={styles.cardInner}>
                 <Text style={styles.cardHeader}>SYSTEM HEALTH</Text>
                 {[
-                  { label: 'API Status', status: 'Online', color: glass.statusSuccessText },
-                  { label: 'Database', status: 'Connected', color: glass.statusSuccessText },
-                  { label: 'Socket.io', status: 'Active', color: glass.statusSuccessText },
+                  { label: 'API Status', status: 'Online', color: colors.success },
+                  { label: 'Database', status: 'Connected', color: colors.success },
+                  { label: 'Socket.io', status: 'Active', color: colors.success },
                 ].map((item, idx, arr) => (
                   <View key={item.label} style={[styles.healthRow, idx < arr.length - 1 && styles.healthRowBorder]}>
                     <Text style={styles.healthLabel}>{item.label}</Text>
@@ -172,7 +171,7 @@ export default function OverridePanelScreen({ navigation }) {
                     </View>
                   </View>
                 ))}
-              </LinearGradient>
+              </View>
             </View>
           </>
         )}
@@ -186,50 +185,50 @@ const styles = StyleSheet.create({
   scroll: { paddingTop: spacing.md, paddingBottom: spacing.huge + spacing.xxl },
 
   toggleBar: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl, marginBottom: spacing.lg },
-  toggleItem: { flex: 1, borderRadius: radii.full, overflow: 'hidden', backgroundColor: glass.surface, borderWidth: 1, borderColor: glass.border },
-  toggleGradient: { paddingVertical: spacing.sm + 2, borderRadius: radii.full, alignItems: 'center' },
-  toggleText: { color: glass.textMuted, fontSize: typography.small.fontSize, fontWeight: '600', paddingVertical: spacing.sm + 2, textAlign: 'center' },
+  toggleItem: { flex: 1, borderRadius: radii.full, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  toggleGradient: { paddingVertical: spacing.sm + 2, borderRadius: radii.full, alignItems: 'center', backgroundColor: colors.primary },
+  toggleText: { color: colors.textMuted, fontSize: typography.small.fontSize, fontWeight: '600', paddingVertical: spacing.sm + 2, textAlign: 'center' },
   toggleTextActive: { color: '#FFFFFF', fontSize: typography.small.fontSize, fontWeight: '800' },
 
   section: { paddingHorizontal: spacing.xl, marginBottom: spacing.lg },
   sectionTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800', marginBottom: spacing.xs },
-  sectionSubtitle: { color: glass.textMuted, fontSize: typography.small.fontSize },
+  sectionSubtitle: { color: colors.textMuted, fontSize: typography.small.fontSize },
 
-  seatCard: { marginHorizontal: spacing.xl, marginBottom: spacing.md, borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: glass.border },
+  seatCard: { marginHorizontal: spacing.xl, marginBottom: spacing.md, backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border },
   seatInner: { flexDirection: 'row', padding: spacing.xl, gap: spacing.lg },
   seatInfo: { flex: 1 },
   seatHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs },
-  seatLabel: { color: glass.neonCyan, fontSize: typography.bodyMedium.fontSize, fontWeight: '800', fontFamily: glass.monoFont },
+  seatLabel: { color: colors.primary, fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
   categoryPill: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radii.full },
   categoryText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
   seatMatch: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '600', marginBottom: 2 },
-  seatMeta: { color: glass.textMuted, fontSize: 9, fontFamily: glass.monoFont, marginBottom: spacing.sm },
+  seatMeta: { color: colors.textMuted, fontSize: 9, marginBottom: spacing.sm },
   statusBadge: { alignSelf: 'flex-start', paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radii.full },
   statusText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.6 },
 
   unlockBtn: { borderRadius: radii.lg, overflow: 'hidden' },
-  unlockBtnInner: { paddingHorizontal: spacing.lg, paddingVertical: spacing.xl, alignItems: 'center', justifyContent: 'center', borderRadius: radii.lg, borderWidth: 1, borderColor: glass.statusDangerFill },
-  unlockBtnText: { color: glass.statusDangerText, fontSize: typography.captionMedium.fontSize, fontWeight: '700', textAlign: 'center', lineHeight: 18 },
+  unlockBtnInner: { paddingHorizontal: spacing.lg, paddingVertical: spacing.xl, alignItems: 'center', justifyContent: 'center', borderRadius: radii.lg, borderWidth: 1, borderColor: colors.dangerSurface, backgroundColor: colors.dangerSurface },
+  unlockBtnText: { color: colors.danger, fontSize: typography.captionMedium.fontSize, fontWeight: '700', textAlign: 'center', lineHeight: 18 },
 
-  card: { marginHorizontal: spacing.xl, marginBottom: spacing.md, borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: glass.border },
+  card: { marginHorizontal: spacing.xl, marginBottom: spacing.md, backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border },
   cardInner: { padding: spacing.xl },
-  cardHeader: { color: glass.textMuted, fontSize: 10, fontWeight: '800', letterSpacing: 1.2, marginBottom: spacing.md },
+  cardHeader: { color: colors.textMuted, fontSize: 10, fontWeight: '800', letterSpacing: 1.2, marginBottom: spacing.md },
 
   input: {
-    backgroundColor: 'rgba(255,255,255,0.04)', color: colors.textPrimary,
+    backgroundColor: colors.surface, color: colors.textPrimary,
     paddingHorizontal: spacing.lg, paddingVertical: spacing.md + 2,
     borderRadius: radii.md, fontSize: typography.body.fontSize,
-    borderWidth: 1, borderColor: glass.border, marginBottom: spacing.xl,
+    borderWidth: 1, borderColor: colors.border, marginBottom: spacing.xl,
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
 
   submitBtn: { borderRadius: radii.lg, overflow: 'hidden' },
-  submitBtnGradient: { paddingVertical: spacing.lg, alignItems: 'center', borderRadius: radii.lg },
+  submitBtnInner: { paddingVertical: spacing.lg, alignItems: 'center', borderRadius: radii.lg, backgroundColor: colors.primary },
   submitBtnText: { color: '#FFFFFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
 
   healthRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.md },
-  healthRowBorder: { borderBottomWidth: 1, borderBottomColor: glass.border },
-  healthLabel: { color: glass.textSecondary, fontSize: typography.captionMedium.fontSize },
+  healthRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  healthLabel: { color: colors.textSecondary, fontSize: typography.captionMedium.fontSize },
   healthRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   healthDot: { width: 8, height: 8, borderRadius: 4 },
   healthStatus: { fontSize: typography.small.fontSize, fontWeight: '700' },
