@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchFraudLogs } from '../../services/adminService';
+import DashboardHeader from '../../components/DashboardHeader';
 
 /* ─── Mock gate status data ─── */
 const MOCK_GATES = [
@@ -91,22 +92,14 @@ export default function SupervisorDashboardScreen({ navigation }) {
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => loadData(true)} tintColor={glass.neonCyan} />}
       >
-        {/* ═══ TOP BAR ═══ */}
-        <View style={styles.topBar}>
-          <View style={styles.topLeft}>
-            <View style={styles.rolePill}>
-              <View style={styles.roleDot} />
-              <Text style={styles.roleText}>SUPERVISOR</Text>
-            </View>
-            <Text style={styles.name}>Hey, {firstName}</Text>
-            <Text style={styles.subtitle}>Incident Command Center</Text>
-          </View>
-          <TouchableOpacity style={styles.avatar} onPress={() => navigation.navigate('SupervisorAccount')} activeOpacity={0.8}>
-            <LinearGradient colors={[glass.neonMagenta, glass.neonPurple]} style={styles.avatarGradient}>
-              <Text style={styles.avatarText}>{initials}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+        {/* ═══ DASHBOARD HEADER ═══ */}
+        <DashboardHeader
+          topLabel="INCIDENT COMMAND"
+          title={`Hey, ${firstName}`}
+          avatarColors={[glass.neonMagenta, glass.neonPurple]}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate('SupervisorProfile')}
+        />
 
         {/* ═══ ACTIVE INCIDENTS ALERT ═══ */}
         {openIncidents.length > 0 && (
@@ -148,11 +141,11 @@ export default function SupervisorDashboardScreen({ navigation }) {
               { label: 'GATES DOWN', value: offlineGates, icon: '📡', color: offlineGates > 0 ? glass.statusDangerText : glass.statusSuccessText },
             ].map((m) => (
               <TouchableOpacity key={m.label} style={styles.metricCard} activeOpacity={0.9}>
-                <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.metricInner}>
+                <View style={styles.metricInner}>
                   <Text style={styles.metricIcon}>{m.icon}</Text>
                   <Text style={[styles.metricValue, { color: m.color }]}>{m.value}</Text>
                   <Text style={styles.metricLabel}>{m.label}</Text>
-                </LinearGradient>
+                </View>
               </TouchableOpacity>
             ))}
           </View>
@@ -166,7 +159,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
           </View>
           {MOCK_GATES.map((gate) => (
             <View key={gate.id} style={styles.gateCard}>
-              <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.gateInner}>
+              <View style={styles.gateInner}>
                 <View style={styles.gateLeft}>
                   <View style={[styles.gateStatusDot, { backgroundColor: gate.status === 'online' ? glass.statusSuccessText : glass.statusDangerText }]} />
                   <View>
@@ -178,7 +171,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
                   <Text style={styles.gateScans}>{gate.scans} scans</Text>
                   {gate.errors > 0 && <Text style={styles.gateErrors}>{gate.errors} errors</Text>}
                 </View>
-              </LinearGradient>
+              </View>
             </View>
           ))}
         </View>
@@ -209,7 +202,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
                   activeOpacity={0.7}
                   onPress={() => navigation.navigate('SupervisorIncidentDetail', { incidentId: incident.id, incident })}
                 >
-                  <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.incidentInner}>
+                  <View style={styles.incidentInner}>
                     <View style={styles.incidentLeft}>
                       <Text style={styles.incidentTitle} numberOfLines={1}>{incident.title}</Text>
                       <Text style={styles.incidentMeta}>{incident.ticketCode} · {incident.staff} · {timeAgo(incident.timestamp)}</Text>
@@ -217,7 +210,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
                     <View style={[styles.severityPill, { backgroundColor: sev.bg }]}>
                       <Text style={[styles.severityText, { color: sev.text }]}>{sev.label}</Text>
                     </View>
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
               );
             })
@@ -231,22 +224,8 @@ export default function SupervisorDashboardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: glass.canvasStart },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingTop: spacing.lg },
-
-  topBar: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: spacing.xl, marginBottom: spacing.xxl,
-  },
-  topLeft: {},
-  rolePill: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
-  roleDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: glass.neonMagenta },
-  roleText: { color: glass.neonMagenta, fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
-  name: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '900', letterSpacing: -0.5 },
-  subtitle: { color: glass.textMuted, fontSize: typography.caption.fontSize, marginTop: spacing.xs },
-  avatar: { width: 48, height: 48, borderRadius: 16, overflow: 'hidden' },
-  avatarGradient: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#FFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
 
   section: { marginBottom: spacing.xxl, paddingHorizontal: spacing.xl },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg },
@@ -263,13 +242,13 @@ const styles = StyleSheet.create({
   alertArrow: { color: glass.statusDangerText, fontSize: 18, fontWeight: '700' },
 
   metricsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  metricCard: { width: '47%', borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: glass.border },
+  metricCard: { width: '47%', backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border },
   metricInner: { padding: spacing.xl, alignItems: 'center' },
   metricIcon: { fontSize: 18, marginBottom: spacing.sm },
   metricValue: { fontSize: typography.h2.fontSize, fontWeight: '900', marginBottom: spacing.xs },
   metricLabel: { color: glass.textMuted, fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
 
-  gateCard: { marginBottom: spacing.sm, borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: glass.border },
+  gateCard: { marginBottom: spacing.sm, backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border },
   gateInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.xl },
   gateLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   gateStatusDot: { width: 10, height: 10, borderRadius: 5 },
@@ -279,7 +258,7 @@ const styles = StyleSheet.create({
   gateScans: { color: glass.neonCyan, fontSize: typography.captionMedium.fontSize, fontWeight: '700', fontFamily: glass.monoFont },
   gateErrors: { color: glass.statusDangerText, fontSize: 9, marginTop: 2 },
 
-  incidentCard: { marginBottom: spacing.sm, borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: glass.border },
+  incidentCard: { marginBottom: spacing.sm, backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border },
   incidentInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.xl, gap: spacing.md },
   incidentLeft: { flex: 1 },
   incidentTitle: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700', marginBottom: 2 },

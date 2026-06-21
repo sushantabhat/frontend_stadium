@@ -237,9 +237,10 @@ export default function AdminEditMatchScreen({ route, navigation }) {
         }
       }
 
-      const result = await updateMatch(matchId, payload);
+      await updateMatch(matchId, payload);
 
-      const msg = result.seatsRegenerated
+      const hadStructuralChange = !hasBookedSeats && payload.stadiumSections?.length > 0;
+      const msg = hadStructuralChange
         ? 'Match updated and seats regenerated.'
         : 'Match updated successfully.';
 

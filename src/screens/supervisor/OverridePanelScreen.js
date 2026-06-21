@@ -4,6 +4,7 @@ import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpa
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { formatTimeInNepal } from '../../utils/date';
+import DashboardHeader from '../../components/DashboardHeader';
 
 /* ─── Mock locked seats data ───
  * In production: GET /api/admin/locked-seats */
@@ -49,6 +50,12 @@ export default function OverridePanelScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+
+      <DashboardHeader
+        topLabel="OVERRIDE PANEL"
+        title="Manual Override"
+        avatarLabel=""
+      />
 
       {/* ═══ SECTION TOGGLE ═══ */}
       <View style={styles.toggleBar}>
@@ -175,7 +182,7 @@ export default function OverridePanelScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: glass.canvasStart },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingTop: spacing.md, paddingBottom: spacing.huge + spacing.xxl },
 
   toggleBar: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl, marginBottom: spacing.lg },

@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import ScreenHeader from '../../components/ScreenHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { formatInNepal } from '../../utils/date';
+import DashboardHeader from '../../components/DashboardHeader';
 
 /* ─── Mock forensic data for investigation ───
  * In production, this comes from GET /api/tickets/:code/forensics */
@@ -88,9 +88,9 @@ export default function IncidentDetailScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScreenHeader
-        title="Incident Investigation"
-        subtitle={incident?.title || 'Review ticket forensics'}
+      <DashboardHeader
+        topLabel="INVESTIGATION"
+        title="Incident Detail"
         onBack={() => navigation.goBack()}
       />
 
@@ -124,7 +124,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
           <>
             {/* Incident summary */}
             <View style={styles.card}>
-              <LinearGradient colors={[glass.surface, 'rgba(18,21,34,0.4)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardInner}>
+              <View style={styles.cardInner}>
                 <Text style={styles.cardHeader}>INCIDENT SUMMARY</Text>
                 <View style={styles.detailRow}>
                   <Text style={styles.label}>Type</Text>
@@ -261,31 +261,31 @@ export default function IncidentDetailScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: glass.canvasStart },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingBottom: spacing.huge + spacing.xxl },
 
   tabBar: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl, marginBottom: spacing.md },
-  tabItem: { flex: 1, paddingVertical: spacing.sm + 2, borderRadius: radii.full, alignItems: 'center', justifyContent: 'center', backgroundColor: glass.surface, borderWidth: 1, borderColor: glass.border },
+  tabItem: { flex: 1, paddingVertical: spacing.sm + 2, borderRadius: radii.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   tabItemActive: { borderWidth: 0, padding: 0 },
   tabGradient: { flex: 1, width: '100%', paddingVertical: spacing.sm + 2, borderRadius: radii.full, alignItems: 'center', justifyContent: 'center' },
   tabText: { color: glass.textMuted, fontSize: typography.small.fontSize, fontWeight: '600' },
   tabTextActive: { color: '#FFFFFF', fontSize: typography.small.fontSize, fontWeight: '800' },
 
-  card: { marginHorizontal: spacing.xl, marginBottom: spacing.md, borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: glass.border },
+  card: { marginHorizontal: spacing.xl, marginBottom: spacing.md, backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border },
   cardInner: { padding: spacing.xl },
   cardHeader: { color: glass.textMuted, fontSize: 10, fontWeight: '800', letterSpacing: 1.2, marginBottom: spacing.lg },
 
-  detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: glass.border },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
   label: { color: glass.textSecondary, fontSize: typography.caption.fontSize, flex: 1 },
   value: { color: colors.textPrimary, fontSize: typography.caption.fontSize, fontWeight: '700', textAlign: 'right', flex: 1.5, marginLeft: spacing.md },
 
   actionBtn: { borderRadius: radii.lg, overflow: 'hidden' },
-  actionBtnInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: spacing.lg, gap: spacing.sm, borderWidth: 1, borderColor: glass.border, borderRadius: radii.lg },
+  actionBtnInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: spacing.lg, gap: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg },
   actionIcon: { fontSize: 16 },
   actionLabel: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
 
   scanRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.md },
-  scanRowBorder: { borderBottomWidth: 1, borderBottomColor: glass.border },
+  scanRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
   scanLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   scanDot: { width: 10, height: 10, borderRadius: 5 },
   scanGate: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
@@ -293,12 +293,12 @@ const styles = StyleSheet.create({
   scanStatusPill: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radii.full },
   scanStatusText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.6 },
 
-  bottomBar: { padding: spacing.xl, gap: spacing.md, backgroundColor: '#0A0B0E', borderTopWidth: 1, borderTopColor: glass.border },
+  bottomBar: { padding: spacing.xl, gap: spacing.md, backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
   bottomBtn: { borderRadius: radii.lg, overflow: 'hidden' },
   bottomBtnGradient: { paddingVertical: spacing.lg, alignItems: 'center', borderRadius: radii.lg },
   bottomBtnText: { color: '#FFFFFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
   bottomRow: { flexDirection: 'row', gap: spacing.md },
   bottomBtnHalf: { flex: 1, borderRadius: radii.lg, overflow: 'hidden' },
-  bottomBtnHalfGradient: { paddingVertical: spacing.lg, alignItems: 'center', borderRadius: radii.lg, borderWidth: 1, borderColor: glass.border },
+  bottomBtnHalfGradient: { paddingVertical: spacing.lg, alignItems: 'center', borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border },
   bottomBtnHalfText: { fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
 });

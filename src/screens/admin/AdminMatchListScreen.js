@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useMemo, useRef, useState } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
   FlatList,
@@ -23,7 +24,7 @@ import DashboardHeader from '../../components/DashboardHeader';
 import FAB from '../../components/FAB';
 import { AdminFilterPills, AdminSearchBar } from '../../components/admin/TicketProHeader';
 import EmptyState from '../../components/EmptyState';
-import { fetchMatches } from '../../services/matchService';
+import { fetchMatches, updateMatch } from '../../services/matchService';
 import { spacing, radii, typography, glass, colors } from '../../constants/theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -146,6 +147,30 @@ export default function AdminMatchListScreen({ navigation }) {
       setDetailVisible(false);
       setSelectedMatch(null);
     });
+  };
+
+  const handleCancel = (match) => {
+    Alert.alert(
+      'Cancel Match',
+      `Mark "${match.title || `${match.teamA} vs ${match.teamB}`}" as cancelled?`,
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await updateMatch(match._id, { status: 'cancelled' });
+              Alert.alert('Cancelled', 'Match marked as cancelled. Fans will see the CANCELLED status.');
+              closeDetail();
+              loadMatches();
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.message || 'Failed to cancel match');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const renderHeader = () => (
@@ -444,6 +469,15 @@ export default function AdminMatchListScreen({ navigation }) {
                 </LinearGradient>
               </TouchableOpacity>
             </View>
+            {m.status !== 'cancelled' && m.status !== 'completed' && (
+              <TouchableOpacity
+                style={s.cancelFooterBtn}
+                onPress={() => handleCancel(m)}
+                activeOpacity={0.8}
+              >
+                <Text style={s.cancelFooterBtnText}>Cancel Match</Text>
+              </TouchableOpacity>
+            )}
           </Animated.View>
         </View>
       </Modal>
@@ -913,5 +947,21 @@ const s = StyleSheet.create({
     color: '#FFF',
     fontSize: typography.captionMedium.fontSize,
     fontWeight: '800',
+  },
+  cancelFooterBtn: {
+    paddingVertical: spacing.lg,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.xxxl,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,23,68,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,23,68,0.25)',
+  },
+  cancelFooterBtnText: {
+    color: '#FF5252',
+    fontSize: typography.captionMedium.fontSize,
+    fontWeight: '700',
   },
 });

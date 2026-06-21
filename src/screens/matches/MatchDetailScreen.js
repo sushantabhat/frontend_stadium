@@ -233,19 +233,30 @@ export default function MatchDetailScreen({ route, navigation }) {
         </View>
 
         {/* ═══════════════════════════════════════════════
-            PRICING — Simple row
+            PRICING — Horizontal scroll pills
             ═══════════════════════════════════════════════ */}
         <View style={s.bodySection}>
           <Text style={s.bodyLabel}>Pricing</Text>
-          <View style={s.pricingRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pricingRow}>
             {PRICING_TIERS.map((p) => (
-              <View key={p.label} style={s.priceCell}>
-                <Text style={s.priceIcon}>{p.icon}</Text>
-                <Text style={[s.priceValue, { color: p.color }]}>Rs.{p.value.toLocaleString()}</Text>
-                <Text style={s.priceLabel}>{p.label}</Text>
+              <View key={p.label} style={[s.priceCell, { borderColor: `${p.color}33` }]}>
+                <View style={s.priceHeader}>
+                  <Text style={s.priceIcon}>{p.icon}</Text>
+                  <Text
+                    style={[s.priceLabel, { color: p.color }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {p.label}
+                  </Text>
+                </View>
+                <Text style={[s.priceValue, { color: p.color }]} numberOfLines={1}>
+                  Rs.{p.value.toLocaleString()}
+                </Text>
               </View>
             ))}
-          </View>
+          </ScrollView>
         </View>
 
         {/* ═══════════════════════════════════════════════
@@ -483,19 +494,28 @@ const s = StyleSheet.create({
   occupancyBar: { height: 4, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden', marginTop: spacing.md },
   occupancyFill: { height: '100%', borderRadius: 2 },
 
-  pricingRow: { flexDirection: 'row', gap: spacing.sm },
+  pricingRow: {
+    paddingLeft: spacing.xs,
+    paddingRight: spacing.xl,
+  },
   priceCell: {
-    flex: 1,
-    alignItems: 'center',
+    minWidth: 140,
+    padding: spacing.lg,
     backgroundColor: 'rgba(26,29,42,0.8)',
-    borderRadius: radii.lg,
-    padding: spacing.md,
+    borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
+    marginRight: spacing.sm,
   },
-  priceIcon: { fontSize: 18, marginBottom: spacing.xs },
-  priceValue: { fontSize: typography.bodyMedium.fontSize, fontWeight: '900', marginBottom: 2 },
-  priceLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '600' },
+  priceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  priceIcon: { fontSize: 16 },
+  priceLabel: { fontSize: 12, fontWeight: '700' },
+  priceValue: { fontSize: 22, fontWeight: '900', letterSpacing: -0.3 },
 
   infoRow: {
     flexDirection: 'row',
