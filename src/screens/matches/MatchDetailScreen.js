@@ -325,7 +325,7 @@ export default function MatchDetailScreen({ route, navigation }) {
 
 const s = StyleSheet.create({
   /* ── Shell ── */
-  container: { flex: 1, backgroundColor: '#0F111A' },
+  container: { flex: 1 },
   scroll: {},
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
   errorIcon: { fontSize: 48, marginBottom: spacing.lg },

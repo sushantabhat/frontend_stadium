@@ -9,7 +9,7 @@ import DailyReportScreen from '../screens/staff/DailyReportScreen';
 import MyShiftsScreen from '../screens/staff/MyShiftsScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import SettingsScreen from '../screens/common/SettingsScreen';
-import { colors } from '../constants/theme';
+import { useBackgroundColor } from '../context/ThemeContext';
 import TabBar, { tabBarStyle } from '../components/TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -17,11 +17,12 @@ const ScannerStack = createStackNavigator();
 const DashStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
-const screenOptions = { headerShown: false, cardStyle: { backgroundColor: colors.background } };
+const screenOptions = { headerShown: false };
 
 function ScannerNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <ScannerStack.Navigator screenOptions={screenOptions}>
+    <ScannerStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <ScannerStack.Screen name="GateScanner" component={GateScannerScreen} />
       <ScannerStack.Screen name="TicketVerify" component={TicketVerifyScreen} />
     </ScannerStack.Navigator>
@@ -29,8 +30,9 @@ function ScannerNavigator() {
 }
 
 function DashboardNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <DashStack.Navigator screenOptions={screenOptions}>
+    <DashStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <DashStack.Screen name="StaffDashboard" component={StaffDashboardScreen} />
       <DashStack.Screen name="TicketVerify" component={TicketVerifyScreen} />
       <DashStack.Screen name="MyShifts" component={MyShiftsScreen} />
@@ -40,8 +42,9 @@ function DashboardNavigator() {
 }
 
 function ProfileNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <ProfileStack.Navigator screenOptions={screenOptions}>
+    <ProfileStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <ProfileStack.Screen name="Profile" component={ProfileScreen} />
       <ProfileStack.Screen name="Settings" component={SettingsScreen} />
     </ProfileStack.Navigator>

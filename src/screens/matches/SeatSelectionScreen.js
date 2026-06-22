@@ -396,7 +396,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: spacing.lg, paddingBottom: 120 },
 

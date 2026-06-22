@@ -219,7 +219,7 @@ export default function MyTicketsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   listContent: { paddingBottom: spacing.xxxl },
   header: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, marginBottom: spacing.xl },
   pageTitle: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '900', marginBottom: spacing.xxs },

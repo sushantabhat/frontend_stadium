@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthContext } from '../context/AuthContext';
+import { useBackgroundColor } from '../context/ThemeContext';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import FanTabNavigator from './FanTabNavigator';
@@ -8,18 +9,17 @@ import AdminTabNavigator from './AdminTabNavigator';
 import StaffTabNavigator from './StaffTabNavigator';
 import SupervisorTabNavigator from './SupervisorTabNavigator';
 import { ROLES } from '../constants/config';
-import { colors } from '../constants/theme';
 
 const AuthStack = createStackNavigator();
 
 const screenOptions = {
   headerShown: false,
-  cardStyle: { backgroundColor: colors.background },
 };
 
 function AuthNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <AuthStack.Navigator screenOptions={screenOptions}>
+    <AuthStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
     </AuthStack.Navigator>
@@ -42,7 +42,7 @@ function RoleNavigator() {
   }
 }
 
-export default function AppNavigator() {
+function AppContent() {
   const { userToken } = useContext(AuthContext);
 
   if (userToken) {
@@ -50,4 +50,8 @@ export default function AppNavigator() {
   }
 
   return <AuthNavigator />;
+}
+
+export default function AppNavigator() {
+  return <AppContent />;
 }

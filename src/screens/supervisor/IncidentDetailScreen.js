@@ -260,7 +260,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   scroll: { paddingBottom: spacing.huge + spacing.xxl },
 
   tabBar: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl, marginBottom: spacing.md },

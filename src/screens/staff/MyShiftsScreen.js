@@ -84,7 +84,7 @@ export default function MyShiftsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   scroll: { paddingTop: spacing.md },
 
   heroShift: { marginHorizontal: spacing.xl, marginBottom: spacing.xxl, borderRadius: radii.xl, overflow: 'hidden', ...shadows.primary },

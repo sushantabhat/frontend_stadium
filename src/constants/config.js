@@ -36,4 +36,5 @@ export const STORAGE_KEYS = {
   TOKEN: 'smart_stadium_token',
   USER: 'smart_stadium_user',
   ACTIVE_ROLE: 'smart_stadium_active_role',
+  BACKGROUND_MODE: 'smart_stadium_background_mode',
 };

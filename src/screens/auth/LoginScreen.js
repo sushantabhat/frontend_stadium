@@ -202,7 +202,7 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   flex: { flex: 1 },
   scroll: { flex: 1, justifyContent: 'center' },
 

@@ -83,12 +83,12 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Preferences</Text>
           <View style={styles.card}>
             {[
+              { icon: '🎨', label: 'Background Theme', route: 'Settings' },
               { icon: '🔔', label: 'Notifications', value: 'On' },
-              { icon: '🌙', label: 'Dark Mode', value: 'Always' },
               { icon: '📍', label: 'Location', value: 'Mumbai' },
               { icon: '🌐', label: 'Language', value: 'English' },
             ].map((item, idx) => (
-              <TouchableOpacity key={item.label} style={[styles.cardItem, idx < 3 && styles.cardItemBorder]} activeOpacity={0.6}>
+              <TouchableOpacity key={item.label} style={[styles.cardItem, idx < 3 && styles.cardItemBorder]} activeOpacity={0.6} onPress={item.route ? () => navigation.navigate(item.route) : undefined}>
                 <View style={styles.cardItemLeft}>
                   <Text style={styles.cardItemIcon}>{item.icon}</Text>
                   <View>
@@ -142,7 +142,7 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   scroll: {},
 
   // Hero

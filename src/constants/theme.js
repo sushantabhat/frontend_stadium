@@ -1,7 +1,7 @@
 import { Platform, StyleSheet } from 'react-native';
 
 const palette = {
-  background: '#0F111A',
+  background: '#07080B',
   backgroundDeep: '#080A12',
   surface: '#1A1D2A',
   surfaceElevated: '#222638',

@@ -9,7 +9,7 @@ import GateScannerScreen from '../screens/staff/GateScannerScreen';
 import TicketVerifyScreen from '../screens/staff/TicketVerifyScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import SettingsScreen from '../screens/common/SettingsScreen';
-import { glass } from '../constants/theme';
+import { useBackgroundColor } from '../context/ThemeContext';
 import TabBar, { tabBarStyle } from '../components/TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -18,11 +18,12 @@ const OverrideStack = createStackNavigator();
 const ScannerStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
-const screenOptions = { headerShown: false, cardStyle: { backgroundColor: glass.canvasStart } };
+const screenOptions = { headerShown: false };
 
 function IncidentsNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <IncidentsStack.Navigator screenOptions={screenOptions}>
+    <IncidentsStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <IncidentsStack.Screen name="SupervisorDashboard" component={SupervisorDashboardScreen} />
       <IncidentsStack.Screen name="SupervisorIncidentDetail" component={IncidentDetailScreen} />
     </IncidentsStack.Navigator>
@@ -30,16 +31,18 @@ function IncidentsNavigator() {
 }
 
 function OverrideNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <OverrideStack.Navigator screenOptions={screenOptions}>
+    <OverrideStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <OverrideStack.Screen name="SupervisorOverride" component={OverridePanelScreen} />
     </OverrideStack.Navigator>
   );
 }
 
 function ScannerNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <ScannerStack.Navigator screenOptions={screenOptions}>
+    <ScannerStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <ScannerStack.Screen name="SupervisorGateScanner" component={GateScannerScreen} />
       <ScannerStack.Screen name="SupervisorTicketVerify" component={TicketVerifyScreen} />
     </ScannerStack.Navigator>
@@ -47,8 +50,9 @@ function ScannerNavigator() {
 }
 
 function ProfileNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <ProfileStack.Navigator screenOptions={screenOptions}>
+    <ProfileStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <ProfileStack.Screen name="SupervisorProfile" component={ProfileScreen} />
       <ProfileStack.Screen name="Settings" component={SettingsScreen} />
     </ProfileStack.Navigator>

@@ -19,7 +19,7 @@ export default function WishlistScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   content: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: spacing.xxl,

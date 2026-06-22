@@ -213,7 +213,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   scroll: { paddingTop: spacing.lg },
 
   section: { marginBottom: spacing.xxl, paddingHorizontal: spacing.xl },

@@ -181,7 +181,7 @@ export default function OverridePanelScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   scroll: { paddingTop: spacing.md, paddingBottom: spacing.huge + spacing.xxl },
 
   toggleBar: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl, marginBottom: spacing.lg },

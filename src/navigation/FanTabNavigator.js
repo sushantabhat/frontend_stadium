@@ -12,7 +12,7 @@ import TicketDetailScreen from '../screens/home/TicketDetailScreen';
 import WishlistScreen from '../screens/home/WishlistScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import SettingsScreen from '../screens/common/SettingsScreen';
-import { colors } from '../constants/theme';
+import { useBackgroundColor } from '../context/ThemeContext';
 import TabBar, { tabBarStyle } from '../components/TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -21,11 +21,12 @@ const BrowseStack = createStackNavigator();
 const TicketsStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
-const screenOptions = { headerShown: false, cardStyle: { backgroundColor: colors.background } };
+const screenOptions = { headerShown: false };
 
 function HomeNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <HomeStack.Navigator screenOptions={screenOptions}>
+    <HomeStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <HomeStack.Screen name="FanHome" component={FanDashboardScreen} />
       <HomeStack.Screen name="MatchDetail" component={MatchDetailScreen} />
       <HomeStack.Screen name="SeatSelection" component={SeatSelectionScreen} />
@@ -36,8 +37,9 @@ function HomeNavigator() {
 }
 
 function BrowseNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <BrowseStack.Navigator screenOptions={screenOptions}>
+    <BrowseStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <BrowseStack.Screen name="MatchList" component={MatchListScreen} />
       <BrowseStack.Screen name="MatchDetail" component={MatchDetailScreen} />
       <BrowseStack.Screen name="SeatSelection" component={SeatSelectionScreen} />
@@ -47,8 +49,9 @@ function BrowseNavigator() {
 }
 
 function TicketsNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <TicketsStack.Navigator screenOptions={screenOptions}>
+    <TicketsStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <TicketsStack.Screen name="MyTickets" component={MyTicketsScreen} />
       <TicketsStack.Screen name="TicketDetail" component={TicketDetailScreen} />
       <TicketsStack.Screen name="MatchDetail" component={MatchDetailScreen} />
@@ -59,8 +62,9 @@ function TicketsNavigator() {
 }
 
 function ProfileNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <ProfileStack.Navigator screenOptions={screenOptions}>
+    <ProfileStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <ProfileStack.Screen name="Profile" component={ProfileScreen} />
       <ProfileStack.Screen name="Settings" component={SettingsScreen} />
     </ProfileStack.Navigator>

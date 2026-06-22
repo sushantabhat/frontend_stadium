@@ -272,7 +272,7 @@ export default function MatchListScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F111A' },
+  container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingBottom: spacing.xxxl + 20 },
 

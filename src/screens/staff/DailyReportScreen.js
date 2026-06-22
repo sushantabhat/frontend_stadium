@@ -99,7 +99,7 @@ export default function DailyReportScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   scroll: { paddingTop: spacing.md },
 
   heroStat: { marginHorizontal: spacing.xl, marginBottom: spacing.xxl, borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },

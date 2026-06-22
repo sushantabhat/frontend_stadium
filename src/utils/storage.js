@@ -17,6 +17,14 @@ export async function clearSession() {
   ]);
 }
 
+export async function saveBackgroundMode(mode) {
+  await AsyncStorage.setItem(STORAGE_KEYS.BACKGROUND_MODE, mode);
+}
+
+export async function loadBackgroundMode() {
+  return AsyncStorage.getItem(STORAGE_KEYS.BACKGROUND_MODE);
+}
+
 export async function loadSession() {
   const [[, token], [, userJson], [, activeRole]] = await AsyncStorage.multiGet([
     STORAGE_KEYS.TOKEN,

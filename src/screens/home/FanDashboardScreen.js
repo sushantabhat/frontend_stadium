@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
-import { colors, spacing, radii, typography } from '../../constants/theme';
+import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchMatchRecommendations } from '../../services/aiService';
 import MatchCard from '../../components/MatchCard';
 import BannerCarousel from '../../components/BannerCarousel';
@@ -199,7 +199,7 @@ export default function FanDashboardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   scroll: { paddingTop: spacing.lg },
   loadingWrap: {
     paddingVertical: spacing.huge,

@@ -14,7 +14,7 @@ import PromotionalHubScreen from '../screens/admin/PromotionalHubScreen';
 import UserManagementScreen from '../screens/admin/UserManagementScreen';
 import AdminSettingsScreen from '../screens/admin/AdminSettingsScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
-import { glass } from '../constants/theme';
+import { useBackgroundColor } from '../context/ThemeContext';
 import TabBar, { tabBarStyle } from '../components/TabBar';
 
 const Tab = createBottomTabNavigator();
@@ -25,11 +25,12 @@ const UsersStack = createStackNavigator();
 const ScannersStack = createStackNavigator();
 const ReportsStack = createStackNavigator();
 
-const screenOptions = { headerShown: false, cardStyle: { backgroundColor: glass.canvasStart } };
+const screenOptions = { headerShown: false };
 
 function DashboardNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <DashStack.Navigator screenOptions={screenOptions}>
+    <DashStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <DashStack.Screen name="AdminDash" component={AdminDashboardScreen} />
       <DashStack.Screen name="AdminStatistics" component={StatisticsScreen} />
       <DashStack.Screen name="AdminTicketValidation" component={TicketValidationScreen} />
@@ -40,8 +41,9 @@ function DashboardNavigator() {
 }
 
 function MatchesNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <MatchesStack.Navigator screenOptions={screenOptions}>
+    <MatchesStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <MatchesStack.Screen name="AdminMatchList" component={AdminMatchListScreen} />
       <MatchesStack.Screen name="AdminCreateMatch" component={CreateMatchScreen} />
       <MatchesStack.Screen name="AdminEditMatch" component={AdminEditMatchScreen} />
@@ -51,16 +53,18 @@ function MatchesNavigator() {
 }
 
 function TicketsNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <TicketsStack.Navigator screenOptions={screenOptions}>
+    <TicketsStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <TicketsStack.Screen name="AdminTicketValidation" component={TicketValidationScreen} />
     </TicketsStack.Navigator>
   );
 }
 
 function UsersNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <UsersStack.Navigator screenOptions={screenOptions}>
+    <UsersStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <UsersStack.Screen name="AdminUserManagement" component={UserManagementScreen} />
       <UsersStack.Screen name="AdminPromotionalHub" component={PromotionalHubScreen} />
     </UsersStack.Navigator>
@@ -68,16 +72,18 @@ function UsersNavigator() {
 }
 
 function ScannersNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <ScannersStack.Navigator screenOptions={screenOptions}>
+    <ScannersStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <ScannersStack.Screen name="AdminScannerHub" component={ScannerDashboardScreen} />
     </ScannersStack.Navigator>
   );
 }
 
 function ReportsNavigator() {
+  const bgColor = useBackgroundColor();
   return (
-    <ReportsStack.Navigator screenOptions={screenOptions}>
+    <ReportsStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <ReportsStack.Screen name="AdminReports" component={StatisticsScreen} />
     </ReportsStack.Navigator>
   );
