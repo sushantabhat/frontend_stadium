@@ -72,18 +72,14 @@ export default function ScannerDashboardScreen({ navigation }) {
     const pool = staff.length > 0 ? staff : [{ name: 'Gate Staff', status: 'active', role: 'staff', _id: 'default' }];
 
     return pool.slice(0, 5).map((member, idx) => {
-      const gateScans = Math.max(1, Math.round(scannedToday / pool.length) + idx * 120);
+      const gateScans = Math.max(0, Math.round(scannedToday / Math.max(pool.length, 1)));
       const status = gateStatus(member);
-      const rate = (98 + (idx % 3) * 0.4).toFixed(1);
-      const battery = 95 - idx * 12;
       return {
         id: member._id || String(idx),
         name: GATE_LABELS[idx] || `Gate ${String.fromCharCode(65 + idx)}`,
         venue: member.venue || 'Stadium Arena',
         status,
         scanned: gateScans,
-        rate,
-        battery: Math.max(18, battery),
         staff: member.name,
         initials: getInitials(member.name),
       };
@@ -154,25 +150,16 @@ export default function ScannerDashboardScreen({ navigation }) {
                 </View>
               </View>
 
-              <View style={styles.metricsRow}>
-                <View style={styles.metricCol}>
-                  <Text style={styles.metricLabel}>SCANNED</Text>
-                  <Text style={styles.metricValue}>{gate.scanned.toLocaleString()}</Text>
-                </View>
-                <View style={styles.metricCol}>
-                  <Text style={styles.metricLabel}>RATE</Text>
-                  <Text style={styles.metricValue}>{gate.rate}%</Text>
-                </View>
-                <View style={[styles.metricCol, styles.metricColWide]}>
-                  <Text style={styles.metricLabel}>BATTERY</Text>
-                  <View style={styles.batteryRow}>
-                    <View style={styles.batteryTrack}>
-                      <View style={[styles.batteryFill, { width: `${gate.battery}%` }]} />
-                    </View>
-                    <Text style={styles.batteryText}>{gate.battery}%</Text>
+                <View style={styles.metricsRow}>
+                  <View style={styles.metricCol}>
+                    <Text style={styles.metricLabel}>SCANNED</Text>
+                    <Text style={styles.metricValue}>{gate.scanned.toLocaleString()}</Text>
+                  </View>
+                  <View style={styles.metricCol}>
+                    <Text style={styles.metricLabel}>RATE</Text>
+                    <Text style={styles.metricValue}>{acceptanceRate}%</Text>
                   </View>
                 </View>
-              </View>
 
               <View style={styles.gateFooter}>
                 <View style={styles.staffAvatar}>

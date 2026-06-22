@@ -84,7 +84,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
     const socket = io(API_BASE_URL);
     socket.emit('join_match', matchId);
     socket.on('seat_update', (updatedSeat) => {
-      setSeats((prev) => prev.map((s) => (s.id === updatedSeat.id ? { ...s, ...updatedSeat } : s)));
+      setSeats((prev) => prev.map((s) => ((s.id === updatedSeat.id || s._id === updatedSeat.id) ? { ...s, ...updatedSeat } : s)));
     });
     return () => {
       socket.emit('leave_match', matchId);

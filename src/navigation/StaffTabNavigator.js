@@ -15,7 +15,6 @@ import TabBar, { tabBarStyle } from '../components/TabBar';
 const Tab = createBottomTabNavigator();
 const ScannerStack = createStackNavigator();
 const DashStack = createStackNavigator();
-const ToolsStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
 const screenOptions = { headerShown: false, cardStyle: { backgroundColor: colors.background } };
@@ -40,16 +39,6 @@ function DashboardNavigator() {
   );
 }
 
-function ToolsNavigator() {
-  return (
-    <ToolsStack.Navigator screenOptions={screenOptions}>
-      <ToolsStack.Screen name="ToolsHome" component={StaffDashboardScreen} />
-      <ToolsStack.Screen name="MyShifts" component={MyShiftsScreen} />
-      <ToolsStack.Screen name="DailyReportAlt" component={DailyReportScreen} />
-    </ToolsStack.Navigator>
-  );
-}
-
 function ProfileNavigator() {
   return (
     <ProfileStack.Navigator screenOptions={screenOptions}>
@@ -71,7 +60,6 @@ export default function StaffTabNavigator() {
     >
       <Tab.Screen name="Scanner" component={ScannerNavigator} />
       <Tab.Screen name="Dashboard" component={DashboardNavigator} />
-      <Tab.Screen name="Tools" component={ToolsNavigator} />
       <Tab.Screen name="Account" component={ProfileNavigator} />
     </Tab.Navigator>
   );

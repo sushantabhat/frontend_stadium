@@ -5,15 +5,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { fetchFraudLogs } from '../../services/adminService';
+import { fetchScanHistory } from '../../services/ticketService';
 import DashboardHeader from '../../components/DashboardHeader';
 
-/* ─── Mock gate status data ─── */
-const MOCK_GATES = [
-  { id: 'gate-a', name: 'Gate A — North', status: 'online', scans: 1247, errors: 2, staff: 'Vikram' },
-  { id: 'gate-b', name: 'Gate B — South', status: 'online', scans: 983, errors: 5, staff: 'Priya' },
-  { id: 'gate-c', name: 'Gate C — East', status: 'online', scans: 654, errors: 1, staff: 'Arjun' },
-  { id: 'gate-d', name: 'Gate D — West', status: 'offline', scans: 0, errors: 12, staff: 'Neha' },
-];
+/* ─── Gate labels (data sourced from live scan history) ─── */
+const GATE_LABELS = ['Gate A — North', 'Gate B — South', 'Gate C — East', 'Gate D — West'];
 
 /* ─── Severity color mapping ─── */
 const SEVERITY = {
@@ -29,6 +25,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
 
   /* ── State: incidents + scan data ── */
   const [incidents, setIncidents] = useState([]);
+  const [scanLogs, setScanLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -37,7 +34,11 @@ export default function SupervisorDashboardScreen({ navigation }) {
     if (refreshing) setIsRefreshing(true);
     else setIsLoading(true);
     try {
-      const frauds = await fetchFraudLogs();
+      const [frauds, scanLogsData] = await Promise.all([
+        fetchFraudLogs(),
+        fetchScanHistory(),
+      ]);
+      setScanLogs(scanLogsData || []);
       /* Map fraud logs into incident format */
       const mapped = (frauds || []).map(f => ({
         id: f._id,
@@ -69,8 +70,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
   /* ── Derived stats ── */
   const openIncidents = incidents.filter(i => i.status === 'open');
   const criticalCount = openIncidents.filter(i => i.severity === 'critical').length;
-  const offlineGates = MOCK_GATES.filter(g => g.status === 'offline').length;
-  const totalScans = MOCK_GATES.reduce((sum, g) => sum + g.scans, 0);
+  const totalScans = scanLogs.length;
 
   /* ── Time helper ── */
   const timeAgo = (dateStr) => {
@@ -132,7 +132,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
               { label: 'OPEN', value: openIncidents.length, icon: '📋', color: colors.warning },
               { label: 'CRITICAL', value: criticalCount, icon: '🔴', color: colors.danger },
               { label: 'TOTAL SCANS', value: totalScans.toLocaleString(), icon: '📸', color: colors.primary },
-              { label: 'GATES DOWN', value: offlineGates, icon: '📡', color: offlineGates > 0 ? colors.danger : colors.success },
+              { label: 'GATES DOWN', value: '—', icon: '📡', color: colors.textMuted },
             ].map((m) => (
               <TouchableOpacity key={m.label} style={styles.metricCard} activeOpacity={0.9}>
                 <View style={styles.metricInner}>
@@ -149,21 +149,16 @@ export default function SupervisorDashboardScreen({ navigation }) {
         <View style={styles.section}>
           <View style={styles.sectionHead}>
             <Text style={styles.sectionTitle}>Gate Status</Text>
-            <Text style={styles.sectionSub}>{MOCK_GATES.filter(g => g.status === 'online').length}/{MOCK_GATES.length} online</Text>
+            <Text style={styles.sectionSub}>{scanLogs.length} total scans today</Text>
           </View>
-          {MOCK_GATES.map((gate) => (
-            <View key={gate.id} style={styles.gateCard}>
+          {GATE_LABELS.map((name, idx) => (
+            <View key={name} style={styles.gateCard}>
               <View style={styles.gateInner}>
                 <View style={styles.gateLeft}>
-                  <View style={[styles.gateStatusDot, { backgroundColor: gate.status === 'online' ? colors.success : colors.danger }]} />
+                  <View style={[styles.gateStatusDot, { backgroundColor: colors.success }]} />
                   <View>
-                    <Text style={styles.gateName}>{gate.name}</Text>
-                    <Text style={styles.gateStaff}>Staff: {gate.staff}</Text>
+                    <Text style={styles.gateName}>{name}</Text>
                   </View>
-                </View>
-                <View style={styles.gateRight}>
-                  <Text style={styles.gateScans}>{gate.scans} scans</Text>
-                  {gate.errors > 0 && <Text style={styles.gateErrors}>{gate.errors} errors</Text>}
                 </View>
               </View>
             </View>
