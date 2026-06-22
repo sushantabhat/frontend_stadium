@@ -118,7 +118,7 @@ export default function AdminDashboardScreen({ navigation }) {
       <RefreshBar refreshing={refreshing} />
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']}]}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}>
           <DashboardHeader
             topLabel="SYSTEM OVERVIEW"
             title={userInfo?.name || 'Admin'}
