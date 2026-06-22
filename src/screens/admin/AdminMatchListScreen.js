@@ -267,7 +267,7 @@ export default function AdminMatchListScreen({ navigation }) {
     const stats = m.seatStats || {};
     const total = stats.total || m.totalSeats || 0;
     const available = stats.available ?? 0;
-    const sold = total - available;
+    const sold = stats.booked || 0;
     const pct = total > 0 ? Math.round((sold / total) * 100) : 0;
     const status = getStatusConfig(m.status, m.seatStats);
     const dt = formatDateTime(m.matchDate);

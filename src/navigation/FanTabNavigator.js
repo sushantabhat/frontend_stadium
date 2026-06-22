@@ -10,6 +10,7 @@ import BookingScreen from '../screens/matches/BookingScreen';
 import MyTicketsScreen from '../screens/home/MyTicketsScreen';
 import TicketDetailScreen from '../screens/home/TicketDetailScreen';
 import WishlistScreen from '../screens/home/WishlistScreen';
+import NotificationsScreen from '../screens/home/NotificationsScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import SettingsScreen from '../screens/common/SettingsScreen';
 import { useBackgroundColor } from '../context/ThemeContext';
@@ -32,6 +33,7 @@ function HomeNavigator() {
       <HomeStack.Screen name="SeatSelection" component={SeatSelectionScreen} />
       <HomeStack.Screen name="Booking" component={BookingScreen} />
       <HomeStack.Screen name="Wishlist" component={WishlistScreen} />
+      <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
     </HomeStack.Navigator>
   );
 }

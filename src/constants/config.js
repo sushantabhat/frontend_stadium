@@ -12,15 +12,15 @@ function resolveApiBaseUrl() {
   if (debuggerHost) {
     const host = debuggerHost.split(':')[0];
     if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return `http://${host}:5001`;
+      return `http://${host}:5009`;
     }
   }
 
   if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:5001';
+    return 'http://10.0.2.2:5009';
   }
 
-  return 'http://localhost:5001';
+  return 'http://localhost:5009';
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();

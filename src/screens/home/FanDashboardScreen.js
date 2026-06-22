@@ -8,6 +8,7 @@ import { fetchMatchRecommendations } from '../../services/aiService';
 import MatchCard from '../../components/MatchCard';
 import BannerCarousel from '../../components/BannerCarousel';
 import DashboardHeader from '../../components/DashboardHeader';
+import NotificationBell from '../../components/NotificationBell';
 import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
 
@@ -60,6 +61,9 @@ export default function FanDashboardScreen({ navigation }) {
           avatarLabel={initials}
           onAvatarPress={() => navigation.navigate('Account')}
         />
+        <View style={styles.bellWrap}>
+          <NotificationBell onPress={() => navigation.navigate('Notifications')} />
+        </View>
 
         {/* Hero Banner Carousel */}
         <BannerCarousel
@@ -202,6 +206,8 @@ export default function FanDashboardScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  topBar: { flexDirection: 'row', alignItems: 'center', paddingRight: spacing.xl },
+  bellWrap: { position: 'absolute', top: 20, right: 68, zIndex: 10 },
   scroll: { paddingTop: spacing.lg },
   loadingWrap: {
     paddingVertical: spacing.huge,

@@ -15,11 +15,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
 import BookingProgress from '../../components/BookingProgress';
 import KhaltiPaymentModal from '../../components/KhaltiPaymentModal';
+import CardPaymentModal from '../../components/CardPaymentModal';
 import GradientButton from '../../components/GradientButton';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 import { fetchMatchById } from '../../services/matchService';
-import { unlockSeats, initiateKhaltiPayment, verifyKhaltiPayment } from '../../services/bookingService';
+import { unlockSeats, initiateKhaltiPayment, verifyKhaltiPayment, initiateCardPayment, confirmCardBooking } from '../../services/bookingService';
 import { fetchDynamicPricingSuggestions } from '../../services/aiService';
 
 export default function BookingScreen({ route, navigation }) {
@@ -33,6 +34,8 @@ export default function BookingScreen({ route, navigation }) {
   const [pendingPayment, setPendingPayment] = useState(null);
   const [khaltiData, setKhaltiData] = useState(null);
   const [khaltiVisible, setKhaltiVisible] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('khalti');
+  const [cardVisible, setCardVisible] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -79,6 +82,23 @@ export default function BookingScreen({ route, navigation }) {
 
   const handleKhaltiError = (msg) => {
     setKhaltiVisible(false);
+    Alert.alert('Payment Failed', msg);
+  };
+
+  const handleCardPayment = () => {
+    const seatIds = selectedSeats.map(s => s.id || s._id);
+    setPendingPayment({ matchId, seatIds });
+    setCardVisible(true);
+  };
+
+  const handleCardSuccess = (result) => {
+    setCardVisible(false);
+    setIsBooked(true);
+    setBookedTickets(result.tickets || []);
+  };
+
+  const handleCardError = (msg) => {
+    setCardVisible(false);
     Alert.alert('Payment Failed', msg);
   };
 
@@ -283,9 +303,20 @@ export default function BookingScreen({ route, navigation }) {
         <View style={styles.paymentMethodCard}>
           <Text style={styles.cardHeader}>PAYMENT METHOD</Text>
           <View style={styles.paymentOptions}>
-            <View style={[styles.paymentOption, styles.paymentOptionActive]}>
-              <Text style={[styles.paymentOptionText, styles.paymentOptionTextActive]}>Khalti</Text>
-            </View>
+            <TouchableOpacity
+              style={[styles.paymentOption, paymentMethod === 'khalti' && styles.paymentOptionActive]}
+              onPress={() => setPaymentMethod('khalti')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.paymentOptionText, paymentMethod === 'khalti' && styles.paymentOptionTextActive]}>Khalti</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.paymentOption, paymentMethod === 'card' && styles.paymentOptionActive]}
+              onPress={() => setPaymentMethod('card')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.paymentOptionText, paymentMethod === 'card' && styles.paymentOptionTextActive]}>Credit Card</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -300,14 +331,24 @@ export default function BookingScreen({ route, navigation }) {
         onClose={() => setKhaltiVisible(false)}
       />
 
+      <CardPaymentModal
+        visible={cardVisible}
+        amount={totalAmount}
+        matchId={matchId}
+        seatIds={pendingPayment?.seatIds || []}
+        onSuccess={handleCardSuccess}
+        onError={handleCardError}
+        onClose={() => setCardVisible(false)}
+      />
+
       {/* Sticky CTA */}
       <View style={styles.stickyCta}>
         <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} activeOpacity={0.7}>
           <Text style={styles.cancelBtnText}>Cancel</Text>
         </TouchableOpacity>
         <GradientButton
-          title={isPaying ? 'Redirecting...' : `Pay Khalti Rs.${Math.round(totalAmount)}`}
-          onPress={handleKhaltiPayment}
+          title={isPaying ? 'Processing...' : `Pay via ${paymentMethod === 'khalti' ? 'Khalti' : 'Card'} Rs.${Math.round(totalAmount)}`}
+          onPress={paymentMethod === 'khalti' ? handleKhaltiPayment : handleCardPayment}
           disabled={isPaying}
           style={{ flex: 1 }}
         />

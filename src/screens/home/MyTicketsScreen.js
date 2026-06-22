@@ -38,8 +38,14 @@ function getTicketDisplayStatus(ticket) {
 const STATUS_CONFIG = {
   active: { label: 'VALID TICKET', bg: 'rgba(0,200,83,0.15)', color: '#69F0AE' },
   used: { label: 'ALREADY USED', bg: 'rgba(255,59,48,0.15)', color: '#FF6B6B' },
-  invalid: { label: 'INVALID', bg: 'rgba(142,142,147,0.15)', color: '#8E8E93' },
+  invalid: { label: 'REFUNDED', bg: 'rgba(108,92,231,0.15)', color: '#A29BFE' },
 };
+
+function getRefundDisplay(refund) {
+  if (!refund) return null;
+  if (refund.status === 'processing') return { label: 'REFUNDING', bg: 'rgba(255,193,7,0.15)', color: '#FFD93D' };
+  return { label: 'REFUNDED', bg: 'rgba(108,92,231,0.15)', color: '#A29BFE' };
+}
 
 export default function MyTicketsScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
@@ -63,7 +69,8 @@ export default function MyTicketsScreen({ navigation }) {
     const theme = CATEGORY_THEMES[category] || CATEGORY_THEMES.general;
     const matchDate = item.match?.matchDate ? new Date(item.match.matchDate) : null;
     const displayStatus = getTicketDisplayStatus(item);
-    const statusCfg = STATUS_CONFIG[displayStatus];
+    const refundCfg = item.refund ? getRefundDisplay(item.refund) : null;
+    const statusCfg = refundCfg || STATUS_CONFIG[displayStatus];
     const isActive = displayStatus === 'active';
 
     return (
@@ -160,7 +167,11 @@ export default function MyTicketsScreen({ navigation }) {
             <View style={styles.qrSection}>
               <View style={styles.qrPlaceholder}>
                 <Text style={styles.qrPlaceholderText}>
-                  {displayStatus === 'used' ? 'This ticket has been scanned' : 'This ticket is no longer valid'}
+                  {displayStatus === 'used'
+                    ? 'This ticket has been scanned'
+                    : item.refund?.status === 'processing'
+                      ? `Refunding — ETA ${new Date(item.refund.estimatedSettlementDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+                      : 'Match cancelled — refund issued'}
                 </Text>
               </View>
             </View>

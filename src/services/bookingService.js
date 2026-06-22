@@ -29,3 +29,13 @@ export async function verifyKhaltiPayment(pidx, matchId, seatIds) {
   const response = await api.post('/api/payments/khalti/verify', { pidx, matchId, seatIds });
   return response.data;
 }
+
+export async function initiateCardPayment(cardDetails) {
+  const response = await api.post('/api/payments/card/init', cardDetails);
+  return response.data;
+}
+
+export async function confirmCardBooking(transactionId, matchId, seatIds) {
+  const response = await api.post('/api/payments/card/confirm', { transactionId, matchId, seatIds });
+  return response.data;
+}

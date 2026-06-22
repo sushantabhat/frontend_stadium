@@ -30,18 +30,22 @@ export default function TicketDetailScreen({ route, navigation }) {
   const theme = CATEGORY_THEMES[category] || CATEGORY_THEMES.general;
   const matchDate = ticket.match?.matchDate ? new Date(ticket.match.matchDate) : null;
 
+  const matchCancelled = ticket.match?.status === 'cancelled';
+  const refund = ticket.refund;
+  const refundProcessing = refund?.status === 'processing';
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" />
       <ScreenHeader title="Ticket" onBack={() => navigation.goBack()} />
 
       <View style={styles.cardWrap}>
-        <LinearGradient colors={theme.gradient} style={styles.accentStripe} />
+        <LinearGradient colors={matchCancelled ? ['#6C5CE7', '#4834D4'] : theme.gradient} style={styles.accentStripe} />
         <LinearGradient
           colors={[`${colors.gradientStart}F0`, `${colors.gradientEnd}F0`]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.card}
+          style={[styles.card, matchCancelled && { opacity: 0.7 }]}
         >
           <View style={styles.cardTop}>
             <Text style={styles.brandText}>SMART STADIUM</Text>
@@ -68,6 +72,27 @@ export default function TicketDetailScreen({ route, navigation }) {
               <Text style={styles.dateText}>
                 {formatTimeInNepal(matchDate, { hour: '2-digit', minute: '2-digit', hour12: true })}
               </Text>
+            </View>
+          )}
+
+          {matchCancelled && refund && (
+            <View style={[styles.refundBanner, refundProcessing && { backgroundColor: 'rgba(255,193,7,0.12)' }]}>
+              <Text style={[styles.refundIcon, refundProcessing && { color: '#FFD93D' }]}>
+                {refundProcessing ? '⏳' : '✓'}
+              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.refundText, refundProcessing && { color: '#FFD93D' }]}>
+                  {refundProcessing ? 'Refund processing' : 'Refund issued'} — Rs.{refund.amount || ticket.seat?.price || '—'}
+                </Text>
+                {refundProcessing && refund.estimatedSettlementDate && (
+                  <Text style={styles.refundEta}>
+                    Expected by {new Date(refund.estimatedSettlementDate).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                  </Text>
+                )}
+                {refund.gatewayRefundId && (
+                  <Text style={styles.refundEta}>Ref: {refund.gatewayRefundId}</Text>
+                )}
+              </View>
             </View>
           )}
 
@@ -98,21 +123,40 @@ export default function TicketDetailScreen({ route, navigation }) {
             <View style={styles.dividerLine} />
           </View>
 
-          <View style={styles.qrSection}>
-            <View style={styles.qrBox}>
-              <QRCode value={ticket.ticketCode} size={200} color="#FFFFFF" backgroundColor="transparent" level="H" />
-              <View style={[styles.qrCorner, styles.qrTL]} />
-              <View style={[styles.qrCorner, styles.qrTR]} />
-              <View style={[styles.qrCorner, styles.qrBL]} />
-              <View style={[styles.qrCorner, styles.qrBR]} />
+          {!matchCancelled ? (
+            <View style={styles.qrSection}>
+              <View style={styles.qrBox}>
+                <QRCode value={ticket.ticketCode} size={200} color="#FFFFFF" backgroundColor="transparent" level="H" />
+                <View style={[styles.qrCorner, styles.qrTL]} />
+                <View style={[styles.qrCorner, styles.qrTR]} />
+                <View style={[styles.qrCorner, styles.qrBL]} />
+                <View style={[styles.qrCorner, styles.qrBR]} />
+              </View>
+              <Text style={styles.ticketCode}>{ticket.ticketCode}</Text>
+              <Text style={styles.qrHint}>Show this QR at the entry gate</Text>
             </View>
-            <Text style={styles.ticketCode}>{ticket.ticketCode}</Text>
-            <Text style={styles.qrHint}>Show this QR at the entry gate</Text>
-          </View>
+          ) : (
+            <View style={styles.qrSection}>
+              <View style={styles.qrPlaceholder}>
+                <Text style={styles.qrPlaceholderIcon}>{refundProcessing ? '⏳' : '✓'}</Text>
+                <Text style={styles.qrPlaceholderText}>
+                  {refundProcessing ? 'Refund in progress' : 'Match cancelled — refund issued'}
+                </Text>
+              </View>
+            </View>
+          )}
 
-          <View style={[styles.statusBadge, { backgroundColor: 'rgba(0,200,83,0.15)' }]}>
-            <Text style={[styles.statusText, { color: '#69F0AE' }]}>VALID TICKET</Text>
-          </View>
+          {matchCancelled ? (
+            <View style={[styles.statusBadge, { backgroundColor: refundProcessing ? 'rgba(255,193,7,0.15)' : 'rgba(108,92,231,0.15)' }]}>
+              <Text style={[styles.statusText, { color: refundProcessing ? '#FFD93D' : '#A29BFE' }]}>
+                {refundProcessing ? 'REFUNDING' : 'REFUNDED'}
+              </Text>
+            </View>
+          ) : (
+            <View style={[styles.statusBadge, { backgroundColor: 'rgba(0,200,83,0.15)' }]}>
+              <Text style={[styles.statusText, { color: '#69F0AE' }]}>VALID TICKET</Text>
+            </View>
+          )}
         </LinearGradient>
       </View>
 
@@ -187,6 +231,20 @@ const styles = StyleSheet.create({
   ticketCode: { color: 'rgba(255,255,255,0.7)', fontSize: typography.small.fontSize, fontWeight: '800', letterSpacing: 2, marginBottom: spacing.xs, fontFamily: 'Courier' },
   qrHint: { color: 'rgba(255,255,255,0.5)', fontSize: typography.small.fontSize, fontWeight: '500' },
 
+  refundBanner: {
+    backgroundColor: 'rgba(108,92,231,0.15)', borderRadius: radii.md, padding: spacing.md,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg,
+  },
+  refundIcon: { color: '#A29BFE', fontSize: 14, fontWeight: '900' },
+  refundText: { color: '#A29BFE', fontSize: typography.caption.fontSize, fontWeight: '700' },
+  refundEta: { color: 'rgba(162,155,254,0.6)', fontSize: typography.tiny.fontSize, marginTop: spacing.xs },
+  qrPlaceholder: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: radii.lg, paddingVertical: spacing.xxl, paddingHorizontal: spacing.xl,
+    width: '100%', alignItems: 'center',
+  },
+  qrPlaceholderIcon: { color: 'rgba(255,255,255,0.3)', fontSize: 32, marginBottom: spacing.sm, fontWeight: '700' },
+  qrPlaceholderText: { color: 'rgba(255,255,255,0.4)', fontSize: typography.caption.fontSize, fontWeight: '600', textAlign: 'center' },
   statusBadge: { borderRadius: radii.md, paddingVertical: spacing.sm, alignItems: 'center', marginTop: 'auto' },
   statusText: { fontSize: typography.tiny.fontSize, fontWeight: '800', letterSpacing: 1 },
 
