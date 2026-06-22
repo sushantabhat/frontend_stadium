@@ -17,6 +17,8 @@ import { AdminCard, AdminFilterPills } from '../../components/admin/TicketProHea
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchScanHistory } from '../../services/ticketService';
 import { fetchFraudLogs } from '../../services/adminService';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 
 const FILTERS = [
   { key: 'all', label: 'All' },
@@ -66,12 +68,10 @@ export default function TicketValidationScreen({ navigation }) {
   const initials = (userInfo?.name || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const [fraudLogs, setFraudLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
 
   const loadData = useCallback(async (refreshing = false) => {
-    if (refreshing) setIsRefreshing(true);
-    else setIsLoading(true);
+    if (!refreshing) setIsLoading(true);
     try {
       const [scans, frauds] = await Promise.all([fetchScanHistory(), fetchFraudLogs()]);
       setScanLogs(scans || []);
@@ -80,11 +80,12 @@ export default function TicketValidationScreen({ navigation }) {
       console.log('Ticket data error:', err.message);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   }, []);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+
+  const { refreshing: isRefreshing, onRefresh } = useRefresh(() => loadData(true));
 
   const tickets = useMemo(() => {
     const fromScans = scanLogs.map((log, i) => normalizeTicket(log, i));
@@ -142,7 +143,9 @@ export default function TicketValidationScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={isRefreshing} />
+      <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <FlatList
         data={tickets}
@@ -161,7 +164,7 @@ export default function TicketValidationScreen({ navigation }) {
           </View>
         }
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={() => loadData(true)} tintColor={glass.brandPurple} />
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />
         }
         ListEmptyComponent={
           isLoading ? (
@@ -176,6 +179,7 @@ export default function TicketValidationScreen({ navigation }) {
         renderItem={renderTicket}
       />
     </SafeAreaView>
+    </View>
   );
 }
 

@@ -8,6 +8,8 @@ import { fetchMatchRecommendations } from '../../services/aiService';
 import MatchCard from '../../components/MatchCard';
 import BannerCarousel from '../../components/BannerCarousel';
 import DashboardHeader from '../../components/DashboardHeader';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -15,12 +17,10 @@ export default function FanDashboardScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
   const [recommendations, setRecommendations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState('');
 
   const loadData = useCallback(async (refreshing = false) => {
-    if (refreshing) setIsRefreshing(true);
-    else setIsLoading(true);
+    if (!refreshing) setIsLoading(true);
     try {
       setLoadError('');
       const data = await fetchMatchRecommendations();
@@ -29,12 +29,11 @@ export default function FanDashboardScreen({ navigation }) {
       setLoadError('Failed to load matches. Pull down to retry.');
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   }, []);
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  const onRefresh = useCallback(() => { loadData(true); }, [loadData]);
+  const { refreshing: isRefreshing, onRefresh } = useRefresh(() => loadData(true));
 
   const firstName = userInfo?.name?.split(' ')[0] || 'Fan';
   const initials = (userInfo?.name || 'F').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -44,12 +43,14 @@ export default function FanDashboardScreen({ navigation }) {
   const otherMatches = recommendations.filter(m => m.status !== 'upcoming' && m.status !== 'live');
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={isRefreshing} />
+      <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
       >
         {/* Top Bar — asymmetric */}
         <DashboardHeader
@@ -195,6 +196,7 @@ export default function FanDashboardScreen({ navigation }) {
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
+    </View>
   );
 }
 

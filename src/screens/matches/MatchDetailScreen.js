@@ -4,6 +4,7 @@ import {
   Alert,
   Dimensions,
   Image,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -17,6 +18,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import { ROLES } from '../../constants/config';
 import { cancelMatch, fetchMatchById } from '../../services/matchService';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 
@@ -42,13 +45,14 @@ export default function MatchDetailScreen({ route, navigation }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState('');
-
-  const loadMatch = useCallback(async () => {
-    setIsLoading(true);
+  const loadMatch = useCallback(async (isRefresh = false) => {
+    if (!isRefresh) setIsLoading(true);
     try { setError(''); setMatch(await fetchMatchById(matchId)); }
     catch (err) { setError(err.response?.data?.message || 'Failed to load match details'); }
     finally { setIsLoading(false); }
   }, [matchId]);
+
+  const { refreshing, onRefresh } = useRefresh(() => loadMatch(true));
 
   useFocusEffect(useCallback(() => { loadMatch(); }, [loadMatch]));
 
@@ -116,210 +120,213 @@ export default function MatchDetailScreen({ route, navigation }) {
     }));
 
   return (
-    <SafeAreaView style={s.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false} bounces={false}>
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={refreshing} />
+      <SafeAreaView style={s.container}>
+        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+        <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false} bounces={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}>
 
-        {/* ═══════════════════════════════════════════════
-            HERO — Full-bleed cinematic banner
-            ═══════════════════════════════════════════════ */}
-        <View style={s.hero}>
-          {hasImage && <Image source={{ uri: match.imageUrl }} style={s.heroBanner} resizeMode="cover" />}
+          {/* ═══════════════════════════════════════════════
+              HERO — Full-bleed cinematic banner
+              ═══════════════════════════════════════════════ */}
+          <View style={s.hero}>
+            {hasImage && <Image source={{ uri: match.imageUrl }} style={s.heroBanner} resizeMode="cover" />}
 
-          <LinearGradient
-            colors={hasImage
-              ? ['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.3)', 'rgba(7,8,11,0.85)', '#0F111A']
-              : [`${colors.primaryDark}CC`, `${colors.primary}88`, `${colors.primaryDark}AA`, '#0F111A']}
-            style={s.heroGradient}
-          />
+            <LinearGradient
+              colors={hasImage
+                ? ['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.3)', 'rgba(7,8,11,0.85)', '#0F111A']
+                : [`${colors.primaryDark}CC`, `${colors.primary}88`, `${colors.primaryDark}AA`, '#0F111A']}
+              style={s.heroGradient}
+            />
 
-          {/* Content over gradient */}
-          <View style={s.heroContent}>
-            {/* Frosted back button */}
-            <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-              <Text style={s.backBtnText}>←</Text>
-            </TouchableOpacity>
+            {/* Content over gradient */}
+            <View style={s.heroContent}>
+              {/* Frosted back button */}
+              <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+                <Text style={s.backBtnText}>←</Text>
+              </TouchableOpacity>
 
-            {/* Status badge — floating top-right */}
-            <View style={[s.statusBadge, { backgroundColor: status.bg }]}>
-              {status.dot && <View style={[s.statusDot, { backgroundColor: status.color }]} />}
-              <Text style={[s.statusText, { color: status.color }]}>{status.label}</Text>
-            </View>
-
-            {/* Team matchup — the visual centerpiece */}
-            <View style={s.teamsRow}>
-              <View style={s.teamBlock}>
-                {match.teamALogo ? (
-                  <View style={[s.logoGlow, { shadowColor: status.glow !== 'transparent' ? status.glow : colors.primary }]}>
-                    <Image source={{ uri: match.teamALogo }} style={s.teamLogo} resizeMode="contain" />
-                  </View>
-                ) : (
-                  <View style={s.teamEmojiFallback}>
-                    <Text style={s.teamEmoji}>{TEAM_EMOJIS[match.teamA] || '🏏'}</Text>
-                  </View>
-                )}
-                <Text style={s.teamName}>{match.teamA}</Text>
+              {/* Status badge — floating top-right */}
+              <View style={[s.statusBadge, { backgroundColor: status.bg }]}>
+                {status.dot && <View style={[s.statusDot, { backgroundColor: status.color }]} />}
+                <Text style={[s.statusText, { color: status.color }]}>{status.label}</Text>
               </View>
 
-              <View style={s.vsBlock}>
-                <LinearGradient colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)']} style={s.vsInner}>
-                  <Text style={s.vsText}>VS</Text>
-                </LinearGradient>
-              </View>
-
-              <View style={s.teamBlock}>
-                {match.teamBLogo ? (
-                  <View style={[s.logoGlow, { shadowColor: status.glow !== 'transparent' ? status.glow : colors.primary }]}>
-                    <Image source={{ uri: match.teamBLogo }} style={s.teamLogo} resizeMode="contain" />
-                  </View>
-                ) : (
-                  <View style={s.teamEmojiFallback}>
-                    <Text style={s.teamEmoji}>{TEAM_EMOJIS[match.teamB] || '🏏'}</Text>
-                  </View>
-                )}
-                <Text style={s.teamName}>{match.teamB}</Text>
-              </View>
-            </View>
-
-            {/* Match title */}
-            <Text style={s.heroTitle}>{match.title}</Text>
-
-            {/* Meta pills */}
-            <View style={s.metaRow}>
-              <View style={s.metaPill}>
-                <Text style={s.metaIcon}>📅</Text>
-                <Text style={s.metaText}>{dateStr}</Text>
-              </View>
-              <View style={s.metaPill}>
-                <Text style={s.metaIcon}>⏰</Text>
-                <Text style={s.metaMono}>{timeStr}</Text>
-              </View>
-              <View style={s.metaPill}>
-                <Text style={s.metaIcon}>📍</Text>
-                <Text style={s.metaText} numberOfLines={1}>{match.venue}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* ═══════════════════════════════════════════════
-            STATS ROW — Clean single-line stats
-            ═══════════════════════════════════════════════ */}
-        <View style={s.bodySection}>
-          <View style={s.statsRow}>
-            {[
-              { label: 'Available', value: stats.available || 0, color: '#00E676' },
-              { label: 'Booked', value: stats.booked || 0, color: '#FFB300' },
-              { label: 'Sold', value: `${occupancyPct}%`, color: '#00B0FF' },
-            ].map((st, i) => (
-              <React.Fragment key={st.label}>
-                {i > 0 && <View style={s.statDivider} />}
-                <View style={s.statCell}>
-                  <Text style={[s.statValue, { color: st.color }]}>{st.value}</Text>
-                  <Text style={s.statLabel}>{st.label}</Text>
+              {/* Team matchup — the visual centerpiece */}
+              <View style={s.teamsRow}>
+                <View style={s.teamBlock}>
+                  {match.teamALogo ? (
+                    <View style={[s.logoGlow, { shadowColor: status.glow !== 'transparent' ? status.glow : colors.primary }]}>
+                      <Image source={{ uri: match.teamALogo }} style={s.teamLogo} resizeMode="contain" />
+                    </View>
+                  ) : (
+                    <View style={s.teamEmojiFallback}>
+                      <Text style={s.teamEmoji}>{TEAM_EMOJIS[match.teamA] || '🏏'}</Text>
+                    </View>
+                  )}
+                  <Text style={s.teamName}>{match.teamA}</Text>
                 </View>
-              </React.Fragment>
-            ))}
+
+                <View style={s.vsBlock}>
+                  <LinearGradient colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)']} style={s.vsInner}>
+                    <Text style={s.vsText}>VS</Text>
+                  </LinearGradient>
+                </View>
+
+                <View style={s.teamBlock}>
+                  {match.teamBLogo ? (
+                    <View style={[s.logoGlow, { shadowColor: status.glow !== 'transparent' ? status.glow : colors.primary }]}>
+                      <Image source={{ uri: match.teamBLogo }} style={s.teamLogo} resizeMode="contain" />
+                    </View>
+                  ) : (
+                    <View style={s.teamEmojiFallback}>
+                      <Text style={s.teamEmoji}>{TEAM_EMOJIS[match.teamB] || '🏏'}</Text>
+                    </View>
+                  )}
+                  <Text style={s.teamName}>{match.teamB}</Text>
+                </View>
+              </View>
+
+              {/* Match title */}
+              <Text style={s.heroTitle}>{match.title}</Text>
+
+              {/* Meta pills */}
+              <View style={s.metaRow}>
+                <View style={s.metaPill}>
+                  <Text style={s.metaIcon}>📅</Text>
+                  <Text style={s.metaText}>{dateStr}</Text>
+                </View>
+                <View style={s.metaPill}>
+                  <Text style={s.metaIcon}>⏰</Text>
+                  <Text style={s.metaMono}>{timeStr}</Text>
+                </View>
+                <View style={s.metaPill}>
+                  <Text style={s.metaIcon}>📍</Text>
+                  <Text style={s.metaText} numberOfLines={1}>{match.venue}</Text>
+                </View>
+              </View>
+            </View>
           </View>
-          {stats.total > 0 && (
-            <View style={s.occupancyBar}>
-              <LinearGradient
-                colors={occupancyPct > 80 ? ['#FF3B30', '#FFB300'] : ['#00D4AA', '#00B0FF']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={[s.occupancyFill, { width: `${occupancyPct}%` }]}
-              />
+
+          {/* ═══════════════════════════════════════════════
+              STATS ROW — Clean single-line stats
+              ═══════════════════════════════════════════════ */}
+          <View style={s.bodySection}>
+            <View style={s.statsRow}>
+              {[
+                { label: 'Available', value: stats.available || 0, color: '#00E676' },
+                { label: 'Booked', value: stats.booked || 0, color: '#FFB300' },
+                { label: 'Sold', value: `${occupancyPct}%`, color: '#00B0FF' },
+              ].map((st, i) => (
+                <React.Fragment key={st.label}>
+                  {i > 0 && <View style={s.statDivider} />}
+                  <View style={s.statCell}>
+                    <Text style={[s.statValue, { color: st.color }]}>{st.value}</Text>
+                    <Text style={s.statLabel}>{st.label}</Text>
+                  </View>
+                </React.Fragment>
+              ))}
+            </View>
+            {stats.total > 0 && (
+              <View style={s.occupancyBar}>
+                <LinearGradient
+                  colors={occupancyPct > 80 ? ['#FF3B30', '#FFB300'] : ['#00D4AA', '#00B0FF']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={[s.occupancyFill, { width: `${occupancyPct}%` }]}
+                />
+              </View>
+            )}
+          </View>
+
+          {/* ═══════════════════════════════════════════════
+              PRICING — Horizontal scroll pills
+              ═══════════════════════════════════════════════ */}
+          <View style={s.bodySection}>
+            <Text style={s.bodyLabel}>Pricing</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pricingRow}>
+              {PRICING_TIERS.map((p) => (
+                <View key={p.label} style={[s.priceCell, { borderColor: `${p.color}33` }]}>
+                  <View style={s.priceHeader}>
+                    <View style={[s.priceIconBadge, { backgroundColor: `${p.color}22` }]}>
+                      <Text style={[s.priceIconText, { color: p.color }]}>{p.label.slice(0, 2).toUpperCase()}</Text>
+                    </View>
+                    <Text
+                      style={[s.priceLabel, { color: p.color }]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.7}
+                    >
+                      {p.label}
+                    </Text>
+                  </View>
+                  <Text style={[s.priceValue, { color: p.color }]} numberOfLines={1}>
+                    Rs.{p.value.toLocaleString()}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* ═══════════════════════════════════════════════
+              STADIUM — One-liner
+              ═══════════════════════════════════════════════ */}
+          <View style={s.bodySection}>
+            <Text style={s.bodyLabel}>Stadium</Text>
+            <View style={s.infoRow}>
+              {match.stadiumSections && match.stadiumSections.length > 0 ? (
+                <>
+                  <Text style={s.infoText}>{match.stadiumSections.length} Sections</Text>
+                  <View style={s.infoDot} />
+                  <Text style={s.infoText}>{stats.total || match.totalSeats || 0} Seats</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={s.infoText}>{match.seatLayout?.rows ?? 0} Rows</Text>
+                  <View style={s.infoDot} />
+                  <Text style={s.infoText}>{match.seatLayout?.seatsPerRow ?? 0} Seats/Row</Text>
+                </>
+              )}
+            </View>
+          </View>
+
+          {/* ═══════════════════════════════════════════════
+              ABOUT
+              ═══════════════════════════════════════════════ */}
+          {match.description ? (
+            <View style={s.bodySection}>
+              <Text style={s.bodyLabel}>About</Text>
+              <Text style={s.aboutText}>{match.description}</Text>
+            </View>
+          ) : null}
+
+          <View style={{ height: 120 }} />
+        </ScrollView>
+
+        {/* ═══════════════════════════════════════════════
+            STICKY CTA — Gradient + glow
+            ═══════════════════════════════════════════════ */}
+        <View style={s.stickyCta}>
+          {!isAdmin && match.status !== 'cancelled' ? (
+            <TouchableOpacity style={s.ctaButton} onPress={() => navigation.navigate('SeatSelection', { matchId: match._id })} activeOpacity={0.88}>
+              <LinearGradient colors={['#7B61FF', '#5A3FD6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.ctaGradient}>
+                <Text style={s.ctaText}>Select & Book Seats</Text>
+                <Text style={s.ctaArrow}>→</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          ) : isAdmin && match.status !== 'cancelled' ? (
+            <TouchableOpacity style={s.ctaButton} onPress={handleCancel} activeOpacity={0.88}>
+              <LinearGradient colors={[colors.danger, '#CC2F26']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.ctaGradient}>
+                <Text style={s.ctaText}>{isCancelling ? 'Cancelling...' : 'Cancel Match'}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          ) : (
+            <View style={s.cancelledBanner}>
+              <Text style={s.cancelledText}>This match has been cancelled</Text>
             </View>
           )}
         </View>
-
-        {/* ═══════════════════════════════════════════════
-            PRICING — Horizontal scroll pills
-            ═══════════════════════════════════════════════ */}
-        <View style={s.bodySection}>
-          <Text style={s.bodyLabel}>Pricing</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pricingRow}>
-            {PRICING_TIERS.map((p) => (
-              <View key={p.label} style={[s.priceCell, { borderColor: `${p.color}33` }]}>
-                <View style={s.priceHeader}>
-                  <View style={[s.priceIconBadge, { backgroundColor: `${p.color}22` }]}>
-                    <Text style={[s.priceIconText, { color: p.color }]}>{p.label.slice(0, 2).toUpperCase()}</Text>
-                  </View>
-                  <Text
-                    style={[s.priceLabel, { color: p.color }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.7}
-                  >
-                    {p.label}
-                  </Text>
-                </View>
-                <Text style={[s.priceValue, { color: p.color }]} numberOfLines={1}>
-                  Rs.{p.value.toLocaleString()}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* ═══════════════════════════════════════════════
-            STADIUM — One-liner
-            ═══════════════════════════════════════════════ */}
-        <View style={s.bodySection}>
-          <Text style={s.bodyLabel}>Stadium</Text>
-          <View style={s.infoRow}>
-            {match.stadiumSections && match.stadiumSections.length > 0 ? (
-              <>
-                <Text style={s.infoText}>{match.stadiumSections.length} Sections</Text>
-                <View style={s.infoDot} />
-                <Text style={s.infoText}>{stats.total || match.totalSeats || 0} Seats</Text>
-              </>
-            ) : (
-              <>
-                <Text style={s.infoText}>{match.seatLayout?.rows ?? 0} Rows</Text>
-                <View style={s.infoDot} />
-                <Text style={s.infoText}>{match.seatLayout?.seatsPerRow ?? 0} Seats/Row</Text>
-              </>
-            )}
-          </View>
-        </View>
-
-        {/* ═══════════════════════════════════════════════
-            ABOUT
-            ═══════════════════════════════════════════════ */}
-        {match.description ? (
-          <View style={s.bodySection}>
-            <Text style={s.bodyLabel}>About</Text>
-            <Text style={s.aboutText}>{match.description}</Text>
-          </View>
-        ) : null}
-
-        <View style={{ height: 120 }} />
-      </ScrollView>
-
-      {/* ═══════════════════════════════════════════════
-          STICKY CTA — Gradient + glow
-          ═══════════════════════════════════════════════ */}
-      <View style={s.stickyCta}>
-        {!isAdmin && match.status !== 'cancelled' ? (
-          <TouchableOpacity style={s.ctaButton} onPress={() => navigation.navigate('SeatSelection', { matchId: match._id })} activeOpacity={0.88}>
-            <LinearGradient colors={['#7B61FF', '#5A3FD6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.ctaGradient}>
-              <Text style={s.ctaText}>Select & Book Seats</Text>
-              <Text style={s.ctaArrow}>→</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        ) : isAdmin && match.status !== 'cancelled' ? (
-          <TouchableOpacity style={s.ctaButton} onPress={handleCancel} activeOpacity={0.88}>
-            <LinearGradient colors={[colors.danger, '#CC2F26']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.ctaGradient}>
-              <Text style={s.ctaText}>{isCancelling ? 'Cancelling...' : 'Cancel Match'}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        ) : (
-          <View style={s.cancelledBanner}>
-            <Text style={s.cancelledText}>This match has been cancelled</Text>
-          </View>
-        )}
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 

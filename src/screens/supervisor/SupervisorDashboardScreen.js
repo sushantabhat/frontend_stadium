@@ -7,6 +7,8 @@ import { colors, spacing, radii, typography } from '../../constants/theme';
 import { fetchFraudLogs } from '../../services/adminService';
 import { fetchScanHistory } from '../../services/ticketService';
 import DashboardHeader from '../../components/DashboardHeader';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 
 /* ─── Gate labels (data sourced from live scan history) ─── */
 const GATE_LABELS = ['Gate A — North', 'Gate B — South', 'Gate C — East', 'Gate D — West'];
@@ -27,19 +29,16 @@ export default function SupervisorDashboardScreen({ navigation }) {
   const [incidents, setIncidents] = useState([]);
   const [scanLogs, setScanLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   /* ── Data loading: parallel fetch ── */
   const loadData = useCallback(async (refreshing = false) => {
-    if (refreshing) setIsRefreshing(true);
-    else setIsLoading(true);
+    if (!refreshing) setIsLoading(true);
     try {
       const [frauds, scanLogsData] = await Promise.all([
         fetchFraudLogs(),
         fetchScanHistory(),
       ]);
       setScanLogs(scanLogsData || []);
-      /* Map fraud logs into incident format */
       const mapped = (frauds || []).map(f => ({
         id: f._id,
         type: f.reason === 'duplicate_scan' ? 'fraud' : 'technical',
@@ -56,12 +55,13 @@ export default function SupervisorDashboardScreen({ navigation }) {
       console.log('Supervisor dashboard error:', e.message);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   }, []);
 
   /* ── Focus-based refresh ── */
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+
+  const { refreshing: isRefreshing, onRefresh } = useRefresh(() => loadData(true));
 
   /* ── Identity helpers ── */
   const firstName = userInfo?.name?.split(' ')[0] || 'Supervisor';
@@ -84,12 +84,14 @@ export default function SupervisorDashboardScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={isRefreshing} />
+      <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => loadData(true)} tintColor={colors.primary} />}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
       >
         {/* ═══ DASHBOARD HEADER ═══ */}
         <DashboardHeader
@@ -209,6 +211,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
         <View style={{ height: spacing.xxxl + 20 }} />
       </ScrollView>
     </SafeAreaView>
+    </View>
   );
 }
 

@@ -14,11 +14,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
 import BookingProgress from '../../components/BookingProgress';
+import EsewaPaymentModal from '../../components/EsewaPaymentModal';
+import KhaltiPaymentModal from '../../components/KhaltiPaymentModal';
 import GradientButton from '../../components/GradientButton';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 import { fetchMatchById } from '../../services/matchService';
-import { confirmBooking, unlockSeats } from '../../services/bookingService';
+import { unlockSeats, initiateEsewaPayment, verifyEsewaPayment, initiateKhaltiPayment, verifyKhaltiPayment } from '../../services/bookingService';
 import { fetchDynamicPricingSuggestions } from '../../services/aiService';
 
 export default function BookingScreen({ route, navigation }) {
@@ -29,6 +31,12 @@ export default function BookingScreen({ route, navigation }) {
   const [isPaying, setIsPaying] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
   const [bookedTickets, setBookedTickets] = useState([]);
+  const [esewaData, setEsewaData] = useState(null);
+  const [esewaVisible, setEsewaVisible] = useState(false);
+  const [pendingPayment, setPendingPayment] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('esewa');
+  const [khaltiData, setKhaltiData] = useState(null);
+  const [khaltiVisible, setKhaltiVisible] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -50,14 +58,65 @@ export default function BookingScreen({ route, navigation }) {
     }, 0);
   }, [match, selectedSeats, pricingSuggestions]);
 
-  const handleCheckout = async () => {
+  const handleEsewaPayment = async () => {
     setIsPaying(true);
     try {
-      const result = await confirmBooking(matchId, selectedSeats.map(s => s.id || s._id));
+      const seatIds = selectedSeats.map(s => s.id || s._id);
+      const result = await initiateEsewaPayment(matchId, seatIds, Math.round(totalAmount));
+      setEsewaData(result);
+      setPendingPayment({ matchId, seatIds });
+      setEsewaVisible(true);
+    } catch (err) { Alert.alert('Payment Error', err.response?.data?.message || err.message); }
+    finally { setIsPaying(false); }
+  };
+
+  const handleEsewaSuccess = async (encodedData) => {
+    setEsewaVisible(false);
+    setIsPaying(true);
+    try {
+      const result = await verifyEsewaPayment(
+        encodedData,
+        esewaData.transactionUuid,
+        pendingPayment.matchId,
+        pendingPayment.seatIds
+      );
       setIsBooked(true);
       setBookedTickets(result.tickets || []);
-    } catch (err) { Alert.alert('Booking failed', err.response?.data?.message || err.message); }
+    } catch (err) { Alert.alert('Verification failed', err.response?.data?.message || err.message); }
     finally { setIsPaying(false); }
+  };
+
+  const handleEsewaError = (msg) => {
+    setEsewaVisible(false);
+    Alert.alert('Payment Failed', msg);
+  };
+
+  const handleKhaltiPayment = async () => {
+    setIsPaying(true);
+    try {
+      const seatIds = selectedSeats.map(s => s.id || s._id);
+      const result = await initiateKhaltiPayment(matchId, seatIds, totalAmount);
+      setKhaltiData(result);
+      setPendingPayment({ matchId, seatIds });
+      setKhaltiVisible(true);
+    } catch (err) { Alert.alert('Payment Error', err.response?.data?.message || err.message); }
+    finally { setIsPaying(false); }
+  };
+
+  const handleKhaltiSuccess = async (pidx) => {
+    setKhaltiVisible(false);
+    setIsPaying(true);
+    try {
+      const result = await verifyKhaltiPayment(pidx, pendingPayment.matchId, pendingPayment.seatIds);
+      setIsBooked(true);
+      setBookedTickets(result.tickets || []);
+    } catch (err) { Alert.alert('Verification failed', err.response?.data?.message || err.message); }
+    finally { setIsPaying(false); }
+  };
+
+  const handleKhaltiError = (msg) => {
+    setKhaltiVisible(false);
+    Alert.alert('Payment Failed', msg);
   };
 
   const handleCancel = async () => {
@@ -257,8 +316,46 @@ export default function BookingScreen({ route, navigation }) {
           </View>
         </View>
 
+        {/* Payment Method Selector */}
+        <View style={styles.paymentMethodCard}>
+          <Text style={styles.cardHeader}>PAYMENT METHOD</Text>
+          <View style={styles.paymentOptions}>
+            <TouchableOpacity
+              style={[styles.paymentOption, paymentMethod === 'esewa' && styles.paymentOptionActive]}
+              onPress={() => setPaymentMethod('esewa')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.paymentOptionText, paymentMethod === 'esewa' && styles.paymentOptionTextActive]}>eSewa</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.paymentOption, paymentMethod === 'khalti' && styles.paymentOptionActive]}
+              onPress={() => setPaymentMethod('khalti')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.paymentOptionText, paymentMethod === 'khalti' && styles.paymentOptionTextActive]}>Khalti</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <View style={{ height: spacing.xxxl }} />
       </ScrollView>
+
+      <EsewaPaymentModal
+        visible={esewaVisible}
+        formData={esewaData?.formData || {}}
+        paymentUrl={esewaData?.paymentUrl || ''}
+        onSuccess={handleEsewaSuccess}
+        onError={handleEsewaError}
+        onClose={() => setEsewaVisible(false)}
+      />
+
+      <KhaltiPaymentModal
+        visible={khaltiVisible}
+        paymentUrl={khaltiData?.paymentUrl || ''}
+        onSuccess={handleKhaltiSuccess}
+        onError={handleKhaltiError}
+        onClose={() => setKhaltiVisible(false)}
+      />
 
       {/* Sticky CTA */}
       <View style={styles.stickyCta}>
@@ -266,8 +363,8 @@ export default function BookingScreen({ route, navigation }) {
           <Text style={styles.cancelBtnText}>Cancel</Text>
         </TouchableOpacity>
         <GradientButton
-          title={isPaying ? 'Processing...' : `Pay Rs.${Math.round(totalAmount)}`}
-          onPress={handleCheckout}
+          title={isPaying ? 'Redirecting...' : `Pay via ${paymentMethod === 'esewa' ? 'eSewa' : 'Khalti'} Rs.${Math.round(totalAmount)}`}
+          onPress={paymentMethod === 'esewa' ? handleEsewaPayment : handleKhaltiPayment}
           disabled={isPaying}
           style={{ flex: 1 }}
         />
@@ -318,6 +415,14 @@ const styles = StyleSheet.create({
   summaryDivider: { height: 1, backgroundColor: colors.borderSubtle, marginVertical: spacing.md },
   totalLabel: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
   totalValue: { color: colors.accent, fontSize: typography.h2.fontSize, fontWeight: '900' },
+
+  // Payment Method
+  paymentMethodCard: { backgroundColor: colors.surface, borderRadius: radii.xl, padding: spacing.xl, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg },
+  paymentOptions: { flexDirection: 'row', gap: spacing.md },
+  paymentOption: { flex: 1, paddingVertical: spacing.lg, borderRadius: radii.lg, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  paymentOptionActive: { borderColor: colors.primary, backgroundColor: `${colors.primary}15` },
+  paymentOptionText: { color: colors.textMuted, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
+  paymentOptionTextActive: { color: colors.primary },
 
   // Sticky CTA
   stickyCta: {

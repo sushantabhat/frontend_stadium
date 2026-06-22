@@ -26,6 +26,8 @@ import { AdminFilterPills, AdminSearchBar } from '../../components/admin/TicketP
 import EmptyState from '../../components/EmptyState';
 import { fetchMatches, updateMatch } from '../../services/matchService';
 import { spacing, radii, typography, glass, colors } from '../../constants/theme';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -106,7 +108,6 @@ export default function AdminMatchListScreen({ navigation }) {
 
   const initials = (userInfo?.name || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,8 +116,7 @@ export default function AdminMatchListScreen({ navigation }) {
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   const loadMatches = useCallback(async (refreshing = false) => {
-    if (refreshing) setIsRefreshing(true);
-    else setIsLoading(true);
+    if (!refreshing) setIsLoading(true);
     try {
       setError('');
       setMatches(await fetchMatches(true));
@@ -124,11 +124,12 @@ export default function AdminMatchListScreen({ navigation }) {
       setError(err.response?.data?.message || 'Failed to load events');
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   }, []);
 
   useFocusEffect(useCallback(() => { loadMatches(); }, [loadMatches]));
+
+  const { refreshing: isRefreshing, onRefresh } = useRefresh(() => loadMatches(true));
 
   const filteredMatches = useMemo(
     () => matches.filter((m) => matchesFilter(m, activeFilter) && matchesSearch(m, searchQuery)),
@@ -490,7 +491,9 @@ export default function AdminMatchListScreen({ navigation }) {
      RENDER
      ═══════════════════════════════════════ */
   return (
-    <SafeAreaView style={s.container}>
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={isRefreshing} />
+      <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" />
 
       {isLoading ? (
@@ -511,8 +514,9 @@ export default function AdminMatchListScreen({ navigation }) {
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={() => loadMatches(true)}
-              tintColor={glass.brandPurple}
+              onRefresh={onRefresh}
+              tintColor="transparent"
+              colors={['transparent']}
             />
           }
           ListEmptyComponent={
@@ -534,6 +538,7 @@ export default function AdminMatchListScreen({ navigation }) {
 
       <FAB icon="+" label="New" onPress={() => navigation.navigate('AdminCreateMatch')} />
     </SafeAreaView>
+    </View>
   );
 }
 

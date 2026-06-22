@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
@@ -9,6 +9,8 @@ import { colors, spacing, radii, typography, shadows } from '../../constants/the
 import { fetchMyTickets } from '../../services/ticketService';
 import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 import DashboardHeader from '../../components/DashboardHeader';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 
 const CATEGORY_THEMES = {
   platinum: { gradient: ['#E8E8E8', '#D0D0D0'], label: 'PLATINUM' },
@@ -44,13 +46,15 @@ export default function MyTicketsScreen({ navigation }) {
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const firstName = userInfo?.name?.split(' ')[0] || 'Fan';
-  const initials = (userInfo?.name || 'F').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-
-  const loadTickets = useCallback(async () => {
-    setIsLoading(true);
+  const loadTickets = useCallback(async (isRefresh = false) => {
+    if (!isRefresh) setIsLoading(true);
     try { setTickets(await fetchMyTickets()); } catch {} finally { setIsLoading(false); }
   }, []);
+
+  const { refreshing, onRefresh } = useRefresh(() => loadTickets(true));
+
+  const firstName = userInfo?.name?.split(' ')[0] || 'Fan';
+  const initials = (userInfo?.name || 'F').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   useFocusEffect(useCallback(() => { loadTickets(); }, [loadTickets]));
 
@@ -175,46 +179,50 @@ export default function MyTicketsScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <DashboardHeader
-        topLabel="MY TICKETS"
-        title={`${firstName}`}
-        avatarColors={colors.gradientPurple}
-        avatarLabel={initials}
-        onAvatarPress={() => navigation.navigate('Account')}
-      />
-      <FlatList
-        data={tickets}
-        renderItem={renderTicket}
-        keyExtractor={(item) => item._id || item.ticketCode}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            {tickets.length > 0 && (
-              <View style={styles.ticketCount}>
-                <Text style={styles.ticketCountText}>{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</Text>
-              </View>
-            )}
-          </View>
-        }
-        ListEmptyComponent={
-          !isLoading ? (
-            <View style={styles.emptyWrap}>
-              <View style={styles.emptyIconWrap}>
-                <Text style={styles.emptyIcon}>{'🎫'}</Text>
-              </View>
-              <Text style={styles.emptyTitle}>No Tickets Yet</Text>
-              <Text style={styles.emptyText}>Book a match to see your tickets here</Text>
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={refreshing} />
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <DashboardHeader
+          topLabel="MY TICKETS"
+          title={`${firstName}`}
+          avatarColors={colors.gradientPurple}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate('Account')}
+        />
+        <FlatList
+          data={tickets}
+          renderItem={renderTicket}
+          keyExtractor={(item) => item._id || item.ticketCode}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              {tickets.length > 0 && (
+                <View style={styles.ticketCount}>
+                  <Text style={styles.ticketCountText}>{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</Text>
+                </View>
+              )}
             </View>
-          ) : null
-        }
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListFooterComponent={
-          isLoading ? <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: spacing.xxl }} /> : null
-        }
-      />
-    </SafeAreaView>
+          }
+          ListEmptyComponent={
+            !isLoading ? (
+              <View style={styles.emptyWrap}>
+                <View style={styles.emptyIconWrap}>
+                  <Text style={styles.emptyIcon}>{'🎫'}</Text>
+                </View>
+                <Text style={styles.emptyTitle}>No Tickets Yet</Text>
+                <Text style={styles.emptyText}>Book a match to see your tickets here</Text>
+              </View>
+            ) : null
+          }
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            isLoading ? <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: spacing.xxl }} /> : null
+          }
+        />
+      </SafeAreaView>
+    </View>
   );
 }
 

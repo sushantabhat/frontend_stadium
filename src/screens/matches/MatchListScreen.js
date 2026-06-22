@@ -20,6 +20,8 @@ import { formatInNepal } from '../../utils/date';
 import { fetchMatches } from '../../services/matchService';
 import MatchCard from '../../components/MatchCard';
 import DashboardHeader from '../../components/DashboardHeader';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 
 const FILTERS = [
   { key: 'all', label: 'All' },
@@ -49,7 +51,6 @@ export default function MatchListScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
   const [matches, setMatches] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -57,14 +58,15 @@ export default function MatchListScreen({ navigation }) {
   const initials = (userInfo?.name || 'F').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const loadMatches = useCallback(async (refreshing = false) => {
-    if (refreshing) setIsRefreshing(true);
-    else setIsLoading(true);
+    if (!refreshing) setIsLoading(true);
     try { setMatches(await fetchMatches()); }
     catch { /* silent */ }
-    finally { setIsLoading(false); setIsRefreshing(false); }
+    finally { setIsLoading(false); }
   }, []);
 
   useFocusEffect(useCallback(() => { loadMatches(); }, [loadMatches]));
+
+  const { refreshing: isRefreshing, onRefresh } = useRefresh(() => loadMatches(true));
 
   const liveMatches = useMemo(() => matches.filter((m) => m.status === 'live'), [matches]);
   const upcomingMatches = useMemo(() => matches.filter((m) => m.status === 'upcoming'), [matches]);
@@ -253,7 +255,9 @@ export default function MatchListScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={s.container}>
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={isRefreshing} />
+      <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" />
       {isLoading ? (
         <View style={s.center}><ActivityIndicator size="large" color={colors.primary} /></View>
@@ -264,10 +268,11 @@ export default function MatchListScreen({ navigation }) {
           keyExtractor={(item) => item._key}
           contentContainerStyle={s.list}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => loadMatches(true)} tintColor={colors.primary} />}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
         />
       )}
     </SafeAreaView>
+    </View>
   );
 }
 

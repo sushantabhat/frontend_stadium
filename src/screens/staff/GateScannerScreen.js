@@ -1,11 +1,13 @@
 import React, { useCallback, useContext, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, Alert, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import DashboardHeader from '../../components/DashboardHeader';
 import { formatTimeInNepal } from '../../utils/date';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { fetchScanHistory, verifyTicketCode } from '../../services/ticketService';
 
@@ -24,7 +26,6 @@ export default function GateScannerScreen({ navigation }) {
   const [scanned, setScanned] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const scanningRef = useRef(false);
-
   const [permission, requestPermission] = useCameraPermissions();
 
   const loadHistory = useCallback(async () => {
@@ -37,6 +38,8 @@ export default function GateScannerScreen({ navigation }) {
       setIsLoadingHistory(false);
     }
   }, []);
+
+  const { refreshing, onRefresh } = useRefresh(loadHistory);
 
   useFocusEffect(
     useCallback(() => {
@@ -205,105 +208,108 @@ export default function GateScannerScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <DashboardHeader
-        topLabel="SECURE UTILITY"
-        title="Gate Scanner"
-        avatarColors={['#00E5FF', '#00B8D4']}
-        avatarLabel={(userInfo?.name || 'S').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-        onAvatarPress={() => navigation.navigate('Account')}
-      />
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={refreshing} />
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <DashboardHeader
+          topLabel="SECURE UTILITY"
+          title="Gate Scanner"
+          avatarColors={['#00E5FF', '#00B8D4']}
+          avatarLabel={(userInfo?.name || 'S').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+          onAvatarPress={() => navigation.navigate('Account')}
+        />
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {scannerActive ? (
-          renderCamera()
-        ) : (
-          <View style={styles.scannerWrapper}>
-            {cameraError ? (
-              <View style={styles.errorBanner}>
-                <Text style={styles.errorBannerText}>{cameraError}</Text>
-              </View>
-            ) : null}
-
-            <TouchableOpacity style={styles.cameraPrompt} onPress={toggleScanner} activeOpacity={0.8}>
-              <View style={styles.cameraPromptInner}>
-                <Text style={styles.cameraPromptEmoji}>📷</Text>
-                <Text style={styles.cameraPromptTitle}>Open Camera</Text>
-                <Text style={styles.cameraPromptDesc}>Scan a fan&apos;s QR ticket code</Text>
-              </View>
-              <View style={styles.cornerTL} />
-              <View style={styles.cornerTR} />
-              <View style={styles.cornerBL} />
-              <View style={styles.cornerBR} />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <View style={styles.manualEntryCard}>
-          <Text style={styles.cardHeader}>MANUAL ENTRY</Text>
-          <Text style={styles.cardDesc}>
-            Type or paste the ticket code.
-          </Text>
-
-          <TextInput
-            style={styles.inputField}
-            placeholder="e.g. TKT-95476f-A-1-YZ3R0N"
-            placeholderTextColor={colors.textMuted}
-            value={ticketCode}
-            onChangeText={setTicketCode}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-
-          <TouchableOpacity
-            style={[styles.verifyBtn, isVerifying && styles.verifyBtnDisabled]}
-            onPress={() => handleVerify()}
-            disabled={isVerifying}
-          >
-            {isVerifying ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.verifyBtnText}>Validate Ticket Code</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.historyCard}>
-          <Text style={styles.cardHeader}>RECENT SCANS</Text>
-
-          {isLoadingHistory ? (
-            <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: spacing.lg }} />
-          ) : scanHistory.length === 0 ? (
-            <Text style={styles.emptyHistory}>No scan records in this shift.</Text>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}>
+          {scannerActive ? (
+            renderCamera()
           ) : (
-            <View style={styles.historyList}>
-              {scanHistory.map((item) => (
-                <View key={item._id} style={styles.historyRow}>
-                  <View style={styles.historyLeft}>
-                    <Text style={styles.historyUser}>{item.user?.name || 'Fan'}</Text>
-                    <Text style={styles.historySeat}>
-                      {item.seat?.seatLabel} ({item.seat?.category?.toUpperCase()})
-                    </Text>
-                  </View>
-                  <View style={styles.historyRight}>
-                    <Text style={styles.historyTime}>
-                      {formatTimeInNepal(item.entryTime || item.createdAt, {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </Text>
-                    <View style={styles.successBadge}>
-                      <Text style={styles.successBadgeText}>APPROVED</Text>
-                    </View>
-                  </View>
+            <View style={styles.scannerWrapper}>
+              {cameraError ? (
+                <View style={styles.errorBanner}>
+                  <Text style={styles.errorBannerText}>{cameraError}</Text>
                 </View>
-              ))}
+              ) : null}
+
+              <TouchableOpacity style={styles.cameraPrompt} onPress={toggleScanner} activeOpacity={0.8}>
+                <View style={styles.cameraPromptInner}>
+                  <Text style={styles.cameraPromptEmoji}>📷</Text>
+                  <Text style={styles.cameraPromptTitle}>Open Camera</Text>
+                  <Text style={styles.cameraPromptDesc}>Scan a fan&apos;s QR ticket code</Text>
+                </View>
+                <View style={styles.cornerTL} />
+                <View style={styles.cornerTR} />
+                <View style={styles.cornerBL} />
+                <View style={styles.cornerBR} />
+              </TouchableOpacity>
             </View>
           )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+
+          <View style={styles.manualEntryCard}>
+            <Text style={styles.cardHeader}>MANUAL ENTRY</Text>
+            <Text style={styles.cardDesc}>
+              Type or paste the ticket code.
+            </Text>
+
+            <TextInput
+              style={styles.inputField}
+              placeholder="e.g. TKT-95476f-A-1-YZ3R0N"
+              placeholderTextColor={colors.textMuted}
+              value={ticketCode}
+              onChangeText={setTicketCode}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
+            <TouchableOpacity
+              style={[styles.verifyBtn, isVerifying && styles.verifyBtnDisabled]}
+              onPress={() => handleVerify()}
+              disabled={isVerifying}
+            >
+              {isVerifying ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.verifyBtnText}>Validate Ticket Code</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.historyCard}>
+            <Text style={styles.cardHeader}>RECENT SCANS</Text>
+
+            {isLoadingHistory ? (
+              <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: spacing.lg }} />
+            ) : scanHistory.length === 0 ? (
+              <Text style={styles.emptyHistory}>No scan records in this shift.</Text>
+            ) : (
+              <View style={styles.historyList}>
+                {scanHistory.map((item) => (
+                  <View key={item._id} style={styles.historyRow}>
+                    <View style={styles.historyLeft}>
+                      <Text style={styles.historyUser}>{item.user?.name || 'Fan'}</Text>
+                      <Text style={styles.historySeat}>
+                        {item.seat?.seatLabel} ({item.seat?.category?.toUpperCase()})
+                      </Text>
+                    </View>
+                    <View style={styles.historyRight}>
+                      <Text style={styles.historyTime}>
+                        {formatTimeInNepal(item.entryTime || item.createdAt, {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </Text>
+                      <View style={styles.successBadge}>
+                        <Text style={styles.successBadgeText}>APPROVED</Text>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 

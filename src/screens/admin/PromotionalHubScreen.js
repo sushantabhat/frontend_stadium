@@ -1,9 +1,11 @@
 import React, { useCallback, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenHeader from '../../components/ScreenHeader';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchMatches } from '../../services/matchService';
 
@@ -47,7 +49,6 @@ export default function PromotionalHubScreen({ navigation }) {
   /* ── State: matches for featured events ── */
   const [featuredMatches, setFeaturedMatches] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
   /* ── Data loading: fetch matches for featured event cards ── */
   const loadData = useCallback(async () => {
     try {
@@ -63,6 +64,8 @@ export default function PromotionalHubScreen({ navigation }) {
       setIsLoading(false);
     }
   }, []);
+
+  const { refreshing, onRefresh } = useRefresh(loadData);
 
   /* ── Focus-based refresh ── */
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
@@ -80,132 +83,136 @@ export default function PromotionalHubScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <ScreenHeader
-        title="Promotions Hub"
-        subtitle="Banner management & sponsorship analytics"
-        onBack={() => navigation.goBack()}
-      />
-
-      {isLoading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={glass.neonPurple} />
-        </View>
-      ) : (
-        <FlatList
-          data={PROMO_CAMPAIGNS}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
-            <>
-              {/* ═══ FEATURED EVENTS CAROUSEL ═══ */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Featured Events</Text>
-                <Text style={styles.sectionSubtitle}>Highlight upcoming matches for promotion</Text>
-              </View>
-
-              <FlatList
-                data={featuredMatches}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.carousel}
-                keyExtractor={(item) => item._id || String(item.id)}
-                ListEmptyComponent={
-                  <View style={styles.emptyCarousel}>
-                    <Text style={styles.emptyCarouselText}>No featured events</Text>
-                  </View>
-                }
-                renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.featuredCard} activeOpacity={0.8}>
-                    <LinearGradient
-                      colors={[glass.surface, 'rgba(18,21,34,0.4)']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.featuredInner}
-                    >
-                      {/* Neon border accent */}
-                      <View style={[styles.featuredAccent, { backgroundColor: glass.neonPurple }]} />
-                      <Text style={styles.featuredTitle} numberOfLines={1}>{item.title}</Text>
-                      <Text style={styles.featuredVenue} numberOfLines={1}>{item.venue || 'Venue TBD'}</Text>
-                      <View style={styles.featuredStatus}>
-                        <View style={[styles.featuredDot, {
-                          backgroundColor: item.status === 'live' ? glass.statusDangerText : glass.statusSuccessText,
-                        }]} />
-                        <Text style={styles.featuredStatusText}>{item.status?.toUpperCase()}</Text>
-                      </View>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                )}
-              />
-
-              {/* ═══ PROMOTIONAL CAMPAIGNS ═══ */}
-              <View style={[styles.section, { marginTop: spacing.xl }]}>
-                <Text style={styles.sectionTitle}>Active Campaigns</Text>
-                <Text style={styles.sectionSubtitle}>Live promotional banners and sponsorships</Text>
-              </View>
-            </>
-          }
-          renderItem={({ item }) => (
-            <View style={styles.campaignCard}>
-              <LinearGradient
-                colors={[`${item.accent}12`, 'rgba(18,21,34,0.5)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.campaignInner}
-              >
-                {/* Neon border glow */}
-                <View style={[styles.campaignBorder, { borderColor: `${item.accent}30` }]} />
-
-                {/* Campaign header */}
-                <View style={styles.campaignHeader}>
-                  <View style={[styles.campaignTag, { backgroundColor: `${item.accent}20` }]}>
-                    <Text style={[styles.campaignTagText, { color: item.accent }]}>{item.tag}</Text>
-                  </View>
-                </View>
-
-                {/* Campaign content */}
-                <Text style={styles.campaignTitle}>{item.title}</Text>
-                <Text style={styles.campaignSubtitle}>{item.subtitle}</Text>
-
-                {/* Conversion analytics — twin micro-insight boxes */}
-                <View style={styles.analyticsRow}>
-                  <View style={styles.analyticsBox}>
-                    <Text style={styles.analyticsValue}>{ctr(item.clicks, item.impressions)}%</Text>
-                    <Text style={styles.analyticsLabel}>CTR</Text>
-                  </View>
-                  <View style={styles.analyticsDivider} />
-                  <View style={styles.analyticsBox}>
-                    <Text style={styles.analyticsValue}>{formatNumber(item.conversions)}</Text>
-                    <Text style={styles.analyticsLabel}>Conversions</Text>
-                  </View>
-                  <View style={styles.analyticsDivider} />
-                  <View style={styles.analyticsBox}>
-                    <Text style={styles.analyticsValue}>{formatNumber(item.impressions)}</Text>
-                    <Text style={styles.analyticsLabel}>Impressions</Text>
-                  </View>
-                </View>
-
-                {/* Progress bar */}
-                <View style={styles.progressBarBg}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      {
-                        width: `${Math.min((item.conversions / item.clicks) * 100, 100)}%`,
-                        backgroundColor: item.accent,
-                      },
-                    ]}
-                  />
-                </View>
-              </LinearGradient>
-            </View>
-          )}
-          ListFooterComponent={<View style={{ height: spacing.xxxl + 20 }} />}
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={refreshing} />
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <ScreenHeader
+          title="Promotions Hub"
+          subtitle="Banner management & sponsorship analytics"
+          onBack={() => navigation.goBack()}
         />
-      )}
-    </SafeAreaView>
+
+        {isLoading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={glass.neonPurple} />
+          </View>
+        ) : (
+          <FlatList
+            data={PROMO_CAMPAIGNS}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.scroll}
+            showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
+            ListHeaderComponent={
+              <>
+                {/* ═══ FEATURED EVENTS CAROUSEL ═══ */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Featured Events</Text>
+                  <Text style={styles.sectionSubtitle}>Highlight upcoming matches for promotion</Text>
+                </View>
+
+                <FlatList
+                  data={featuredMatches}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.carousel}
+                  keyExtractor={(item) => item._id || String(item.id)}
+                  ListEmptyComponent={
+                    <View style={styles.emptyCarousel}>
+                      <Text style={styles.emptyCarouselText}>No featured events</Text>
+                    </View>
+                  }
+                  renderItem={({ item }) => (
+                    <TouchableOpacity style={styles.featuredCard} activeOpacity={0.8}>
+                      <LinearGradient
+                        colors={[glass.surface, 'rgba(18,21,34,0.4)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.featuredInner}
+                      >
+                        {/* Neon border accent */}
+                        <View style={[styles.featuredAccent, { backgroundColor: glass.neonPurple }]} />
+                        <Text style={styles.featuredTitle} numberOfLines={1}>{item.title}</Text>
+                        <Text style={styles.featuredVenue} numberOfLines={1}>{item.venue || 'Venue TBD'}</Text>
+                        <View style={styles.featuredStatus}>
+                          <View style={[styles.featuredDot, {
+                            backgroundColor: item.status === 'live' ? glass.statusDangerText : glass.statusSuccessText,
+                          }]} />
+                          <Text style={styles.featuredStatusText}>{item.status?.toUpperCase()}</Text>
+                        </View>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  )}
+                />
+
+                {/* ═══ PROMOTIONAL CAMPAIGNS ═══ */}
+                <View style={[styles.section, { marginTop: spacing.xl }]}>
+                  <Text style={styles.sectionTitle}>Active Campaigns</Text>
+                  <Text style={styles.sectionSubtitle}>Live promotional banners and sponsorships</Text>
+                </View>
+              </>
+            }
+            renderItem={({ item }) => (
+              <View style={styles.campaignCard}>
+                <LinearGradient
+                  colors={[`${item.accent}12`, 'rgba(18,21,34,0.5)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.campaignInner}
+                >
+                  {/* Neon border glow */}
+                  <View style={[styles.campaignBorder, { borderColor: `${item.accent}30` }]} />
+
+                  {/* Campaign header */}
+                  <View style={styles.campaignHeader}>
+                    <View style={[styles.campaignTag, { backgroundColor: `${item.accent}20` }]}>
+                      <Text style={[styles.campaignTagText, { color: item.accent }]}>{item.tag}</Text>
+                    </View>
+                  </View>
+
+                  {/* Campaign content */}
+                  <Text style={styles.campaignTitle}>{item.title}</Text>
+                  <Text style={styles.campaignSubtitle}>{item.subtitle}</Text>
+
+                  {/* Conversion analytics — twin micro-insight boxes */}
+                  <View style={styles.analyticsRow}>
+                    <View style={styles.analyticsBox}>
+                      <Text style={styles.analyticsValue}>{ctr(item.clicks, item.impressions)}%</Text>
+                      <Text style={styles.analyticsLabel}>CTR</Text>
+                    </View>
+                    <View style={styles.analyticsDivider} />
+                    <View style={styles.analyticsBox}>
+                      <Text style={styles.analyticsValue}>{formatNumber(item.conversions)}</Text>
+                      <Text style={styles.analyticsLabel}>Conversions</Text>
+                    </View>
+                    <View style={styles.analyticsDivider} />
+                    <View style={styles.analyticsBox}>
+                      <Text style={styles.analyticsValue}>{formatNumber(item.impressions)}</Text>
+                      <Text style={styles.analyticsLabel}>Impressions</Text>
+                    </View>
+                  </View>
+
+                  {/* Progress bar */}
+                  <View style={styles.progressBarBg}>
+                    <View
+                      style={[
+                        styles.progressBarFill,
+                        {
+                          width: `${Math.min((item.conversions / item.clicks) * 100, 100)}%`,
+                          backgroundColor: item.accent,
+                        },
+                      ]}
+                    />
+                  </View>
+                </LinearGradient>
+              </View>
+            )}
+            ListFooterComponent={<View style={{ height: spacing.xxxl + 20 }} />}
+          />
+        )}
+      </SafeAreaView>
+    </View>
   );
 }
 

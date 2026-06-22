@@ -7,6 +7,8 @@ import { colors, spacing, radii, typography, glass } from '../../constants/theme
 import { fetchScanHistory } from '../../services/ticketService';
 import DashboardHeader from '../../components/DashboardHeader';
 import { AdminCard } from '../../components/admin/TicketProHeader';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 
 function timeAgo(date) {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -22,7 +24,6 @@ export default function StaffDashboardScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
   const [scans, setScans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportType, setReportType] = useState('');
   const [reportNote, setReportNote] = useState('');
@@ -35,12 +36,12 @@ export default function StaffDashboardScreen({ navigation }) {
       console.log('Scan history error:', e.message);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
-  const onRefresh = () => { setIsRefreshing(true); loadData(); };
+
+  const { refreshing: isRefreshing, onRefresh } = useRefresh(() => loadData(true));
 
   const firstName = userInfo?.name?.split(' ')[0] || 'Staff';
   const initials = (userInfo?.name || 'S').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -59,12 +60,14 @@ export default function StaffDashboardScreen({ navigation }) {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={isRefreshing} />
+      <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={glass.brandPurple} colors={[glass.brandPurple]} />}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
       >
         <DashboardHeader
           topLabel="GATE OPERATIONS"
@@ -233,6 +236,7 @@ export default function StaffDashboardScreen({ navigation }) {
         </View>
       </Modal>
     </SafeAreaView>
+    </View>
   );
 }
 

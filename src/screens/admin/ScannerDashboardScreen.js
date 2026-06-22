@@ -16,6 +16,8 @@ import DashboardHeader from '../../components/DashboardHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchAdminAnalytics, fetchUsers } from '../../services/adminService';
 import { fetchScanHistory } from '../../services/ticketService';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 
 const GATE_LABELS = ['Gate A — Main', 'Gate B — North', 'Gate C — South', 'Gate D — VIP', 'Gate E — Staff'];
 
@@ -42,11 +44,9 @@ export default function ScannerDashboardScreen({ navigation }) {
   const [staff, setStaff] = useState([]);
   const [scanLogs, setScanLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadData = useCallback(async (refreshing = false) => {
-    if (refreshing) setIsRefreshing(true);
-    else setIsLoading(true);
+    if (!refreshing) setIsLoading(true);
     try {
       const [stats, users, scans] = await Promise.all([
         fetchAdminAnalytics(),
@@ -60,11 +60,12 @@ export default function ScannerDashboardScreen({ navigation }) {
       console.log('Scanner dashboard error:', e.message);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   }, []);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+
+  const { refreshing: isRefreshing, onRefresh } = useRefresh(() => loadData(true));
 
   const gates = useMemo(() => {
     const scannedToday = analytics?.attendance?.scannedTickets || scanLogs.length;
@@ -97,13 +98,15 @@ export default function ScannerDashboardScreen({ navigation }) {
   const acceptanceRate = analytics?.attendance?.entryRate || '98.4';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={isRefreshing} />
+      <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={() => loadData(true)} tintColor={glass.brandPurple} />
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />
         }
       >
         <DashboardHeader
@@ -172,6 +175,7 @@ export default function ScannerDashboardScreen({ navigation }) {
         )}
       </ScrollView>
     </SafeAreaView>
+    </View>
   );
 }
 

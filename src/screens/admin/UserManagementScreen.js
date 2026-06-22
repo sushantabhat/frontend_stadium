@@ -19,6 +19,8 @@ import FAB from '../../components/FAB';
 import { AdminCard, AdminFilterPills, AdminSearchBar } from '../../components/admin/TicketProHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchUsers, createUser, updateUser, deleteUser } from '../../services/adminService';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 
 const ROLES = ['user', 'staff', 'supervisor', 'admin'];
 const ROLE_LABELS = { user: 'Fan', staff: 'Staff', supervisor: 'Organizer', admin: 'VIP' };
@@ -64,7 +66,6 @@ export default function UserManagementScreen({ navigation }) {
 
   const initials = (userInfo?.name || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -84,12 +85,12 @@ export default function UserManagementScreen({ navigation }) {
       console.log('Users error:', e.message);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   }, []);
 
   React.useEffect(() => { loadData(); }, [loadData]);
-  const onRefresh = () => { setIsRefreshing(true); loadData(); };
+
+  const { refreshing: isRefreshing, onRefresh } = useRefresh(() => loadData(true));
 
   const filteredUsers = useMemo(() => {
     let list = users;
@@ -175,12 +176,14 @@ export default function UserManagementScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={isRefreshing} />
+      <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={glass.brandPurple} />}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
       >
         <DashboardHeader
           topLabel="MANAGEMENT"
@@ -388,6 +391,7 @@ export default function UserManagementScreen({ navigation }) {
 
       <FAB icon="+" label="Add" onPress={() => setShowCreate(true)} />
     </SafeAreaView>
+    </View>
   );
 }
 

@@ -2,6 +2,7 @@ import React, { useContext, useState, useCallback, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -13,6 +14,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import { AdminCard } from '../../components/admin/TicketProHeader';
 import DashboardHeader from '../../components/DashboardHeader';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { formatInNepal } from '../../utils/date';
 import { fetchAdminAnalytics, fetchUsers } from '../../services/adminService';
@@ -59,7 +62,6 @@ export default function AdminDashboardScreen({ navigation }) {
   const [upcomingMatches, setUpcomingMatches] = useState([]);
   const [liveMatch, setLiveMatch] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-
   const loadMetrics = useCallback(async () => {
     try {
       const [matches, analytics, users] = await Promise.all([
@@ -95,6 +97,8 @@ export default function AdminDashboardScreen({ navigation }) {
     }
   }, []);
 
+  const { refreshing, onRefresh } = useRefresh(loadMetrics);
+
   useFocusEffect(useCallback(() => { loadMetrics(); }, [loadMetrics]));
 
   const statCards = useMemo(() => [
@@ -110,127 +114,130 @@ export default function AdminDashboardScreen({ navigation }) {
   ], [metrics]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <DashboardHeader
-          topLabel="SYSTEM OVERVIEW"
-          title={userInfo?.name || 'Admin'}
-          avatarColors={colors.gradientGold}
-          avatarLabel={initials}
-          onAvatarPress={() => navigation.navigate('AdminProfile')}
-        />
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={refreshing} />
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']}]}>
+          <DashboardHeader
+            topLabel="SYSTEM OVERVIEW"
+            title={userInfo?.name || 'Admin'}
+            avatarColors={colors.gradientGold}
+            avatarLabel={initials}
+            onAvatarPress={() => navigation.navigate('AdminProfile')}
+          />
 
-        <AdminCard style={styles.revenueCard}>
-          <Text style={styles.cardLabel}>WEEKLY REVENUE</Text>
-          {isLoading ? (
-            <ActivityIndicator color={glass.brandPurple} style={{ marginVertical: spacing.lg }} />
-          ) : (
-            <Text style={styles.revenueValue}>Rs.{metrics.revenue.toLocaleString()}</Text>
-          )}
-          <Text style={styles.revenueDelta}>↗ +18.4% vs last week</Text>
-          <View style={styles.chartArea}>
-            <View style={styles.chartBars}>
-              {CHART_HEIGHTS.map((h, i) => (
-                <View key={i} style={styles.chartCol}>
-                  <View style={[styles.chartBar, { height: `${h}%`, opacity: i >= 8 ? 1 : 0.45 }]} />
+          <AdminCard style={styles.revenueCard}>
+            <Text style={styles.cardLabel}>WEEKLY REVENUE</Text>
+            {isLoading ? (
+              <ActivityIndicator color={glass.brandPurple} style={{ marginVertical: spacing.lg }} />
+            ) : (
+              <Text style={styles.revenueValue}>Rs.{metrics.revenue.toLocaleString()}</Text>
+            )}
+            <Text style={styles.revenueDelta}>↗ +18.4% vs last week</Text>
+            <View style={styles.chartArea}>
+              <View style={styles.chartBars}>
+                {CHART_HEIGHTS.map((h, i) => (
+                  <View key={i} style={styles.chartCol}>
+                    <View style={[styles.chartBar, { height: `${h}%`, opacity: i >= 8 ? 1 : 0.45 }]} />
+                  </View>
+                ))}
+              </View>
+              <View style={styles.chartLabels}>
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                  <Text key={`${d}-${i}`} style={styles.chartDay}>{d}</Text>
+                ))}
+              </View>
+            </View>
+          </AdminCard>
+
+          {statCards.map((card) => (
+            <AdminCard key={card.label} style={styles.statCard}>
+              <View style={styles.statTop}>
+                <View>
+                  <Text style={styles.statLabel}>{card.label}</Text>
+                  <Text style={styles.statValue}>
+                    {isLoading ? '—' : card.value}
+                  </Text>
                 </View>
-              ))}
-            </View>
-            <View style={styles.chartLabels}>
-              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-                <Text key={`${d}-${i}`} style={styles.chartDay}>{d}</Text>
-              ))}
-            </View>
-          </View>
-        </AdminCard>
+                <Sparkline heights={[30, 45, 40, 60, 55, 75, 65, 80]} color={card.color} activeIndex={7} />
+              </View>
+              <Text style={[styles.statDelta, { color: card.positive ? glass.statusSuccessText : glass.statusDangerText }]}>
+                {card.delta}
+              </Text>
+            </AdminCard>
+          ))}
 
-        {statCards.map((card) => (
-          <AdminCard key={card.label} style={styles.statCard}>
-            <View style={styles.statTop}>
-              <View>
-                <Text style={styles.statLabel}>{card.label}</Text>
-                <Text style={styles.statValue}>
-                  {isLoading ? '—' : card.value}
+          {liveMatch && (
+            <TouchableOpacity
+              style={styles.liveAlert}
+              onPress={() => navigation.navigate('Events', { screen: 'AdminMatchDetail', params: { matchId: liveMatch._id } })}
+              activeOpacity={0.85}
+            >
+              <View style={styles.liveDot} />
+              <View style={styles.liveTextWrap}>
+                <Text style={styles.liveTitle}>
+                  {liveMatch.title || `${liveMatch.teamA} vs ${liveMatch.teamB}`} — LIVE NOW
+                </Text>
+                <Text style={styles.liveSub}>
+                  {liveMatch.venue} · {(liveMatch.seatStats?.booked || 0).toLocaleString()} scanned
                 </Text>
               </View>
-              <Sparkline heights={[30, 45, 40, 60, 55, 75, 65, 80]} color={card.color} activeIndex={7} />
-            </View>
-            <Text style={[styles.statDelta, { color: card.positive ? glass.statusSuccessText : glass.statusDangerText }]}>
-              {card.delta}
-            </Text>
-          </AdminCard>
-        ))}
+              <Text style={styles.liveChevron}>›</Text>
+            </TouchableOpacity>
+          )}
 
-        {liveMatch && (
-          <TouchableOpacity
-            style={styles.liveAlert}
-            onPress={() => navigation.navigate('Events', { screen: 'AdminMatchDetail', params: { matchId: liveMatch._id } })}
-            activeOpacity={0.85}
-          >
-            <View style={styles.liveDot} />
-            <View style={styles.liveTextWrap}>
-              <Text style={styles.liveTitle}>
-                {liveMatch.title || `${liveMatch.teamA} vs ${liveMatch.teamB}`} — LIVE NOW
-              </Text>
-              <Text style={styles.liveSub}>
-                {liveMatch.venue} · {(liveMatch.seatStats?.booked || 0).toLocaleString()} scanned
-              </Text>
-            </View>
-            <Text style={styles.liveChevron}>›</Text>
-          </TouchableOpacity>
-        )}
+          {metrics.fraudCount > 0 && (
+            <TouchableOpacity
+              style={styles.fraudBanner}
+              onPress={() => navigation.navigate('AdminTicketValidation')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.fraudIcon}>⚠</Text>
+              <View style={styles.fraudText}>
+                <Text style={styles.fraudTitle}>Fraud Alert</Text>
+                <Text style={styles.fraudDesc}>{metrics.fraudCount} security incidents need review</Text>
+              </View>
+            </TouchableOpacity>
+          )}
 
-        {metrics.fraudCount > 0 && (
-          <TouchableOpacity
-            style={styles.fraudBanner}
-            onPress={() => navigation.navigate('AdminTicketValidation')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.fraudIcon}>⚠</Text>
-            <View style={styles.fraudText}>
-              <Text style={styles.fraudTitle}>Fraud Alert</Text>
-              <Text style={styles.fraudDesc}>{metrics.fraudCount} security incidents need review</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-
-        {upcomingMatches.length > 0 && (
-          <>
-            <Text style={styles.sectionLabel}>NEXT UP</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.nextRow}>
-              {upcomingMatches.map((match) => {
-                const available = match.seatStats?.available ?? 0;
-                const soldOut = available === 0 && (match.seatStats?.total || 0) > 0;
-                const date = match.matchDate
-                  ? formatInNepal(match.matchDate, { month: 'short', day: 'numeric' })
-                  : 'TBD';
-                return (
-                  <TouchableOpacity
-                    key={match._id}
-                    style={styles.nextCard}
-                    onPress={() => navigation.navigate('Events', { screen: 'AdminMatchDetail', params: { matchId: match._id } })}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={styles.nextIcon}>🏟</Text>
-                    <Text style={styles.nextTitle} numberOfLines={1}>
-                      {match.title || `${match.teamA} vs ${match.teamB}`}
-                    </Text>
-                    <Text style={styles.nextDate}>{date}</Text>
-                    <View style={[styles.nextBadge, soldOut ? styles.nextBadgeSold : styles.nextBadgeSale]}>
-                      <Text style={[styles.nextBadgeText, soldOut ? styles.nextBadgeTextSold : styles.nextBadgeTextSale]}>
-                        {soldOut ? 'Sold Out' : 'On Sale'}
+          {upcomingMatches.length > 0 && (
+            <>
+              <Text style={styles.sectionLabel}>NEXT UP</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.nextRow}>
+                {upcomingMatches.map((match) => {
+                  const available = match.seatStats?.available ?? 0;
+                  const soldOut = available === 0 && (match.seatStats?.total || 0) > 0;
+                  const date = match.matchDate
+                    ? formatInNepal(match.matchDate, { month: 'short', day: 'numeric' })
+                    : 'TBD';
+                  return (
+                    <TouchableOpacity
+                      key={match._id}
+                      style={styles.nextCard}
+                      onPress={() => navigation.navigate('Events', { screen: 'AdminMatchDetail', params: { matchId: match._id } })}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.nextIcon}>🏟</Text>
+                      <Text style={styles.nextTitle} numberOfLines={1}>
+                        {match.title || `${match.teamA} vs ${match.teamB}`}
                       </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </>
-        )}
+                      <Text style={styles.nextDate}>{date}</Text>
+                      <View style={[styles.nextBadge, soldOut ? styles.nextBadgeSold : styles.nextBadgeSale]}>
+                        <Text style={[styles.nextBadgeText, soldOut ? styles.nextBadgeTextSold : styles.nextBadgeTextSale]}>
+                          {soldOut ? 'Sold Out' : 'On Sale'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </>
+          )}
 
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
