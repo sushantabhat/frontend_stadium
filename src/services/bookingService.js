@@ -20,16 +20,6 @@ export async function fetchMyBookings() {
   return response.data.bookings;
 }
 
-export async function initiateEsewaPayment(matchId, seatIds, amount) {
-  const response = await api.post('/api/payments/esewa/init', { matchId, seatIds, amount });
-  return response.data;
-}
-
-export async function verifyEsewaPayment(encodedData, transactionUuid, matchId, seatIds) {
-  const response = await api.post('/api/payments/esewa/verify', { encodedData, transactionUuid, matchId, seatIds });
-  return response.data;
-}
-
 export async function initiateKhaltiPayment(matchId, seatIds, amount) {
   const response = await api.post('/api/payments/khalti/init', { matchId, seatIds, amount });
   return response.data;

@@ -14,13 +14,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
 import BookingProgress from '../../components/BookingProgress';
-import EsewaPaymentModal from '../../components/EsewaPaymentModal';
 import KhaltiPaymentModal from '../../components/KhaltiPaymentModal';
 import GradientButton from '../../components/GradientButton';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 import { fetchMatchById } from '../../services/matchService';
-import { unlockSeats, initiateEsewaPayment, verifyEsewaPayment, initiateKhaltiPayment, verifyKhaltiPayment } from '../../services/bookingService';
+import { unlockSeats, initiateKhaltiPayment, verifyKhaltiPayment } from '../../services/bookingService';
 import { fetchDynamicPricingSuggestions } from '../../services/aiService';
 
 export default function BookingScreen({ route, navigation }) {
@@ -31,10 +30,7 @@ export default function BookingScreen({ route, navigation }) {
   const [isPaying, setIsPaying] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
   const [bookedTickets, setBookedTickets] = useState([]);
-  const [esewaData, setEsewaData] = useState(null);
-  const [esewaVisible, setEsewaVisible] = useState(false);
   const [pendingPayment, setPendingPayment] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('esewa');
   const [khaltiData, setKhaltiData] = useState(null);
   const [khaltiVisible, setKhaltiVisible] = useState(false);
 
@@ -57,39 +53,6 @@ export default function BookingScreen({ route, navigation }) {
       return sum + basePrice * (pricingSuggestions?.multiplier || 1.0);
     }, 0);
   }, [match, selectedSeats, pricingSuggestions]);
-
-  const handleEsewaPayment = async () => {
-    setIsPaying(true);
-    try {
-      const seatIds = selectedSeats.map(s => s.id || s._id);
-      const result = await initiateEsewaPayment(matchId, seatIds, Math.round(totalAmount));
-      setEsewaData(result);
-      setPendingPayment({ matchId, seatIds });
-      setEsewaVisible(true);
-    } catch (err) { Alert.alert('Payment Error', err.response?.data?.message || err.message); }
-    finally { setIsPaying(false); }
-  };
-
-  const handleEsewaSuccess = async (encodedData) => {
-    setEsewaVisible(false);
-    setIsPaying(true);
-    try {
-      const result = await verifyEsewaPayment(
-        encodedData,
-        esewaData.transactionUuid,
-        pendingPayment.matchId,
-        pendingPayment.seatIds
-      );
-      setIsBooked(true);
-      setBookedTickets(result.tickets || []);
-    } catch (err) { Alert.alert('Verification failed', err.response?.data?.message || err.message); }
-    finally { setIsPaying(false); }
-  };
-
-  const handleEsewaError = (msg) => {
-    setEsewaVisible(false);
-    Alert.alert('Payment Failed', msg);
-  };
 
   const handleKhaltiPayment = async () => {
     setIsPaying(true);
@@ -316,38 +279,18 @@ export default function BookingScreen({ route, navigation }) {
           </View>
         </View>
 
-        {/* Payment Method Selector */}
+        {/* Payment Method */}
         <View style={styles.paymentMethodCard}>
           <Text style={styles.cardHeader}>PAYMENT METHOD</Text>
           <View style={styles.paymentOptions}>
-            <TouchableOpacity
-              style={[styles.paymentOption, paymentMethod === 'esewa' && styles.paymentOptionActive]}
-              onPress={() => setPaymentMethod('esewa')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.paymentOptionText, paymentMethod === 'esewa' && styles.paymentOptionTextActive]}>eSewa</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.paymentOption, paymentMethod === 'khalti' && styles.paymentOptionActive]}
-              onPress={() => setPaymentMethod('khalti')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.paymentOptionText, paymentMethod === 'khalti' && styles.paymentOptionTextActive]}>Khalti</Text>
-            </TouchableOpacity>
+            <View style={[styles.paymentOption, styles.paymentOptionActive]}>
+              <Text style={[styles.paymentOptionText, styles.paymentOptionTextActive]}>Khalti</Text>
+            </View>
           </View>
         </View>
 
         <View style={{ height: spacing.xxxl }} />
       </ScrollView>
-
-      <EsewaPaymentModal
-        visible={esewaVisible}
-        formData={esewaData?.formData || {}}
-        paymentUrl={esewaData?.paymentUrl || ''}
-        onSuccess={handleEsewaSuccess}
-        onError={handleEsewaError}
-        onClose={() => setEsewaVisible(false)}
-      />
 
       <KhaltiPaymentModal
         visible={khaltiVisible}
@@ -363,8 +306,8 @@ export default function BookingScreen({ route, navigation }) {
           <Text style={styles.cancelBtnText}>Cancel</Text>
         </TouchableOpacity>
         <GradientButton
-          title={isPaying ? 'Redirecting...' : `Pay via ${paymentMethod === 'esewa' ? 'eSewa' : 'Khalti'} Rs.${Math.round(totalAmount)}`}
-          onPress={paymentMethod === 'esewa' ? handleEsewaPayment : handleKhaltiPayment}
+          title={isPaying ? 'Redirecting...' : `Pay Khalti Rs.${Math.round(totalAmount)}`}
+          onPress={handleKhaltiPayment}
           disabled={isPaying}
           style={{ flex: 1 }}
         />
