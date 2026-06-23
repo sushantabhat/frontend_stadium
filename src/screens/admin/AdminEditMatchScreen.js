@@ -42,8 +42,11 @@ function getDaysInMonth(year, month) {
 function formatDateISO(year, month, day, hour, minute) {
   const m = String(month + 1).padStart(2, '0');
   const d = String(day).padStart(2, '0');
-  const h = String(hour).padStart(2, '0');
-  const min = String(minute).padStart(2, '0');
+  const totalMinutes = hour * 60 + minute - (5 * 60 + 45);
+  const adjHour = Math.floor(((totalMinutes % 1440) + 1440) % 1440 / 60);
+  const adjMinute = ((totalMinutes % 60) + 60) % 60;
+  const h = String(adjHour).padStart(2, '0');
+  const min = String(adjMinute).padStart(2, '0');
   return `${year}-${m}-${d}T${h}:${min}:00.000Z`;
 }
 
@@ -681,7 +684,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
             <View style={styles.datePreview}>
               <Text style={styles.datePreviewIcon}>📅</Text>
               <Text style={styles.datePreviewText}>
-                {formatDateISO(pickerYear, pickerMonth, clampedDay, pickerHour, pickerMinute)}
+                {formatDisplayDate(formatDateISO(pickerYear, pickerMonth, clampedDay, pickerHour, pickerMinute))}
               </Text>
             </View>
 
@@ -743,7 +746,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
 
             <View style={[styles.pickerRow, { marginTop: spacing.md }]}>
               <View style={styles.pickerCol}>
-                <Text style={styles.pickerLabel}>HOUR</Text>
+                <Text style={styles.pickerLabel}>HOUR (NPT)</Text>
                 <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
                   {HOURS.map((h) => (
                     <TouchableOpacity
@@ -761,7 +764,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
               </View>
 
               <View style={styles.pickerCol}>
-                <Text style={styles.pickerLabel}>MINUTE</Text>
+                <Text style={styles.pickerLabel}>MINUTE (NPT)</Text>
                 <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
                   {MINUTES.map((m) => (
                     <TouchableOpacity
