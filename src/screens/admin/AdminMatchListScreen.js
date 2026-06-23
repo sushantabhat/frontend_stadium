@@ -24,7 +24,7 @@ import DashboardHeader from '../../components/DashboardHeader';
 import FAB from '../../components/FAB';
 import { AdminFilterPills, AdminSearchBar } from '../../components/admin/TicketProHeader';
 import EmptyState from '../../components/EmptyState';
-import { fetchMatches, updateMatch } from '../../services/matchService';
+import { fetchMatches, cancelMatch } from '../../services/matchService';
 import { spacing, radii, typography, glass, colors } from '../../constants/theme';
 import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
@@ -161,8 +161,8 @@ export default function AdminMatchListScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await updateMatch(match._id, { status: 'cancelled' });
-              Alert.alert('Cancelled', 'Match marked as cancelled. Fans will see the CANCELLED status.');
+              await cancelMatch(match._id);
+              Alert.alert('Cancelled', 'Match cancelled. Refunds and notifications processed.');
               closeDetail();
               loadMatches();
             } catch (err) {

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -51,7 +51,7 @@ export default function NotificationsScreen({ navigation }) {
     }
   };
 
-  const renderNotification = ({ item }) => {
+  const renderNotification = useCallback(({ item }) => {
     const config = TYPE_CONFIG[item.type] || TYPE_CONFIG.general;
     const timeAgo = getTimeAgo(item.createdAt);
 
@@ -76,9 +76,9 @@ export default function NotificationsScreen({ navigation }) {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, []);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -96,6 +96,9 @@ export default function NotificationsScreen({ navigation }) {
           data={notifications}
           renderItem={renderNotification}
           keyExtractor={(item) => item._id}
+          removeClippedSubviews
+          maxToRenderPerBatch={10}
+          windowSize={5}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
           ListEmptyComponent={
             !isLoading ? (
@@ -138,7 +141,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg, backgroundColor: colors.surface, borderRadius: radii.lg,
     borderWidth: 1, borderColor: colors.border,
   },
-  notifUnread: { borderColor: `${colors.primary}40`, backgroundColor: `${colors.surface}` },
+  notifUnread: { borderColor: '#FF4757', backgroundColor: 'rgba(255,71,87,0.06)' },
   notifIcon: {
     width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
     marginRight: spacing.md,
@@ -147,7 +150,7 @@ const styles = StyleSheet.create({
   notifBody: { flex: 1 },
   notifTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs },
   notifTitle: { color: colors.textSecondary, fontSize: typography.captionMedium.fontSize, fontWeight: '700', flex: 1 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF4757' },
   notifMessage: { color: colors.textMuted, fontSize: typography.small.fontSize, lineHeight: 18, marginBottom: spacing.xs },
   notifTime: { color: colors.textMuted, fontSize: typography.tiny?.fontSize || 10, opacity: 0.6 },
   emptyWrap: { alignItems: 'center', paddingVertical: spacing.huge },

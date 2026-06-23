@@ -3,6 +3,7 @@ import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
 import { ThemeProvider } from './src/context/ThemeContext';
+import { NotificationProvider } from './src/context/NotificationContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import LoadingScreen from './src/components/LoadingScreen';
 
@@ -24,7 +25,9 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <RootNavigator />
+        <NotificationProvider>
+          <RootNavigator />
+        </NotificationProvider>
       </ThemeProvider>
     </AuthProvider>
   );

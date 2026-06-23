@@ -1,26 +1,11 @@
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { radii } from '../constants/theme';
-import { fetchUnreadCount } from '../services/notificationService';
+import { NotificationContext } from '../context/NotificationContext';
 
 export default function NotificationBell({ onPress }) {
-  const [count, setCount] = useState(0);
-
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      const load = async () => {
-        try {
-          const { unreadCount } = await fetchUnreadCount();
-          if (active) setCount(unreadCount);
-        } catch {}
-      };
-      load();
-      const interval = setInterval(load, 30000);
-      return () => { active = false; clearInterval(interval); };
-    }, [])
-  );
+  const { unreadCount } = React.useContext(NotificationContext) || {};
+  const count = unreadCount || 0;
 
   return (
     <TouchableOpacity style={styles.bell} onPress={onPress} activeOpacity={0.7}>
