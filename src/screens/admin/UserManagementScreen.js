@@ -212,6 +212,12 @@ export default function UserManagementScreen({ navigation }) {
           </View>
         </AdminCard>
 
+        <TouchableOpacity style={styles.shiftLink} onPress={() => navigation.navigate('AdminStaffShifts')} activeOpacity={0.7}>
+          <Text style={styles.shiftLinkIcon}>📋</Text>
+          <Text style={styles.shiftLinkText}>Manage Staff Shifts</Text>
+          <Text style={styles.shiftLinkArrow}>→</Text>
+        </TouchableOpacity>
+
         <AdminSearchBar
           value={search}
           onChangeText={setSearch}
@@ -456,4 +462,8 @@ const styles = StyleSheet.create({
   cancelText: { color: colors.textPrimary, fontWeight: '700' },
   confirmBtn: { flex: 1, paddingVertical: spacing.lg, borderRadius: radii.lg, backgroundColor: glass.statusDangerText, alignItems: 'center' },
   confirmText: { color: '#FFF', fontWeight: '700' },
+  shiftLink: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, marginHorizontal: spacing.xl, marginBottom: spacing.lg, padding: spacing.lg, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border, gap: spacing.md },
+  shiftLinkIcon: { fontSize: 18 },
+  shiftLinkText: { flex: 1, color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
+  shiftLinkArrow: { color: colors.textMuted, fontSize: 16 },
 });

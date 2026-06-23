@@ -15,6 +15,7 @@ import TicketValidationScreen from '../screens/admin/TicketValidationScreen';
 import ScannerDashboardScreen from '../screens/admin/ScannerDashboardScreen';
 import PromotionalHubScreen from '../screens/admin/PromotionalHubScreen';
 import UserManagementScreen from '../screens/admin/UserManagementScreen';
+import StaffShiftManagementScreen from '../screens/admin/StaffShiftManagementScreen';
 import AdminSettingsScreen from '../screens/admin/AdminSettingsScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import { useBackgroundColor } from '../context/ThemeContext';
@@ -72,6 +73,7 @@ function UsersNavigator() {
   return (
     <UsersStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <UsersStack.Screen name="AdminUserManagement" component={UserManagementScreen} />
+      <UsersStack.Screen name="AdminStaffShifts" component={StaffShiftManagementScreen} />
       <UsersStack.Screen name="AdminPromotionalHub" component={PromotionalHubScreen} />
     </UsersStack.Navigator>
   );

@@ -1,85 +1,139 @@
-import React, { useContext } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthContext } from '../../context/AuthContext';
 import DashboardHeader from '../../components/DashboardHeader';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
-
-const SHIFTS = [
-  { match: 'India vs Australia', date: 'Today', time: '2:00 PM — 10:00 PM', gate: 'Gate A', status: 'active', checkedIn: true },
-  { match: 'India vs England', date: 'Sat, Jun 21', time: '6:00 PM — 11:00 PM', gate: 'Gate B', status: 'upcoming', checkedIn: false },
-  { match: 'Mumbai vs Chennai', date: 'Sun, Jun 22', time: '3:00 PM — 9:00 PM', gate: 'Gate A', status: 'upcoming', checkedIn: false },
-];
+import { fetchMyActiveShift, fetchMyShifts } from '../../services/ticketService';
 
 export default function MyShiftsScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
+  const [activeShift, setActiveShift] = useState(null);
+  const [allShifts, setAllShifts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const initials = (userInfo?.name || 'S').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
+  const loadData = useCallback(async (refreshing = false) => {
+    if (!refreshing) setIsLoading(true);
+    try {
+      const [active, all] = await Promise.all([
+        fetchMyActiveShift(),
+        fetchMyShifts(),
+      ]);
+      setActiveShift(active);
+      setAllShifts(all || []);
+    } catch (e) {
+      console.log('Shifts load error:', e.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const { refreshing, onRefresh } = useRefresh(() => loadData(true));
+
+  const upcoming = allShifts.filter(s => !activeShift || s._id !== activeShift._id);
+
+  const formatDate = (d) => {
+    if (!d) return '—';
+    const opts = { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'Asia/Kathmandu' };
+    return new Date(d).toLocaleDateString('en-US', opts);
+  };
+
+  const formatTime = (d) => {
+    if (!d) return '—';
+    const opts = { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kathmandu' };
+    return new Date(d).toLocaleTimeString('en-US', opts);
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <DashboardHeader
-        topLabel="SCHEDULE"
-        title="My Shifts"
-        avatarColors={['#00C853', '#00A844']}
-        avatarLabel={initials}
-        onAvatarPress={() => navigation.navigate('Account')}
-        onBack={() => navigation.goBack()}
-      />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* Today's shift highlight */}
-        {SHIFTS[0].status === 'active' && (
-          <View style={styles.heroShift}>
-            <LinearGradient colors={colors.gradientPurple} style={styles.heroShiftInner}>
-              <View style={styles.heroTop}>
-                <View style={styles.livePill}>
-                  <View style={styles.liveDot} />
-                  <Text style={styles.liveText}>ON SHIFT</Text>
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={refreshing} />
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <DashboardHeader
+          topLabel="SCHEDULE"
+          title="My Shifts"
+          avatarColors={['#00C853', '#00A844']}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate('Account')}
+          onBack={() => navigation.goBack()}
+        />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scroll}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
+        >
+          {isLoading ? (
+            <ActivityIndicator color={colors.primary} style={{ paddingVertical: spacing.huge }} />
+          ) : (
+            <>
+              {activeShift && (
+                <View style={styles.heroShift}>
+                  <LinearGradient colors={colors.gradientPurple} style={styles.heroShiftInner}>
+                    <View style={styles.heroTop}>
+                      <View style={styles.livePill}>
+                        <View style={styles.liveDot} />
+                        <Text style={styles.liveText}>ON SHIFT</Text>
+                      </View>
+                      <Text style={styles.heroTime}>{formatTime(activeShift.match?.matchDate)}</Text>
+                    </View>
+                    <Text style={styles.heroMatch}>{activeShift.match?.title || 'Today\'s Match'}</Text>
+                    <Text style={styles.heroGate}>{activeShift.gate}</Text>
+                    <TouchableOpacity style={styles.checkInBtn} activeOpacity={0.85}>
+                      <Text style={styles.checkInText}>✓ Checked In</Text>
+                    </TouchableOpacity>
+                  </LinearGradient>
                 </View>
-                <Text style={styles.heroTime}>{SHIFTS[0].time}</Text>
-              </View>
-              <Text style={styles.heroMatch}>{SHIFTS[0].match}</Text>
-              <Text style={styles.heroGate}>{SHIFTS[0].gate}</Text>
-              <TouchableOpacity style={styles.checkInBtn} activeOpacity={0.85}>
-                <Text style={styles.checkInText}>
-                  {SHIFTS[0].checkedIn ? '✓ Checked In' : 'Check In Now'}
-                </Text>
-              </TouchableOpacity>
-            </LinearGradient>
-          </View>
-        )}
+              )}
 
-        {/* Upcoming shifts */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Upcoming</Text>
-          <View style={styles.shiftsList}>
-            {SHIFTS.filter(s => s.status === 'upcoming').map((shift, idx) => (
-              <View key={shift.match} style={[styles.shiftItem, idx < SHIFTS.length - 2 && styles.shiftItemBorder]}>
-                <View style={styles.shiftLeft}>
-                  <View style={styles.shiftDateBox}>
-                    <Text style={styles.shiftDay}>{shift.date.split(',')[0]}</Text>
-                    <Text style={styles.shiftDateNum}>{shift.date.split(',')[1]?.trim()}</Text>
+              {upcoming.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Upcoming</Text>
+                  <View style={styles.shiftsList}>
+                    {upcoming.map((shift, idx) => (
+                      <View key={shift._id} style={[styles.shiftItem, idx < upcoming.length - 1 && styles.shiftItemBorder]}>
+                        <View style={styles.shiftLeft}>
+                          <View style={styles.shiftDateBox}>
+                            <Text style={styles.shiftDay}>{formatDate(shift.date).split(',')[0]}</Text>
+                            <Text style={styles.shiftDateNum}>{formatDate(shift.date).split(',')[1]?.trim()}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.shiftCenter}>
+                          <Text style={styles.shiftMatch}>{shift.match?.title || 'Unknown Match'}</Text>
+                          <Text style={styles.shiftTime}>{shift.match?.matchDate ? formatTime(shift.match.matchDate) : '—'}</Text>
+                          <Text style={styles.shiftGate}>{shift.gate}</Text>
+                        </View>
+                        <View style={styles.shiftRight}>
+                          <View style={styles.upcomingPill}>
+                            <Text style={styles.upcomingText}>UPCOMING</Text>
+                          </View>
+                        </View>
+                      </View>
+                    ))}
                   </View>
                 </View>
-                <View style={styles.shiftCenter}>
-                  <Text style={styles.shiftMatch}>{shift.match}</Text>
-                  <Text style={styles.shiftTime}>{shift.time}</Text>
-                  <Text style={styles.shiftGate}>{shift.gate}</Text>
-                </View>
-                <View style={styles.shiftRight}>
-                  <View style={styles.upcomingPill}>
-                    <Text style={styles.upcomingText}>UPCOMING</Text>
-                  </View>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
+              )}
 
-        <View style={{ height: spacing.xxxl + 20 }} />
-      </ScrollView>
-    </SafeAreaView>
+              {!activeShift && upcoming.length === 0 && (
+                <View style={styles.emptyWrap}>
+                  <Text style={styles.emptyIcon}>📋</Text>
+                  <Text style={styles.emptyTitle}>No shifts assigned</Text>
+                  <Text style={styles.emptyDesc}>Ask your admin to assign you to a match</Text>
+                </View>
+              )}
+            </>
+          )}
+
+          <View style={{ height: spacing.xxxl + 20 }} />
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -116,4 +170,9 @@ const styles = StyleSheet.create({
   shiftRight: {},
   upcomingPill: { backgroundColor: colors.surfaceElevated, borderRadius: radii.full, paddingHorizontal: spacing.sm, paddingVertical: 3, borderWidth: 1, borderColor: colors.border },
   upcomingText: { color: colors.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 0.8 },
+
+  emptyWrap: { alignItems: 'center', paddingVertical: spacing.huge },
+  emptyIcon: { fontSize: 48, marginBottom: spacing.md },
+  emptyTitle: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '800', marginBottom: spacing.xs },
+  emptyDesc: { color: colors.textMuted, fontSize: typography.small.fontSize, textAlign: 'center' },
 });

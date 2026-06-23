@@ -32,6 +32,7 @@ const EMPTY_SECTION = {
   totalSeats: '20',
   rows: 'A,B,C',
   polygon: '',
+  gate: '',
 };
 
 function buildPricingFromVenue(venue) {
@@ -52,6 +53,7 @@ function buildSectionsFromVenue(venue) {
     totalSeats: String(s.totalSeats ?? ''),
     rows: Array.isArray(s.rows) ? s.rows.join(',') : '',
     polygon: s.polygon || '',
+    gate: s.gate || '',
   }));
 }
 
@@ -74,6 +76,11 @@ export default function VenueEditorScreen({ navigation, route }) {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [polygonEditorIndex, setPolygonEditorIndex] = useState(null);
+  const [venueGates, setVenueGates] = useState(() => {
+    if (venue && Array.isArray(venue.gates)) return [...venue.gates];
+    return [];
+  });
+  const [gateInput, setGateInput] = useState('');
 
   const updatePricing = (cat, value) => setPricing((prev) => ({ ...prev, [cat]: value }));
 
@@ -135,6 +142,7 @@ export default function VenueEditorScreen({ navigation, route }) {
           pricePerTicket: Number(s.pricePerTicket) || 0,
           totalSeats: Number(s.totalSeats) || 0,
           rows: s.rows.split(',').map((r) => r.trim()).filter(Boolean),
+          gate: s.gate.trim() || '',
         }));
       const seatLayout = stadiumSections.length === 0 ? { rows: 10, seatsPerRow: 20, vipRows: 2, premiumRows: 3 } : null;
 
@@ -143,6 +151,7 @@ export default function VenueEditorScreen({ navigation, route }) {
           name: venueName.trim(),
           location: venueLocation.trim(),
           pricing: pricingObj,
+          gates: venueGates,
           stadiumSections,
           seatLayout,
         });
@@ -151,6 +160,7 @@ export default function VenueEditorScreen({ navigation, route }) {
           name: venueName.trim(),
           location: venueLocation.trim(),
           pricing: pricingObj,
+          gates: venueGates,
           stadiumSections,
           seatLayout,
         });
@@ -198,6 +208,56 @@ export default function VenueEditorScreen({ navigation, route }) {
             onChangeText={(v) => { setVenueLocation(v); if (errors.location) setErrors((p) => { const n = { ...p }; delete n.location; return n; }); }}
           />
           {errors.location && <Text style={styles.errorText}>{errors.location}</Text>}
+
+          {/* VENUE GATES */}
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionDot, { backgroundColor: '#00E5FF' }]} />
+              <Text style={styles.sectionTitle}>Venue Gates</Text>
+            </View>
+            <Text style={styles.hint}>
+              Define entrance gates for this venue. These appear as a dropdown when assigning gates to sections and staff shifts.
+            </Text>
+
+            {venueGates.length > 0 && (
+              <View style={styles.gateChipRow}>
+                {venueGates.map((g, i) => (
+                  <View key={i} style={styles.gateChip}>
+                    <Text style={styles.gateChipText}>{g}</Text>
+                    <TouchableOpacity
+                      onPress={() => setVenueGates((prev) => prev.filter((_, idx) => idx !== i))}
+                      hitSlop={6}
+                    >
+                      <Text style={styles.gateChipRemove}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <View style={styles.gateInputRow}>
+              <TextInput
+                style={[styles.gateInput, styles.gateInputField]}
+                placeholder="e.g. North Gate"
+                placeholderTextColor={glass.textMuted}
+                value={gateInput}
+                onChangeText={setGateInput}
+              />
+              <TouchableOpacity
+                style={[styles.gateAddBtn, !gateInput.trim() && styles.gateAddBtnDisabled]}
+                onPress={() => {
+                  const trimmed = gateInput.trim();
+                  if (!trimmed) return;
+                  setVenueGates((prev) => [...prev, trimmed]);
+                  setGateInput('');
+                }}
+                activeOpacity={0.7}
+                disabled={!gateInput.trim()}
+              >
+                <Text style={styles.gateAddBtnText}>+</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
           {/* PRICING */}
           <View style={styles.sectionCard}>
@@ -321,6 +381,44 @@ export default function VenueEditorScreen({ navigation, route }) {
                       value={section.rows}
                       onChangeText={(v) => updateSection(index, 'rows', v)}
                     />
+
+                    <Text style={styles.inputLabel}>Gate</Text>
+                    {venueGates.length > 0 ? (
+                      <View>
+                        <View style={styles.gateOptionRow}>
+                          {venueGates.map((g) => {
+                            const selected = section.gate === g;
+                            return (
+                              <TouchableOpacity
+                                key={g}
+                                style={[styles.gateOptionChip, selected && styles.gateOptionChipActive]}
+                                onPress={() => updateSection(index, 'gate', selected ? '' : g)}
+                                activeOpacity={0.7}
+                              >
+                                <Text style={[styles.gateOptionChipText, selected && styles.gateOptionChipTextActive]}>
+                                  {g}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                        <TextInput
+                          style={[styles.inputField, { marginTop: spacing.xs }]}
+                          placeholder="Or type a custom gate..."
+                          placeholderTextColor={glass.textMuted}
+                          value={section.gate}
+                          onChangeText={(v) => updateSection(index, 'gate', v)}
+                        />
+                      </View>
+                    ) : (
+                      <TextInput
+                        style={styles.inputField}
+                        placeholder="e.g. North Gate"
+                        placeholderTextColor={glass.textMuted}
+                        value={section.gate}
+                        onChangeText={(v) => updateSection(index, 'gate', v)}
+                      />
+    )}
 
                     <Text style={styles.inputLabel}>Stadium Map Shape</Text>
                     {section.polygon ? (
@@ -502,6 +600,41 @@ const styles = StyleSheet.create({
   saveBtn: { borderRadius: radii.lg, overflow: 'hidden', marginTop: spacing.lg },
   saveBtnGradient: { paddingVertical: spacing.lg, alignItems: 'center', borderRadius: radii.lg },
   saveBtnText: { color: '#FFF', fontWeight: '800', fontSize: typography.body.fontSize },
+
+  gateChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+  gateChip: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+    backgroundColor: 'rgba(0,229,255,0.1)', borderRadius: radii.md,
+    borderWidth: 1, borderColor: 'rgba(0,229,255,0.3)',
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+  },
+  gateChipText: { color: '#00E5FF', fontSize: typography.small.fontSize, fontWeight: '700' },
+  gateChipRemove: { color: '#FF4757', fontSize: 12, fontWeight: '800', marginLeft: 4 },
+  gateInputRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
+  gateInput: {
+    backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: radii.md,
+    borderWidth: 1, borderColor: glass.border, padding: spacing.md,
+    color: colors.textPrimary, fontSize: typography.body.fontSize,
+    height: 48,
+  },
+  gateInputField: { flex: 1 },
+  gateAddBtn: {
+    width: 48, height: 48, borderRadius: radii.md,
+    backgroundColor: glass.brandPurple, alignItems: 'center', justifyContent: 'center',
+  },
+  gateAddBtnDisabled: { opacity: 0.4 },
+  gateAddBtnText: { color: '#FFF', fontSize: 22, fontWeight: '600', lineHeight: 24 },
+  gateOptionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm },
+  gateOptionChip: {
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    borderRadius: radii.sm, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  gateOptionChipActive: { borderColor: '#00E5FF', backgroundColor: 'rgba(0,229,255,0.12)' },
+  gateOptionChipText: { color: glass.textMuted, fontSize: typography.small.fontSize, fontWeight: '600' },
+  gateOptionChipTextActive: { color: '#00E5FF', fontWeight: '800' },
+  gateCustomRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
+  gateCustomLabel: { color: '#FFA502', fontSize: 10, fontWeight: '700' },
 
   polygonBtns: { flexDirection: 'row', gap: spacing.sm },
   polygonEditBtn: {

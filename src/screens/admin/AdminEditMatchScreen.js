@@ -116,6 +116,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
   const [pickerHour, setPickerHour] = useState(18);
   const [pickerMinute, setPickerMinute] = useState(0);
   const [polygonEditorIndex, setPolygonEditorIndex] = useState(null);
+  const [venueGates, setVenueGates] = useState([]);
   const [errors, setErrors] = useState({});
 
   const maxDays = getDaysInMonth(pickerYear, pickerMonth);
@@ -149,8 +150,11 @@ export default function AdminEditMatchScreen({ route, navigation }) {
           totalSeats: String(s.totalSeats ?? ''),
           rows: Array.isArray(s.rows) ? s.rows.join(',') : '',
           polygon: s.polygon || '',
+          gate: s.gate || '',
         }))
       );
+
+      setVenueGates(match.venueGates || []);
 
       setForm({
         title: match.title || '',
@@ -249,6 +253,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
               .map((r) => r.trim())
               .filter(Boolean),
             polygon: s.polygon || '',
+            gate: s.gate || '',
           }));
 
         if (stadiumSections.length > 0) {
@@ -586,6 +591,62 @@ export default function AdminEditMatchScreen({ route, navigation }) {
                   }}
                 />
 
+                <Text style={styles.inputLabel}>Gate</Text>
+                {venueGates.length > 0 ? (
+                  <View>
+                    <View style={styles.gateOptionRow}>
+                      {venueGates.map((g) => {
+                        const selected = section.gate === g;
+                        return (
+                          <TouchableOpacity
+                            key={g}
+                            style={[styles.gateOptionChip, selected && styles.gateOptionChipActive]}
+                            onPress={() => {
+                              setSections((prev) => {
+                                const next = [...prev];
+                                next[index] = { ...next[index], gate: selected ? '' : g };
+                                return next;
+                              });
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={[styles.gateOptionChipText, selected && styles.gateOptionChipTextActive]}>
+                              {g}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                    <TextInput
+                      style={[styles.inputField, { marginTop: spacing.xs }]}
+                      placeholder="Or type a custom gate..."
+                      placeholderTextColor={glass.textMuted}
+                      value={section.gate}
+                      onChangeText={(v) => {
+                        setSections((prev) => {
+                          const next = [...prev];
+                          next[index] = { ...next[index], gate: v };
+                          return next;
+                        });
+                      }}
+                    />
+                  </View>
+                ) : (
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="e.g. North Gate"
+                    placeholderTextColor={glass.textMuted}
+                    value={section.gate}
+                    onChangeText={(v) => {
+                      setSections((prev) => {
+                        const next = [...prev];
+                        next[index] = { ...next[index], gate: v };
+                        return next;
+                      });
+                    }}
+                  />
+                )}
+
                 <Text style={styles.inputLabel}>Stadium Map Shape</Text>
                 {section.polygon ? (
                   <View style={styles.polygonBtns}>
@@ -625,7 +686,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
             {!hasBookedSeats && (
               <TouchableOpacity
                 style={styles.addSectionBtn}
-                onPress={() => setSections((prev) => [...prev, { sectionId: `S${prev.length + 1}`, category: 'platinum', label: '', color: '#E8E8E8', pricePerTicket: '3500', totalSeats: '20', rows: 'A,B,C', polygon: '' }])}
+                onPress={() => setSections((prev) => [...prev, { sectionId: `S${prev.length + 1}`, category: 'platinum', label: '', color: '#E8E8E8', pricePerTicket: '3500', totalSeats: '20', rows: 'A,B,C', polygon: '', gate: '' }])}
                 activeOpacity={0.7}
               >
                 <Text style={styles.addSectionBtnText}>+ Add Section</Text>
@@ -968,6 +1029,18 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginBottom: spacing.md,
   },
   addSectionBtnText: { color: glass.brandPurple, fontWeight: '700', fontSize: typography.captionMedium.fontSize },
+
+  gateOptionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm },
+  gateOptionChip: {
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    borderRadius: radii.sm, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  gateOptionChipActive: { borderColor: '#00E5FF', backgroundColor: 'rgba(0,229,255,0.12)' },
+  gateOptionChipText: { color: glass.textMuted, fontSize: typography.small.fontSize, fontWeight: '600' },
+  gateOptionChipTextActive: { color: '#00E5FF', fontWeight: '800' },
+  gateCustomRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
+  gateCustomLabel: { color: '#FFA502', fontSize: 10, fontWeight: '700' },
 
   row: {
     flexDirection: 'row',

@@ -141,6 +141,7 @@ export default function CreateMatchScreen({ navigation }) {
           pricingObj[key] = Number(val) || 0;
         }
         payload.pricing = pricingObj;
+        payload.venueGates = selectedVenue.gates || [];
 
         const stadiumSections = (selectedVenue.stadiumSections || []).map((s) => ({
           sectionId: s.sectionId,
@@ -152,6 +153,7 @@ export default function CreateMatchScreen({ navigation }) {
           totalSeats: Number(s.totalSeats) || 0,
           availableSeats: Number(s.totalSeats) || 0,
           rows: Array.isArray(s.rows) ? s.rows : [],
+          gate: s.gate || '',
         }));
 
         if (stadiumSections.length > 0) {

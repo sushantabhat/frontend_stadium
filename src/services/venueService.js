@@ -5,13 +5,13 @@ export async function fetchVenues() {
   return response.data.venues;
 }
 
-export async function createVenue({ name, location, pricing, stadiumSections, seatLayout }) {
-  const response = await api.post('/api/admin/venues', { name, location, pricing, stadiumSections, seatLayout });
+export async function createVenue({ name, location, pricing, stadiumSections, seatLayout, gates }) {
+  const response = await api.post('/api/admin/venues', { name, location, pricing, stadiumSections, seatLayout, gates });
   return response.data.venue;
 }
 
-export async function updateVenue(id, { name, location, pricing, stadiumSections, seatLayout }) {
-  const response = await api.put(`/api/admin/venues/${id}`, { name, location, pricing, stadiumSections, seatLayout });
+export async function updateVenue(id, { name, location, pricing, stadiumSections, seatLayout, gates }) {
+  const response = await api.put(`/api/admin/venues/${id}`, { name, location, pricing, stadiumSections, seatLayout, gates });
   return response.data.venue;
 }
 

@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import SupervisorDashboardScreen from '../screens/supervisor/SupervisorDashboardScreen';
+import GateAnalyticsScreen from '../screens/supervisor/GateAnalyticsScreen';
 import IncidentDetailScreen from '../screens/supervisor/IncidentDetailScreen';
 import OverridePanelScreen from '../screens/supervisor/OverridePanelScreen';
 import GateScannerScreen from '../screens/staff/GateScannerScreen';
@@ -27,6 +28,7 @@ function IncidentsNavigator() {
   return (
     <IncidentsStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <IncidentsStack.Screen name="SupervisorDashboard" component={SupervisorDashboardScreen} />
+      <IncidentsStack.Screen name="GateAnalytics" component={GateAnalyticsScreen} />
       <IncidentsStack.Screen name="SupervisorIncidentDetail" component={IncidentDetailScreen} />
     </IncidentsStack.Navigator>
   );

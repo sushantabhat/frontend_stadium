@@ -126,6 +126,10 @@ export default function StadiumViewScreen({ navigation, route }) {
                   <Text style={styles.detailLabel}>Price / Ticket</Text>
                   <Text style={[styles.detailValue, { color: glass.brandPurple }]}>Rs {selectedSection.pricePerTicket || 0}</Text>
                 </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Gate</Text>
+                  <Text style={styles.detailValue}>{selectedSection.gate || '—'}</Text>
+                </View>
               </>
             )}
           </View>

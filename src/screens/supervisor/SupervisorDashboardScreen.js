@@ -4,14 +4,12 @@ import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, T
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography } from '../../constants/theme';
-import { fetchFraudLogs } from '../../services/adminService';
+import { fetchFraudLogs, fetchGateStats } from '../../services/adminService';
 import { fetchScanHistory } from '../../services/ticketService';
+import { fetchMatches } from '../../services/matchService';
 import DashboardHeader from '../../components/DashboardHeader';
 import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
-
-/* ─── Gate labels (data sourced from live scan history) ─── */
-const GATE_LABELS = ['Gate A — North', 'Gate B — South', 'Gate C — East', 'Gate D — West'];
 
 /* ─── Severity color mapping ─── */
 const SEVERITY = {
@@ -28,15 +26,18 @@ export default function SupervisorDashboardScreen({ navigation }) {
   /* ── State: incidents + scan data ── */
   const [incidents, setIncidents] = useState([]);
   const [scanLogs, setScanLogs] = useState([]);
+  const [gates, setGates] = useState([]);
+  const [activeMatch, setActiveMatch] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   /* ── Data loading: parallel fetch ── */
   const loadData = useCallback(async (refreshing = false) => {
     if (!refreshing) setIsLoading(true);
     try {
-      const [frauds, scanLogsData] = await Promise.all([
-        fetchFraudLogs(),
+      const [frauds, scanLogsData, matchesData] = await Promise.all([
+        fetchFraudLogs('open'),
         fetchScanHistory(),
+        fetchMatches(),
       ]);
       setScanLogs(scanLogsData || []);
       const mapped = (frauds || []).map(f => ({
@@ -48,9 +49,20 @@ export default function SupervisorDashboardScreen({ navigation }) {
         details: f.details,
         staff: f.scannedBy?.name || 'Gate staff',
         timestamp: f.timestamp || f.createdAt,
-        status: 'open',
+        status: f.status || 'open',
       }));
       setIncidents(mapped);
+
+      const todayMatch = (matchesData || []).find(m => m.status === 'live') || (matchesData || [])[0];
+      if (todayMatch) {
+        setActiveMatch(todayMatch);
+        try {
+          const gateStats = await fetchGateStats(todayMatch._id);
+          setGates(gateStats || []);
+        } catch {
+          setGates([]);
+        }
+      }
     } catch (e) {
       console.log('Supervisor dashboard error:', e.message);
     } finally {
@@ -108,7 +120,6 @@ export default function SupervisorDashboardScreen({ navigation }) {
             <TouchableOpacity
               style={styles.alertCard}
               activeOpacity={0.9}
-              onPress={() => navigation.navigate('SupervisorIncidents')}
             >
               <View style={styles.alertInner}>
                 <View style={styles.alertLeft}>
@@ -151,29 +162,47 @@ export default function SupervisorDashboardScreen({ navigation }) {
         <View style={styles.section}>
           <View style={styles.sectionHead}>
             <Text style={styles.sectionTitle}>Gate Status</Text>
-            <Text style={styles.sectionSub}>{scanLogs.length} total scans today</Text>
+            {activeMatch && <Text style={styles.sectionSub}>{activeMatch.title}</Text>}
           </View>
-          {GATE_LABELS.map((name, idx) => (
-            <View key={name} style={styles.gateCard}>
-              <View style={styles.gateInner}>
-                <View style={styles.gateLeft}>
-                  <View style={[styles.gateStatusDot, { backgroundColor: colors.success }]} />
-                  <View>
-                    <Text style={styles.gateName}>{name}</Text>
+          {gates.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyIcon}>📡</Text>
+              <Text style={styles.emptyTitle}>No gate data</Text>
+              <Text style={styles.emptyDesc}>Assign staff to gates for match data</Text>
+            </View>
+          ) : (
+            gates.map((gate) => (
+              <View key={gate.gate} style={styles.gateCard}>
+                <View style={styles.gateInner}>
+                  <View style={styles.gateLeft}>
+                    <View style={[styles.gateStatusDot, { backgroundColor: gate.online ? colors.success : colors.textMuted }]} />
+                    <View>
+                      <Text style={styles.gateName}>{gate.gate}</Text>
+                      <Text style={styles.gateStaff}>{(gate.staff || []).join(', ') || 'Unassigned'}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.gateRight}>
+                    <Text style={styles.gateScans}>{gate.scanned}</Text>
+                    <Text style={styles.gateErrors}>scanned</Text>
                   </View>
                 </View>
               </View>
-            </View>
-          ))}
+            ))
+          )}
+          <TouchableOpacity
+            style={styles.analyticsLink}
+            onPress={() => navigation.navigate('GateAnalytics')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.analyticsLinkText}>View Full Gate Analytics →</Text>
+          </TouchableOpacity>
         </View>
 
         {/* ═══ RECENT INCIDENTS ═══ */}
         <View style={styles.section}>
           <View style={styles.sectionHead}>
             <Text style={styles.sectionTitle}>Recent Incidents</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('SupervisorIncidents')} activeOpacity={0.7}>
-              <Text style={styles.seeAll}>View All →</Text>
-            </TouchableOpacity>
+            <View />
           </View>
           {isLoading ? (
             <ActivityIndicator color={colors.primary} style={{ paddingVertical: spacing.xl }} />
@@ -249,6 +278,13 @@ const styles = StyleSheet.create({
   gateRight: { alignItems: 'flex-end' },
   gateScans: { color: colors.primary, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
   gateErrors: { color: colors.danger, fontSize: 9, marginTop: 2 },
+
+  analyticsLink: {
+    paddingVertical: spacing.lg, alignItems: 'center',
+    backgroundColor: 'rgba(123,97,255,0.08)', borderRadius: radii.lg,
+    borderWidth: 1, borderColor: 'rgba(123,97,255,0.25)', marginTop: spacing.sm,
+  },
+  analyticsLinkText: { color: colors.primary, fontSize: typography.small.fontSize, fontWeight: '800' },
 
   incidentCard: { marginBottom: spacing.sm, backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border },
   incidentInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.xl, gap: spacing.md },

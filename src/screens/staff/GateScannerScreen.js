@@ -9,7 +9,7 @@ import { formatTimeInNepal } from '../../utils/date';
 import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
-import { fetchScanHistory, verifyTicketCode } from '../../services/ticketService';
+import { fetchScanHistory, verifyTicketCode, fetchMyActiveShift } from '../../services/ticketService';
 
 const isSecureContext = Platform.OS !== 'web'
   || typeof window === 'undefined'
@@ -25,13 +25,18 @@ export default function GateScannerScreen({ navigation }) {
   const [scannerActive, setScannerActive] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [cameraError, setCameraError] = useState(null);
+  const [activeShift, setActiveShift] = useState(null);
   const scanningRef = useRef(false);
   const [permission, requestPermission] = useCameraPermissions();
 
   const loadHistory = useCallback(async () => {
     try {
-      const historyData = await fetchScanHistory();
-      setScanHistory(historyData);
+      const [historyData, shift] = await Promise.all([
+        fetchScanHistory(),
+        fetchMyActiveShift(),
+      ]);
+      setScanHistory(historyData || []);
+      setActiveShift(shift);
     } catch {
       // Quietly ignore
     } finally {
@@ -221,6 +226,12 @@ export default function GateScannerScreen({ navigation }) {
         />
 
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}>
+          {activeShift && (
+            <View style={styles.shiftBanner}>
+              <Text style={styles.shiftBannerGate}>{activeShift.gate}</Text>
+              <Text style={styles.shiftBannerMatch}>{activeShift.match?.title || 'Today\'s Match'}</Text>
+            </View>
+          )}
           {scannerActive ? (
             renderCamera()
           ) : (
@@ -595,5 +606,24 @@ const styles = StyleSheet.create({
     color: colors.success,
     ...typography.tiny,
     fontWeight: '800',
+  },
+
+  shiftBanner: {
+    backgroundColor: colors.primary,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    alignItems: 'center',
+  },
+  shiftBannerGate: {
+    color: '#FFF',
+    fontSize: typography.h3.fontSize,
+    fontWeight: '900',
+  },
+  shiftBannerMatch: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: typography.captionMedium.fontSize,
+    fontWeight: '600',
+    marginTop: 2,
   },
 });
