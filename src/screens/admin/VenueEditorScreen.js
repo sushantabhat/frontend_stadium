@@ -61,6 +61,7 @@ export default function VenueEditorScreen({ navigation, route }) {
 
   const [venueName, setVenueName] = useState(venue?.name || '');
   const [venueLocation, setVenueLocation] = useState(venue?.location || '');
+  const [errors, setErrors] = useState({});
   const [pricing, setPricing] = useState(() => {
     if (venue) return buildPricingFromVenue(venue);
     const result = {};
@@ -101,10 +102,22 @@ export default function VenueEditorScreen({ navigation, route }) {
   };
 
   const saveVenue = async () => {
-    if (!venueName.trim()) {
-      Alert.alert('Name required', 'Please enter a venue name.');
+    const newErrors = {};
+    if (!venueName.trim()) newErrors.name = 'Venue name is required';
+    if (!venueLocation.trim()) newErrors.location = 'Location is required';
+    if (sections.length === 0) newErrors.sections = 'Add at least one stadium section';
+    const missing = sections.filter((s) => !s.polygon);
+    if (missing.length > 0) newErrors.sections = `${missing.length} section(s) missing stadium map shape`;
+    const usedCategories = [...new Set(sections.map((s) => s.category))];
+    const zeroPricing = usedCategories.filter((cat) => !pricing[cat] || Number(pricing[cat]) === 0);
+    if (zeroPricing.length > 0) {
+      newErrors.pricing = `Set price for: ${zeroPricing.join(', ')}`;
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+    setErrors({});
     setIsSaving(true);
     try {
       const pricingObj = {};
@@ -168,21 +181,23 @@ export default function VenueEditorScreen({ navigation, route }) {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <Text style={styles.inputLabel}>Venue Name</Text>
           <TextInput
-            style={styles.inputField}
+            style={[styles.inputField, errors.name && styles.inputError]}
             placeholder="e.g. Tribhuvan University International Cricket Ground"
             placeholderTextColor={glass.textMuted}
             value={venueName}
-            onChangeText={setVenueName}
+            onChangeText={(v) => { setVenueName(v); if (errors.name) setErrors((p) => { const n = { ...p }; delete n.name; return n; }); }}
           />
+          {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
           <Text style={styles.inputLabel}>Location</Text>
           <TextInput
-            style={styles.inputField}
+            style={[styles.inputField, errors.location && styles.inputError]}
             placeholder="e.g. Kirtipur, Kathmandu"
             placeholderTextColor={glass.textMuted}
             value={venueLocation}
-            onChangeText={setVenueLocation}
+            onChangeText={(v) => { setVenueLocation(v); if (errors.location) setErrors((p) => { const n = { ...p }; delete n.location; return n; }); }}
           />
+          {errors.location && <Text style={styles.errorText}>{errors.location}</Text>}
 
           {/* PRICING */}
           <View style={styles.sectionCard}>
@@ -190,6 +205,8 @@ export default function VenueEditorScreen({ navigation, route }) {
               <View style={[styles.sectionDot, { backgroundColor: glass.statusSuccessText }]} />
               <Text style={styles.sectionTitle}>Category Pricing</Text>
             </View>
+
+            {errors.pricing && <Text style={styles.errorText}>{errors.pricing}</Text>}
 
             {CATEGORY_OPTIONS.map((cat) => {
               const catIndex = CATEGORY_OPTIONS.indexOf(cat);
@@ -218,6 +235,8 @@ export default function VenueEditorScreen({ navigation, route }) {
             <Text style={styles.hint}>
               Define sections with SVG polygons for the interactive stadium map. Each section maps to a category.
             </Text>
+
+            {errors.sections && <Text style={styles.errorText}>{errors.sections}</Text>}
 
             {sections.map((section, index) => (
               <View key={index} style={styles.sectionItem}>
@@ -416,6 +435,8 @@ const styles = StyleSheet.create({
     color: colors.textPrimary, fontSize: typography.body.fontSize,
     marginBottom: spacing.md, minHeight: 48,
   },
+  inputError: { borderColor: '#FF4757' },
+  errorText: { color: '#FF4757', fontSize: 11, fontWeight: '600', marginBottom: spacing.md, marginTop: -spacing.sm },
   row: { flexDirection: 'row', gap: spacing.md },
   halfField: { flex: 1 },
   hint: { color: glass.textSecondary, fontSize: typography.small.fontSize, lineHeight: 18, marginBottom: spacing.lg },

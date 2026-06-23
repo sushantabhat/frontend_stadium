@@ -201,6 +201,11 @@ export default function AdminEditMatchScreen({ route, navigation }) {
     if (!form.teamB.trim()) newErrors.teamB = 'Team B is required';
     if (!form.venue.trim()) newErrors.venue = 'Venue is required';
     if (!form.matchDate) newErrors.matchDate = 'Date & time is required';
+    const usedCategories = [...new Set(sections.map((s) => s.category))];
+    const zeroPricing = usedCategories.filter((cat) => !pricing[cat] || Number(pricing[cat]) === 0);
+    if (zeroPricing.length > 0) {
+      newErrors.pricing = `Set price for: ${zeroPricing.join(', ')}`;
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -433,6 +438,8 @@ export default function AdminEditMatchScreen({ route, navigation }) {
               <View style={[styles.sectionDot, { backgroundColor: glass.statusSuccessText }]} />
               <Text style={styles.sectionTitle}>Category Pricing</Text>
             </View>
+
+            {errors.pricing && <Text style={styles.errorText}>{errors.pricing}</Text>}
 
             {CATEGORY_OPTIONS.map((cat) => (
               <View key={cat} style={styles.priceRow}>

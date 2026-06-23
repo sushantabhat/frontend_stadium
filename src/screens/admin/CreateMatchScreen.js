@@ -165,6 +165,7 @@ export default function CreateMatchScreen({ navigation }) {
 
       Alert.alert('Success', 'Match created.', [
         { text: 'View Match', onPress: () => navigation.replace('AdminMatchDetail', { matchId: match._id }) },
+        { text: 'Done', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
       Alert.alert('Error', error.response?.data?.message || 'Failed to create match');

@@ -110,11 +110,14 @@ export default function PolygonEditor({
   const handleTouchStart = useCallback((evt) => {
     const { locationX, locationY } = evt.nativeEvent;
     const svgPt = touchToSvg(locationX, locationY);
-    if (!svgPt || pointsRef.current.length === 0) return;
+    if (!svgPt) return;
+
+    const pts = pointsRef.current;
+    if (pts.length === 0) return;
 
     let closest = 0;
     let minDist = Infinity;
-    pointsRef.current.forEach((p, i) => {
+    pts.forEach((p, i) => {
       const d = Math.hypot(p.x - svgPt.x, p.y - svgPt.y);
       if (d < minDist) { minDist = d; closest = i; }
     });
@@ -123,6 +126,35 @@ export default function PolygonEditor({
       setDragIdx(closest);
     }
   }, [touchToSvg]);
+
+  const addPoint = useCallback(() => {
+    setPoints((prev) => {
+      if (prev.length < 2) return prev;
+      const c = centroid(prev);
+      const mid = {
+        x: Math.round((prev[prev.length - 1].x + prev[0].x) / 2),
+        y: Math.round((prev[prev.length - 1].y + prev[0].y) / 2),
+      };
+      const next = [...prev, mid];
+      pointsRef.current = next;
+      emit(next);
+      return next;
+    });
+  }, [emit]);
+
+  const removeLast = useCallback(() => {
+    setPoints((prev) => {
+      if (prev.length < 1) return prev;
+      const next = prev.slice(0, -1);
+      pointsRef.current = next;
+      if (next.length === 0) {
+        onPolygonChange?.('');
+      } else {
+        emit(next);
+      }
+      return next;
+    });
+  }, [emit, onPolygonChange]);
 
   const handleTouchMove = useCallback((evt) => {
     if (dragIdx === null) return;
@@ -162,6 +194,7 @@ export default function PolygonEditor({
           }}
           onStartShouldSetResponder={() => true}
           onMoveShouldSetResponder={() => true}
+          onResponderTerminationRequest={() => false}
           onResponderGrant={handleTouchStart}
           onResponderMove={handleTouchMove}
           onResponderRelease={handleTouchEnd}
@@ -249,9 +282,9 @@ export default function PolygonEditor({
             <Text style={[styles.badgeText, { color: col }]}>{sectionLabel}</Text>
           </View>
           {points.length > 0 ? (
-            <Text style={styles.pointCount}>{points.length} pts — drag dots or use arrows</Text>
+            <Text style={styles.pointCount}>{points.length} pts — drag dots to adjust</Text>
           ) : (
-            <Text style={styles.pointCount}>Pick a shape or tap map to draw</Text>
+            <Text style={styles.pointCount}>Pick a preset to start</Text>
           )}
         </View>
 
@@ -265,9 +298,19 @@ export default function PolygonEditor({
         </ScrollView>
 
         {points.length > 0 && (
-          <TouchableOpacity style={styles.clearBtn} onPress={clear} activeOpacity={0.7}>
-            <Text style={styles.clearBtnText}>Clear</Text>
-          </TouchableOpacity>
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.pointBtn} onPress={addPoint} activeOpacity={0.7}>
+              <Text style={styles.pointBtnText}>+ Add vertex</Text>
+            </TouchableOpacity>
+            {points.length >= 3 && (
+              <TouchableOpacity style={styles.pointBtnOutline} onPress={removeLast} activeOpacity={0.7}>
+                <Text style={styles.pointBtnTextOutline}>− Remove last</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={styles.clearBtn} onPress={clear} activeOpacity={0.7}>
+              <Text style={styles.clearBtnText}>Clear</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </View>
@@ -295,6 +338,11 @@ const styles = StyleSheet.create({
   presetChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.04)', marginRight: spacing.sm },
   presetDot: { width: 7, height: 7, borderRadius: 4 },
   presetLabel: { color: colors.textSecondary, fontSize: typography.tiny.fontSize, fontWeight: '700' },
-  clearBtn: { paddingVertical: spacing.sm, borderRadius: radii.sm, alignItems: 'center', backgroundColor: 'rgba(255,59,48,0.1)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)' },
+  clearBtn: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: radii.sm, alignItems: 'center', backgroundColor: 'rgba(255,59,48,0.1)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)' },
   clearBtnText: { color: '#FF3B30', fontSize: typography.tiny.fontSize, fontWeight: '700' },
+  actionRow: { flexDirection: 'row', gap: spacing.sm },
+  pointBtn: { flex: 1, paddingVertical: spacing.sm, borderRadius: radii.sm, alignItems: 'center', backgroundColor: '#6C5CE7', borderWidth: 1, borderColor: 'rgba(108,92,231,0.3)' },
+  pointBtnText: { color: '#FFF', fontSize: typography.tiny.fontSize, fontWeight: '700' },
+  pointBtnOutline: { flex: 1, paddingVertical: spacing.sm, borderRadius: radii.sm, alignItems: 'center', backgroundColor: 'rgba(255,59,48,0.1)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)' },
+  pointBtnTextOutline: { color: '#FF3B30', fontSize: typography.tiny.fontSize, fontWeight: '700' },
 });

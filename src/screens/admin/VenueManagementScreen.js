@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  RefreshControl,
   StatusBar,
   StyleSheet,
   Text,
@@ -13,6 +14,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import ScreenHeader from '../../components/ScreenHeader';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 import { fetchVenues, deleteVenue } from '../../services/venueService';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 
@@ -20,7 +23,8 @@ export default function VenueManagementScreen({ navigation }) {
   const [venues, setVenues] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const loadVenues = useCallback(async () => {
+  const loadVenues = useCallback(async (refreshing = false) => {
+    if (!refreshing) setLoading(true);
     try {
       const data = await fetchVenues();
       setVenues(data);
@@ -30,6 +34,8 @@ export default function VenueManagementScreen({ navigation }) {
       setLoading(false);
     }
   }, []);
+
+  const { refreshing, onRefresh } = useRefresh(() => loadVenues(true));
 
   useFocusEffect(useCallback(() => {
     loadVenues();
@@ -110,6 +116,8 @@ export default function VenueManagementScreen({ navigation }) {
         onBack={() => navigation.goBack()}
       />
 
+      <RefreshBar refreshing={refreshing} />
+
       <View style={styles.headerActions}>
         <TouchableOpacity
           style={styles.addBtn}
@@ -133,6 +141,7 @@ export default function VenueManagementScreen({ navigation }) {
         renderItem={renderVenueItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
             <Text style={styles.emptyIcon}>🏟️</Text>
