@@ -1,9 +1,10 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../../services/notificationService';
+import { NotificationContext } from '../../context/NotificationContext';
 import ScreenHeader from '../../components/ScreenHeader';
 import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
@@ -17,6 +18,7 @@ const TYPE_CONFIG = {
 };
 
 export default function NotificationsScreen({ navigation }) {
+  const { refreshUnreadCount } = useContext(NotificationContext);
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,6 +38,7 @@ export default function NotificationsScreen({ navigation }) {
     try {
       await markAllNotificationsRead();
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      refreshUnreadCount();
     } catch {}
   };
 
@@ -44,6 +47,7 @@ export default function NotificationsScreen({ navigation }) {
       try {
         await markNotificationRead(item._id);
         setNotifications(prev => prev.map(n => n._id === item._id ? { ...n, read: true } : n));
+        refreshUnreadCount();
       } catch {}
     }
     if (item.data?.matchId) {

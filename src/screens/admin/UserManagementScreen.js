@@ -32,7 +32,7 @@ const ROLE_COLORS = {
 };
 const AVATAR_COLORS = ['#4F8EF7', '#F59E0B', glass.brandPurple, '#22C55E', '#EC4899'];
 const FILTERS = [
-  { key: null, label: 'All' },
+  { key: 'all', label: 'All' },
   { key: 'user', label: 'Fans' },
   { key: 'staff', label: 'Staff' },
   { key: 'active', label: 'Active' },
@@ -67,7 +67,7 @@ export default function UserManagementScreen({ navigation }) {
   const initials = (userInfo?.name || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState(null);
+  const [filter, setFilter] = useState('all');
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(null);
   const [showDelete, setShowDelete] = useState(null);
@@ -77,7 +77,8 @@ export default function UserManagementScreen({ navigation }) {
   const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role: 'user' });
   const [editForm, setEditForm] = useState({ name: '', email: '', role: 'user', status: 'active' });
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (refreshing = false) => {
+    if (!refreshing) setIsLoading(true);
     try {
       const data = await fetchUsers();
       setUsers(data);
@@ -96,14 +97,13 @@ export default function UserManagementScreen({ navigation }) {
     let list = users;
     if (filter === 'active') list = list.filter((u) => u.status === 'active');
     else if (filter === 'suspended') list = list.filter((u) => u.status === 'suspended');
-    else if (filter) list = list.filter((u) => u.role === filter);
+    else if (filter && filter !== 'all') list = list.filter((u) => u.role === filter);
 
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((u) =>
         u.name?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        u.role?.toLowerCase().includes(q)
+        u.email?.toLowerCase().includes(q)
       );
     }
     return list;

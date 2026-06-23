@@ -9,6 +9,7 @@ import GateScannerScreen from '../screens/staff/GateScannerScreen';
 import TicketVerifyScreen from '../screens/staff/TicketVerifyScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import SettingsScreen from '../screens/common/SettingsScreen';
+import TicketValidationScreen from '../screens/admin/TicketValidationScreen';
 import { useBackgroundColor } from '../context/ThemeContext';
 import TabBar, { tabBarStyle } from '../components/TabBar';
 
@@ -16,6 +17,7 @@ const Tab = createBottomTabNavigator();
 const IncidentsStack = createStackNavigator();
 const OverrideStack = createStackNavigator();
 const ScannerStack = createStackNavigator();
+const TicketsStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 
 const screenOptions = { headerShown: false };
@@ -49,6 +51,15 @@ function ScannerNavigator() {
   );
 }
 
+function TicketsNavigator() {
+  const bgColor = useBackgroundColor();
+  return (
+    <TicketsStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
+      <TicketsStack.Screen name="SupervisorTicketValidation" component={TicketValidationScreen} />
+    </TicketsStack.Navigator>
+  );
+}
+
 function ProfileNavigator() {
   const bgColor = useBackgroundColor();
   return (
@@ -70,8 +81,9 @@ export default function SupervisorTabNavigator() {
       })}
     >
       <Tab.Screen name="Incidents" component={IncidentsNavigator} />
-      <Tab.Screen name="Override" component={OverrideNavigator} />
+      <Tab.Screen name="Tickets" component={TicketsNavigator} />
       <Tab.Screen name="Scanner" component={ScannerNavigator} />
+      <Tab.Screen name="Override" component={OverrideNavigator} />
       <Tab.Screen name="Account" component={ProfileNavigator} />
     </Tab.Navigator>
   );

@@ -10,6 +10,11 @@ export async function fetchFraudLogs() {
   return response.data.fraudLogs;
 }
 
+export async function fetchAllTickets() {
+  const response = await api.get('/api/admin/tickets');
+  return response.data.tickets;
+}
+
 export async function fetchUsers(role) {
   const params = role ? { role } : {};
   const response = await api.get('/api/admin/users', { params });
