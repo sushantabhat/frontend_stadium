@@ -6,6 +6,9 @@ import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import AdminMatchListScreen from '../screens/admin/AdminMatchListScreen';
 import CreateMatchScreen from '../screens/admin/CreateMatchScreen';
 import AdminEditMatchScreen from '../screens/admin/AdminEditMatchScreen';
+import VenueManagementScreen from '../screens/admin/VenueManagementScreen';
+import VenueEditorScreen from '../screens/admin/VenueEditorScreen';
+import StadiumViewScreen from '../screens/admin/StadiumViewScreen';
 import MatchDetailScreen from '../screens/matches/MatchDetailScreen';
 import StatisticsScreen from '../screens/admin/StatisticsScreen';
 import TicketValidationScreen from '../screens/admin/TicketValidationScreen';
@@ -47,6 +50,9 @@ function MatchesNavigator() {
       <MatchesStack.Screen name="AdminMatchList" component={AdminMatchListScreen} />
       <MatchesStack.Screen name="AdminCreateMatch" component={CreateMatchScreen} />
       <MatchesStack.Screen name="AdminEditMatch" component={AdminEditMatchScreen} />
+      <MatchesStack.Screen name="AdminVenueManagement" component={VenueManagementScreen} />
+      <MatchesStack.Screen name="AdminVenueEditor" component={VenueEditorScreen} />
+      <MatchesStack.Screen name="AdminStadiumView" component={StadiumViewScreen} />
       <MatchesStack.Screen name="AdminMatchDetail" component={MatchDetailScreen} />
     </MatchesStack.Navigator>
   );

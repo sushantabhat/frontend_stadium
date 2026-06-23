@@ -537,6 +537,14 @@ export default function AdminMatchListScreen({ navigation }) {
 
       {renderDetailModal()}
 
+      <TouchableOpacity
+        style={[s.venuesFab]}
+        onPress={() => navigation.navigate('AdminVenueManagement')}
+        activeOpacity={0.85}
+      >
+        <Text style={s.venuesFabIcon}>🏟️</Text>
+        <Text style={s.venuesFabLabel}>Venues</Text>
+      </TouchableOpacity>
       <FAB icon="+" label="New" onPress={() => navigation.navigate('AdminCreateMatch')} />
     </SafeAreaView>
     </View>
@@ -973,4 +981,23 @@ const s = StyleSheet.create({
     fontSize: typography.captionMedium.fontSize,
     fontWeight: '700',
   },
+  venuesFab: {
+    position: 'absolute',
+    bottom: spacing.xxl + 64,
+    right: spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radii.full,
+    backgroundColor: glass.brandPurple,
+    elevation: 6,
+    shadowColor: glass.brandPurple,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+  },
+  venuesFabIcon: { color: '#FFF', fontSize: 18 },
+  venuesFabLabel: { color: '#FFF', fontSize: 14, fontWeight: '800', letterSpacing: 0.3 },
 });

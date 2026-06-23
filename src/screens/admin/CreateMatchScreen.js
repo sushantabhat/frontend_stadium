@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,10 +15,11 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import ScreenHeader from '../../components/ScreenHeader';
-import PolygonEditor from '../../components/stadium/PolygonEditor';
 import ImagePickerField from '../../components/ImagePickerField';
 import { createMatch } from '../../services/matchService';
+import { fetchVenues } from '../../services/venueService';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
 const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
@@ -33,26 +34,6 @@ const DEFAULT_FORM = {
   imageUrl: '',
   teamALogo: '',
   teamBLogo: '',
-};
-
-const DEFAULT_PRICING = {
-  platinum: '3500',
-  gold: '2500',
-  silver: '1500',
-  bronze: '800',
-  general: '300',
-  supporters: '150',
-};
-
-const EMPTY_SECTION = {
-  sectionId: '',
-  category: 'platinum',
-  label: '',
-  color: '#E8E8E8',
-  pricePerTicket: '3500',
-  totalSeats: '20',
-  rows: 'A,B,C',
-  polygon: '',
 };
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -89,8 +70,6 @@ function formatDisplayDate(dateStr) {
 
 export default function CreateMatchScreen({ navigation }) {
   const [form, setForm] = useState(DEFAULT_FORM);
-  const [pricing, setPricing] = useState(DEFAULT_PRICING);
-  const [sections, setSections] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(CURRENT_YEAR);
@@ -98,44 +77,35 @@ export default function CreateMatchScreen({ navigation }) {
   const [pickerDay, setPickerDay] = useState(new Date().getDate());
   const [pickerHour, setPickerHour] = useState(18);
   const [pickerMinute, setPickerMinute] = useState(0);
-  const [polygonEditorIndex, setPolygonEditorIndex] = useState(null);
   const [errors, setErrors] = useState({});
+
+  const [venues, setVenues] = useState([]);
+  const [selectedVenue, setSelectedVenue] = useState(null);
+  const [showVenuePicker, setShowVenuePicker] = useState(false);
+  const [matchPricing, setMatchPricing] = useState({});
 
   const maxDays = getDaysInMonth(pickerYear, pickerMonth);
   const clampedDay = Math.min(pickerDay, maxDays);
+
+  useFocusEffect(useCallback(() => {
+    fetchVenues().then(setVenues).catch(() => {});
+  }, []));
 
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => { const n = { ...prev }; delete n[field]; return n; });
   };
-  const updatePricing = (cat, value) => setPricing((prev) => ({ ...prev, [cat]: value }));
 
-  const updateSection = (index, field, value) => {
-    setSections((prev) => {
-      const next = [...prev];
-      next[index] = { ...next[index], [field]: value };
-      if (field === 'category') {
-        const catKey = value;
-        next[index].color = CATEGORY_COLORS[catKey]?.accent || '#888888';
-        next[index].pricePerTicket = pricing[catKey] || '0';
-      }
-      return next;
-    });
+  const selectVenue = (venue) => {
+    setSelectedVenue(venue);
+    updateField('venue', venue.name);
+    const vp = {};
+    for (const cat of CATEGORY_OPTIONS) {
+      vp[cat] = venue.pricing?.[cat] != null ? String(venue.pricing[cat]) : '0';
+    }
+    setMatchPricing(vp);
+    setShowVenuePicker(false);
   };
-
-  const addSection = () => {
-    setSections((prev) => {
-      const idx = prev.length;
-      return [...prev, { ...EMPTY_SECTION, sectionId: `S${idx + 1}` }];
-    });
-  };
-
-  const removeSection = (index) => {
-    setSections((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const openPolygonEditor = (index) => setPolygonEditorIndex(index);
-  const closePolygonEditor = () => setPolygonEditorIndex(null);
 
   const handleDateConfirm = () => {
     const iso = formatDateISO(pickerYear, pickerMonth, clampedDay, pickerHour, pickerMinute);
@@ -163,42 +133,37 @@ export default function CreateMatchScreen({ navigation }) {
 
     setIsSubmitting(true);
     try {
-      const pricingObj = {};
-      for (const [key, val] of Object.entries(pricing)) {
-        pricingObj[key] = Number(val) || 0;
-      }
+      const payload = { ...form };
 
-      const stadiumSections = sections
-        .filter((s) => s.sectionId.trim())
-        .map((s) => ({
-          sectionId: s.sectionId.trim(),
+      if (selectedVenue) {
+        const pricingObj = {};
+        for (const [key, val] of Object.entries(matchPricing)) {
+          pricingObj[key] = Number(val) || 0;
+        }
+        payload.pricing = pricingObj;
+
+        const stadiumSections = (selectedVenue.stadiumSections || []).map((s) => ({
+          sectionId: s.sectionId,
           category: s.category,
-          label: s.label.trim() || s.sectionId.trim(),
+          label: s.label || s.sectionId,
           color: s.color,
           polygon: s.polygon || '',
           pricePerTicket: Number(s.pricePerTicket) || 0,
           totalSeats: Number(s.totalSeats) || 0,
           availableSeats: Number(s.totalSeats) || 0,
-          rows: s.rows
-            .split(',')
-            .map((r) => r.trim())
-            .filter(Boolean),
+          rows: Array.isArray(s.rows) ? s.rows : [],
         }));
 
-      const payload = {
-        ...form,
-        pricing: pricingObj,
-      };
-
-      if (stadiumSections.length > 0) {
-        payload.stadiumSections = stadiumSections;
-      } else {
-        payload.seatLayout = { rows: 10, seatsPerRow: 20, vipRows: 2, premiumRows: 3 };
+        if (stadiumSections.length > 0) {
+          payload.stadiumSections = stadiumSections;
+        } else {
+          payload.seatLayout = selectedVenue.seatLayout || { rows: 10, seatsPerRow: 20, vipRows: 2, premiumRows: 3 };
+        }
       }
 
       const match = await createMatch(payload);
 
-      Alert.alert('Success', 'Match created with stadium layout.', [
+      Alert.alert('Success', 'Match created.', [
         { text: 'View Match', onPress: () => navigation.replace('AdminMatchDetail', { matchId: match._id }) },
       ]);
     } catch (error) {
@@ -213,7 +178,7 @@ export default function CreateMatchScreen({ navigation }) {
       <StatusBar barStyle="light-content" />
       <ScreenHeader
         title="Create Match"
-        subtitle="Define event details, pricing, and stadium layout"
+        subtitle="Define event details and select a venue"
         onBack={() => navigation.goBack()}
       />
 
@@ -265,13 +230,27 @@ export default function CreateMatchScreen({ navigation }) {
             </View>
 
             <Text style={styles.inputLabel}>Venue</Text>
-            <TextInput
-              style={[styles.inputField, errors.venue && styles.inputError]}
-              placeholder="Smart Stadium Arena"
-              placeholderTextColor={glass.textMuted}
-              value={form.venue}
-              onChangeText={(v) => updateField('venue', v)}
-            />
+            <TouchableOpacity
+              style={[styles.datePickerTrigger, errors.venue && styles.inputError]}
+              onPress={() => setShowVenuePicker(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.datePickerIcon}>🏟️</Text>
+              <View style={styles.datePickerTextWrap}>
+                {selectedVenue ? (
+                  <>
+                    <Text style={styles.datePickerValue}>{selectedVenue.name}</Text>
+                    <Text style={styles.datePickerHint}>{selectedVenue.location || 'Tap to change'}</Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.datePickerPlaceholder}>Select venue</Text>
+                    <Text style={styles.datePickerHint}>{venues.length} venues available</Text>
+                  </>
+                )}
+              </View>
+              <Text style={styles.datePickerChevron}>›</Text>
+            </TouchableOpacity>
             {errors.venue && <Text style={styles.errorText}>{errors.venue}</Text>}
 
             <Text style={styles.inputLabel}>Match Date & Time</Text>
@@ -338,162 +317,32 @@ export default function CreateMatchScreen({ navigation }) {
             </View>
           </View>
 
-          {/* PRICING */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionDot, { backgroundColor: glass.statusSuccessText }]} />
-              <Text style={styles.sectionTitle}>Category Pricing</Text>
-            </View>
-
-            {CATEGORY_OPTIONS.map((cat) => (
-              <View key={cat} style={styles.priceRow}>
-                <View style={[styles.priceDot, { backgroundColor: CATEGORY_COLORS[cat].accent }]} />
-                <Text style={styles.priceLabel}>{CATEGORY_COLORS[cat].label}</Text>
-                <TextInput
-                  style={styles.priceInput}
-                  keyboardType="numeric"
-                  value={pricing[cat]}
-                  onChangeText={(v) => updatePricing(cat, v)}
-                />
+          {/* PRICING OVERRIDE */}
+          {selectedVenue && (
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionHeader}>
+                <View style={[styles.sectionDot, { backgroundColor: glass.statusSuccessText }]} />
+                <Text style={styles.sectionTitle}>Ticket Pricing</Text>
               </View>
-            ))}
-          </View>
+              <Text style={styles.hint}>Override prices from venue defaults for this match.</Text>
 
-          {/* STADIUM SECTIONS */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionDot, { backgroundColor: glass.statusWarningText }]} />
-              <Text style={styles.sectionTitle}>Stadium Sections</Text>
-            </View>
-
-            <Text style={styles.hint}>
-              Define sections with SVG polygons for the interactive stadium map. Each section maps to a category.
-            </Text>
-
-            {sections.map((section, index) => (
-              <View key={index} style={styles.sectionItem}>
-                <View style={styles.sectionItemHeader}>
-                  <Text style={styles.sectionItemTitle}>Section {index + 1}</Text>
-                  <TouchableOpacity onPress={() => removeSection(index)} style={styles.removeBtn}>
-                    <Text style={styles.removeBtnText}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.row}>
-                  <View style={styles.halfField}>
-                    <Text style={styles.inputLabel}>Section ID</Text>
+              {CATEGORY_OPTIONS.map((cat) => {
+                const catData = CATEGORY_COLORS[cat];
+                return (
+                  <View key={cat} style={styles.priceRow}>
+                    <View style={[styles.priceDot, { backgroundColor: catData?.accent }]} />
+                    <Text style={styles.priceLabel}>{catData?.label}</Text>
                     <TextInput
-                      style={styles.inputField}
-                      placeholder="318"
-                      placeholderTextColor={glass.textMuted}
-                      value={section.sectionId}
-                      onChangeText={(v) => updateSection(index, 'sectionId', v)}
-                    />
-                  </View>
-                  <View style={styles.halfField}>
-                    <Text style={styles.inputLabel}>Category</Text>
-                    <View style={styles.categoryPicker}>
-                      {CATEGORY_OPTIONS.map((cat) => (
-                        <TouchableOpacity
-                          key={cat}
-                          style={[
-                            styles.categoryChip,
-                            section.category === cat && {
-                              borderColor: CATEGORY_COLORS[cat].accent,
-                              backgroundColor: CATEGORY_COLORS[cat].bg,
-                            },
-                          ]}
-                          onPress={() => updateSection(index, 'category', cat)}
-                          activeOpacity={0.7}
-                        >
-                          <View style={[styles.categoryDot, { backgroundColor: CATEGORY_COLORS[cat].accent }]} />
-                          <Text
-                            style={[
-                              styles.categoryChipText,
-                              section.category === cat && { color: CATEGORY_COLORS[cat].accent },
-                            ]}
-                          >
-                            {CATEGORY_COLORS[cat].label}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                </View>
-
-                <View style={styles.row}>
-                  <View style={styles.halfField}>
-                    <Text style={styles.inputLabel}>Price / Ticket</Text>
-                    <TextInput
-                      style={styles.inputField}
+                      style={styles.priceInput}
                       keyboardType="numeric"
-                      value={section.pricePerTicket}
-                      onChangeText={(v) => updateSection(index, 'pricePerTicket', v)}
+                      value={matchPricing[cat] || '0'}
+                      onChangeText={(v) => setMatchPricing((prev) => ({ ...prev, [cat]: v }))}
                     />
                   </View>
-                  <View style={styles.halfField}>
-                    <Text style={styles.inputLabel}>Total Seats</Text>
-                    <TextInput
-                      style={styles.inputField}
-                      keyboardType="numeric"
-                      value={section.totalSeats}
-                      onChangeText={(v) => updateSection(index, 'totalSeats', v)}
-                    />
-                  </View>
-                </View>
-
-                <Text style={styles.inputLabel}>Row Labels (comma separated)</Text>
-                <TextInput
-                  style={styles.inputField}
-                  placeholder="A,B,C,D"
-                  placeholderTextColor={glass.textMuted}
-                  value={section.rows}
-                  onChangeText={(v) => updateSection(index, 'rows', v)}
-                />
-
-                <Text style={styles.inputLabel}>Stadium Map Shape</Text>
-                {section.polygon ? (
-                  <View style={styles.polygonBtns}>
-                    <TouchableOpacity
-                      style={styles.polygonEditBtn}
-                      onPress={() => openPolygonEditor(index)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.polygonEditText}>Edit Shape</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.polygonClearBtn}
-                      onPress={() => updateSection(index, 'polygon', '')}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.polygonClearText}>Clear</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.polygonDrawBtn}
-                    onPress={() => openPolygonEditor(index)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.polygonDrawText}>Draw on Stadium Map</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            ))}
-
-            <TouchableOpacity style={styles.addSectionBtn} onPress={addSection} activeOpacity={0.7}>
-              <Text style={styles.addSectionBtnText}>+ Add Section</Text>
-            </TouchableOpacity>
-
-            {sections.length > 0 && (
-              <View style={styles.summaryCard}>
-                <Text style={styles.summaryText}>
-                  {sections.length} section{sections.length > 1 ? 's' : ''} ·{' '}
-                  {sections.reduce((sum, s) => sum + (Number(s.totalSeats) || 0), 0)} total seats
-                </Text>
-              </View>
-            )}
-          </View>
+                );
+              })}
+            </View>
+          )}
 
           <TouchableOpacity
             style={styles.submitButton}
@@ -510,12 +359,47 @@ export default function CreateMatchScreen({ navigation }) {
               {isSubmitting ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.submitButtonText}>Create Match & Stadium</Text>
+                <Text style={styles.submitButtonText}>Create Match</Text>
               )}
             </LinearGradient>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* VENUE PICKER MODAL */}
+      <Modal visible={showVenuePicker} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalBackdrop} onPress={() => setShowVenuePicker(false)} activeOpacity={1} />
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Select Venue</Text>
+            <ScrollView style={{ maxHeight: 350 }} showsVerticalScrollIndicator={false}>
+              {venues.length === 0 ? (
+                <Text style={styles.hint}>No venues found. Create one in Venues tab first.</Text>
+              ) : (
+                venues.map((v) => (
+                  <TouchableOpacity
+                    key={v._id}
+                    style={[styles.venueOption, selectedVenue?._id === v._id && styles.venueOptionActive]}
+                    onPress={() => selectVenue(v)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.venueOptionName}>{v.name}</Text>
+                    <Text style={styles.venueOptionMeta}>
+                      {v.location || 'No location'} · {v.stadiumSections?.length || 0} sections
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+            <View style={[styles.sheetActions, { marginTop: spacing.lg }]}>
+              <TouchableOpacity style={styles.sheetCancelBtn} onPress={() => setShowVenuePicker(false)} activeOpacity={0.7}>
+                <Text style={styles.sheetCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* DATE PICKER MODAL */}
       <Modal visible={showDatePicker} animationType="slide" transparent>
@@ -635,37 +519,6 @@ export default function CreateMatchScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-
-      {/* POLYGON EDITOR MODAL */}
-      <Modal visible={polygonEditorIndex !== null} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalBackdrop} onPress={closePolygonEditor} activeOpacity={1} />
-          <View style={styles.sheet}>
-            <View style={styles.sheetHandle} />
-            <View style={styles.sheetActions}>
-              <Text style={styles.sheetTitle}>Draw Section Polygon</Text>
-              <TouchableOpacity onPress={closePolygonEditor} activeOpacity={0.7}>
-                <Text style={styles.sheetCancelText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-            {polygonEditorIndex !== null && sections[polygonEditorIndex] && (
-              <PolygonEditor
-                existingSections={sections.filter((_, i) => i !== polygonEditorIndex)}
-                initialPolygon={sections[polygonEditorIndex].polygon || ''}
-                sectionColor={sections[polygonEditorIndex].color || '#FFD700'}
-                sectionLabel={`Section ${polygonEditorIndex + 1} — ${sections[polygonEditorIndex].sectionId || 'New'}`}
-                onPolygonChange={(path) => {
-                  setSections((prev) => {
-                    const next = [...prev];
-                    next[polygonEditorIndex] = { ...next[polygonEditorIndex], polygon: path };
-                    return next;
-                  });
-                }}
-              />
-            )}
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -684,36 +537,6 @@ const styles = StyleSheet.create({
   sectionDot: { width: 10, height: 10, borderRadius: 5 },
   sectionTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800' },
 
-  inputLabel: {
-    color: glass.textMuted, fontSize: 10, fontWeight: '700',
-    letterSpacing: 1, marginBottom: spacing.sm, textTransform: 'uppercase',
-  },
-  inputField: {
-    backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: radii.md,
-    borderWidth: 1, borderColor: glass.border, padding: spacing.md,
-    color: colors.textPrimary, fontSize: typography.body.fontSize,
-    marginBottom: spacing.md, minHeight: 48,
-  },
-  inputError: { borderColor: '#FF4757' },
-  errorText: { color: '#FF4757', fontSize: 11, fontWeight: '600', marginBottom: spacing.md, marginTop: -spacing.sm },
-  row: { flexDirection: 'row', gap: spacing.md },
-  halfField: { flex: 1 },
-  textArea: { minHeight: 80, textAlignVertical: 'top' },
-  mono: { fontFamily: glass.monoFont, fontSize: 12 },
-
-  datePickerTrigger: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: radii.md,
-    borderWidth: 1, borderColor: glass.border, padding: spacing.md,
-    marginBottom: spacing.md, gap: spacing.md,
-  },
-  datePickerIcon: { fontSize: 20 },
-  datePickerTextWrap: { flex: 1 },
-  datePickerValue: { color: colors.textPrimary, fontSize: typography.body.fontSize, fontWeight: '600', fontFamily: glass.monoFont },
-  datePickerPlaceholder: { color: glass.textMuted, fontSize: typography.body.fontSize },
-  datePickerHint: { color: glass.textMuted, fontSize: 9, marginTop: 2 },
-  datePickerChevron: { color: glass.textMuted, fontSize: 20, fontWeight: '600' },
-
   hint: { color: glass.textSecondary, fontSize: typography.small.fontSize, lineHeight: 18, marginBottom: spacing.lg },
 
   priceRow: {
@@ -729,41 +552,34 @@ const styles = StyleSheet.create({
     width: 80, textAlign: 'right', fontFamily: glass.monoFont,
   },
 
-  sectionItem: {
-    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: radii.lg,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-    padding: spacing.lg, marginBottom: spacing.md,
+  inputLabel: {
+    color: glass.textMuted, fontSize: 10, fontWeight: '700',
+    letterSpacing: 1, marginBottom: spacing.sm, textTransform: 'uppercase',
   },
-  sectionItemHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginBottom: spacing.md,
+  inputField: {
+    backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: radii.md,
+    borderWidth: 1, borderColor: glass.border, padding: spacing.md,
+    color: colors.textPrimary, fontSize: typography.body.fontSize,
+    marginBottom: spacing.md, minHeight: 48,
   },
-  sectionItemTitle: { color: colors.textPrimary, fontWeight: '700', fontSize: typography.bodyMedium.fontSize },
-  removeBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(255,59,48,0.15)', alignItems: 'center', justifyContent: 'center' },
-  removeBtnText: { color: colors.danger, fontSize: 12, fontWeight: '800' },
+  inputError: { borderColor: '#FF4757' },
+  errorText: { color: '#FF4757', fontSize: 11, fontWeight: '600', marginBottom: spacing.md, marginTop: -spacing.sm },
+  row: { flexDirection: 'row', gap: spacing.md },
+  halfField: { flex: 1 },
+  textArea: { minHeight: 80, textAlignVertical: 'top' },
 
-  categoryPicker: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.md },
-  categoryChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
-    borderRadius: radii.sm, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+  datePickerTrigger: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: radii.md,
+    borderWidth: 1, borderColor: glass.border, padding: spacing.md,
+    marginBottom: spacing.md, gap: spacing.md,
   },
-  categoryDot: { width: 6, height: 6, borderRadius: 3 },
-  categoryChipText: { color: glass.textMuted, fontSize: 9, fontWeight: '700' },
-
-  addSectionBtn: {
-    paddingVertical: spacing.md, borderRadius: radii.md,
-    borderWidth: 1.5, borderColor: glass.brandPurple, borderStyle: 'dashed',
-    alignItems: 'center', marginBottom: spacing.md,
-  },
-  addSectionBtnText: { color: glass.brandPurple, fontWeight: '700', fontSize: typography.captionMedium.fontSize },
-
-  summaryCard: {
-    backgroundColor: 'rgba(123,97,255,0.08)', borderRadius: radii.md,
-    padding: spacing.md,
-  },
-  summaryText: { color: glass.brandPurple, fontSize: typography.small.fontSize, fontWeight: '700', textAlign: 'center' },
+  datePickerIcon: { fontSize: 20 },
+  datePickerTextWrap: { flex: 1 },
+  datePickerValue: { color: colors.textPrimary, fontSize: typography.body.fontSize, fontWeight: '600', fontFamily: glass.monoFont },
+  datePickerPlaceholder: { color: glass.textMuted, fontSize: typography.body.fontSize },
+  datePickerHint: { color: glass.textMuted, fontSize: 9, marginTop: 2 },
+  datePickerChevron: { color: glass.textMuted, fontSize: 20, fontWeight: '600' },
 
   submitButton: { borderRadius: radii.lg, overflow: 'hidden' },
   submitGradient: { paddingVertical: spacing.lg, minHeight: 52, alignItems: 'center', justifyContent: 'center' },
@@ -778,6 +594,15 @@ const styles = StyleSheet.create({
   },
   sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: glass.textMuted, alignSelf: 'center', marginBottom: spacing.xl },
   sheetTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800', marginBottom: spacing.lg },
+
+  venueOption: {
+    backgroundColor: glass.card, borderRadius: radii.lg,
+    borderWidth: 1, borderColor: glass.border,
+    padding: spacing.lg, marginBottom: spacing.sm,
+  },
+  venueOptionActive: { borderColor: glass.brandPurple, backgroundColor: 'rgba(123,97,255,0.08)' },
+  venueOptionName: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '700', marginBottom: 4 },
+  venueOptionMeta: { color: glass.textSecondary, fontSize: typography.small.fontSize },
 
   datePreview: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
@@ -806,37 +631,4 @@ const styles = StyleSheet.create({
   sheetConfirmBtn: { flex: 1, borderRadius: radii.md, overflow: 'hidden' },
   sheetConfirmGradient: { paddingVertical: spacing.lg, alignItems: 'center' },
   sheetConfirmText: { color: '#FFFFFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
-
-  polygonBtns: { flexDirection: 'row', gap: spacing.sm },
-  polygonEditBtn: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.sm,
-    alignItems: 'center',
-    backgroundColor: 'rgba(108,92,231,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(108,92,231,0.4)',
-  },
-  polygonEditText: { color: glass.brandPurple, fontSize: 10, fontWeight: '700' },
-  polygonClearBtn: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.sm,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,59,48,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,59,48,0.3)',
-  },
-  polygonClearText: { color: '#FF3B30', fontSize: 10, fontWeight: '700' },
-  polygonDrawBtn: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: glass.border,
-    borderStyle: 'dashed',
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  polygonDrawText: { color: glass.brandPurple, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
 });

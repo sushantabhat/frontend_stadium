@@ -2,19 +2,24 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 function resolveApiBaseUrl() {
-  const envUrl = process.env.EXPO_PUBLIC_API_URL;
-  if (envUrl && envUrl !== '') return envUrl;
+  try {
+    const envUrl = typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL;
+    if (envUrl && envUrl !== '') return envUrl;
+  } catch {}
 
-  const debuggerHost = Constants.manifest?.debuggerHost
-    || Constants.manifest?.hostUri
-    || Constants.manifest2?.extra?.expoGo?.debuggerHost;
+  try {
+    const manifest = Constants?.manifest ?? Constants?.expoConfig ?? null;
+    const debuggerHost = manifest?.debuggerHost
+      || manifest?.hostUri
+      || manifest?.extra?.expoGo?.debuggerHost;
 
-  if (debuggerHost) {
-    const host = debuggerHost.split(':')[0];
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return `http://${host}:5009`;
+    if (debuggerHost) {
+      const host = debuggerHost.split(':')[0];
+      if (host && host !== 'localhost' && host !== '127.0.0.1') {
+        return `http://${host}:5009`;
+      }
     }
-  }
+  } catch {}
 
   if (Platform.OS === 'android') {
     return 'http://10.0.2.2:5009';
