@@ -27,9 +27,10 @@ const CATEGORY_THEMES = {
 };
 
 function getTicketDisplayStatus(ticket) {
+  if (ticket.status === 'cancelled') return 'cancelled';
   if (ticket.status === 'used') return 'used';
   const matchStatus = ticket.match?.status;
-  if (matchStatus === 'cancelled') return 'invalid';
+  if (matchStatus === 'cancelled') return 'cancelled';
   const matchDate = ticket.match?.matchDate ? new Date(ticket.match.matchDate) : null;
   if (matchStatus === 'completed' || (matchDate && matchDate < new Date())) return 'invalid';
   return 'active';
@@ -38,7 +39,8 @@ function getTicketDisplayStatus(ticket) {
 const STATUS_CONFIG = {
   active: { label: 'VALID TICKET', bg: 'rgba(0,200,83,0.15)', color: '#69F0AE' },
   used: { label: 'ALREADY USED', bg: 'rgba(255,59,48,0.15)', color: '#FF6B6B' },
-  invalid: { label: 'REFUNDED', bg: 'rgba(108,92,231,0.15)', color: '#A29BFE' },
+  cancelled: { label: 'CANCELLED', bg: 'rgba(255,59,48,0.15)', color: '#FF4757' },
+  invalid: { label: 'EXPIRED', bg: 'rgba(108,92,231,0.15)', color: '#A29BFE' },
 };
 
 function getRefundDisplay(refund) {

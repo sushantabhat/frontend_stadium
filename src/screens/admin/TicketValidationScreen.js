@@ -23,26 +23,26 @@ const STATUS_FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'valid', label: 'Valid' },
   { key: 'used', label: 'Used' },
-  { key: 'refunded', label: 'Refunded' },
+  { key: 'cancelled', label: 'Cancelled' },
 ];
 
 const STATUS_MAP = {
   valid: { label: 'Valid', color: glass.statusSuccessText, bg: glass.statusSuccessFill },
   used: { label: 'Used', color: '#FFA726', bg: 'rgba(255,167,38,0.12)' },
-  refunded: { label: 'Refunded', color: glass.statusDangerText, bg: glass.statusDangerFill },
+  cancelled: { label: 'Cancelled', color: '#FF4757', bg: 'rgba(255,71,87,0.12)' },
 };
 
 const TIER_COLORS = { platinum: '#E8E8E8', gold: '#FFD700', silver: '#A8A8A8', bronze: '#CD7F32', general: '#5B9BD5', category1: '#FFD700', category2: '#FF6B6B', category3: '#A29BFE', category4: '#EF5350', supporters: '#81C784', premium: glass.brandPurple };
 
 function normalizeTicket(ticket) {
   const category = ticket.seat?.category || 'general';
-  const matchCancelled = ticket.match?.status === 'cancelled';
   const isScanned = ticket.status === 'used' && ticket.scannedBy;
 
   let statusKey;
-  if (matchCancelled) statusKey = 'refunded';
+  if (ticket.status === 'cancelled') statusKey = 'cancelled';
   else if (isScanned) statusKey = 'used';
-  else if (ticket.status === 'used') statusKey = 'refunded';
+  else if (ticket.status === 'used') statusKey = 'cancelled';
+  else if (ticket.match?.status === 'cancelled') statusKey = 'cancelled';
   else statusKey = 'valid';
 
   return {
