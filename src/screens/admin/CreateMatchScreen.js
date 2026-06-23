@@ -99,11 +99,15 @@ export default function CreateMatchScreen({ navigation }) {
   const [pickerHour, setPickerHour] = useState(18);
   const [pickerMinute, setPickerMinute] = useState(0);
   const [polygonEditorIndex, setPolygonEditorIndex] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const maxDays = getDaysInMonth(pickerYear, pickerMonth);
   const clampedDay = Math.min(pickerDay, maxDays);
 
-  const updateField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+  const updateField = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => { const n = { ...prev }; delete n[field]; return n; });
+  };
   const updatePricing = (cat, value) => setPricing((prev) => ({ ...prev, [cat]: value }));
 
   const updateSection = (index, field, value) => {
@@ -135,17 +139,27 @@ export default function CreateMatchScreen({ navigation }) {
 
   const handleDateConfirm = () => {
     const iso = formatDateISO(pickerYear, pickerMonth, clampedDay, pickerHour, pickerMinute);
+    if (new Date(iso) <= new Date()) {
+      setErrors((prev) => ({ ...prev, matchDate: 'Date & time must be in the future' }));
+      return;
+    }
     updateField('matchDate', iso);
     setShowDatePicker(false);
   };
 
+  const validate = () => {
+    const newErrors = {};
+    if (!form.title.trim()) newErrors.title = 'Title is required';
+    if (!form.teamA.trim()) newErrors.teamA = 'Team A is required';
+    if (!form.teamB.trim()) newErrors.teamB = 'Team B is required';
+    if (!form.venue.trim()) newErrors.venue = 'Venue is required';
+    if (!form.matchDate) newErrors.matchDate = 'Date & time is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async () => {
-    const required = ['title', 'teamA', 'teamB', 'venue', 'matchDate'];
-    const missing = required.filter((field) => !form[field].trim());
-    if (missing.length > 0) {
-      Alert.alert('Missing fields', 'Please fill title, teams, venue, and match date.');
-      return;
-    }
+    if (!validate()) return;
 
     setIsSubmitting(true);
     try {
@@ -217,48 +231,52 @@ export default function CreateMatchScreen({ navigation }) {
 
             <Text style={styles.inputLabel}>Match Title</Text>
             <TextInput
-              style={styles.inputField}
+              style={[styles.inputField, errors.title && styles.inputError]}
               placeholder="T20 Final - Season Opener"
               placeholderTextColor={glass.textMuted}
               value={form.title}
               onChangeText={(v) => updateField('title', v)}
             />
+            {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
 
             <View style={styles.row}>
               <View style={styles.halfField}>
                 <Text style={styles.inputLabel}>Team A</Text>
                 <TextInput
-                  style={styles.inputField}
+                  style={[styles.inputField, errors.teamA && styles.inputError]}
                   placeholder="Nepal"
                   placeholderTextColor={glass.textMuted}
                   value={form.teamA}
                   onChangeText={(v) => updateField('teamA', v)}
                 />
+                {errors.teamA && <Text style={styles.errorText}>{errors.teamA}</Text>}
               </View>
               <View style={styles.halfField}>
                 <Text style={styles.inputLabel}>Team B</Text>
                 <TextInput
-                  style={styles.inputField}
+                  style={[styles.inputField, errors.teamB && styles.inputError]}
                   placeholder="India"
                   placeholderTextColor={glass.textMuted}
                   value={form.teamB}
                   onChangeText={(v) => updateField('teamB', v)}
                 />
+                {errors.teamB && <Text style={styles.errorText}>{errors.teamB}</Text>}
               </View>
             </View>
 
             <Text style={styles.inputLabel}>Venue</Text>
             <TextInput
-              style={styles.inputField}
+              style={[styles.inputField, errors.venue && styles.inputError]}
               placeholder="Smart Stadium Arena"
               placeholderTextColor={glass.textMuted}
               value={form.venue}
               onChangeText={(v) => updateField('venue', v)}
             />
+            {errors.venue && <Text style={styles.errorText}>{errors.venue}</Text>}
 
             <Text style={styles.inputLabel}>Match Date & Time</Text>
             <TouchableOpacity
-              style={styles.datePickerTrigger}
+              style={[styles.datePickerTrigger, errors.matchDate && styles.inputError]}
               onPress={() => setShowDatePicker(true)}
               activeOpacity={0.7}
             >
@@ -278,6 +296,7 @@ export default function CreateMatchScreen({ navigation }) {
               </View>
               <Text style={styles.datePickerChevron}>›</Text>
             </TouchableOpacity>
+            {errors.matchDate && <Text style={styles.errorText}>{errors.matchDate}</Text>}
 
             <Text style={styles.inputLabel}>Description</Text>
             <TextInput
@@ -675,6 +694,8 @@ const styles = StyleSheet.create({
     color: colors.textPrimary, fontSize: typography.body.fontSize,
     marginBottom: spacing.md, minHeight: 48,
   },
+  inputError: { borderColor: '#FF4757' },
+  errorText: { color: '#FF4757', fontSize: 11, fontWeight: '600', marginBottom: spacing.md, marginTop: -spacing.sm },
   row: { flexDirection: 'row', gap: spacing.md },
   halfField: { flex: 1 },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
