@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography, shadows } from '../constants/theme';
 import { formatInNepal, formatTimeInNepal } from '../utils/date';
+import { imageUri } from '../utils/imageUri';
 
 function getInitials(name) {
   if (!name) return '??';
@@ -46,7 +47,7 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
     return (
       <TouchableOpacity style={styles.heroCard} onPress={onPress} activeOpacity={0.92}>
         {match.imageUrl ? (
-          <Image source={{ uri: match.imageUrl }} style={styles.heroCardBg} resizeMode="cover" />
+          <Image source={{ uri: imageUri(match.imageUrl) }} style={styles.heroCardBg} resizeMode="cover" />
         ) : null}
         <LinearGradient
           colors={match.imageUrl ? ['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.85)'] : tint}
@@ -68,7 +69,7 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
           <View style={styles.heroTeamsRow}>
             <View style={styles.heroTeam}>
               {isValidLogo(match.teamALogo) ? (
-                <Image source={{ uri: match.teamALogo }} style={styles.heroTeamLogo} resizeMode="contain" />
+                <Image source={{ uri: imageUri(match.teamALogo) }} style={styles.heroTeamLogo} resizeMode="contain" />
               ) : (
                 <View style={styles.teamCircleLarge}>
                   <Text style={styles.teamCircleLargeText}>{getInitials(match.teamA)}</Text>
@@ -81,7 +82,7 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
             </View>
             <View style={styles.heroTeam}>
               {isValidLogo(match.teamBLogo) ? (
-                <Image source={{ uri: match.teamBLogo }} style={styles.heroTeamLogo} resizeMode="contain" />
+                <Image source={{ uri: imageUri(match.teamBLogo) }} style={styles.heroTeamLogo} resizeMode="contain" />
               ) : (
                 <View style={styles.teamCircleLarge}>
                   <Text style={styles.teamCircleLargeText}>{getInitials(match.teamB)}</Text>
@@ -129,7 +130,7 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
       <View style={styles.hCardInner}>
         {/* Full background image or gradient fallback */}
         {hasThumb ? (
-          <Image source={{ uri: match.imageUrl }} style={styles.hBgImage} resizeMode="cover" />
+          <Image source={{ uri: imageUri(match.imageUrl) }} style={styles.hBgImage} resizeMode="cover" />
         ) : (
           <LinearGradient colors={tint} style={styles.hBgImage} />
         )}
@@ -165,7 +166,7 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
           <View style={styles.hMiddle}>
             <View style={styles.hTeamsRow}>
               {isValidLogo(match.teamALogo) ? (
-                <Image source={{ uri: match.teamALogo }} style={styles.hTeamLogo} resizeMode="contain" />
+                <Image source={{ uri: imageUri(match.teamALogo) }} style={styles.hTeamLogo} resizeMode="contain" />
               ) : (
                 <View style={styles.teamCircleSmall}>
                   <Text style={styles.teamCircleSmallText}>{getInitials(match.teamA)}</Text>
@@ -173,7 +174,7 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
               )}
               <Text style={styles.hTeams}>{match.teamA || 'TBA'} vs {match.teamB || 'TBA'}</Text>
               {isValidLogo(match.teamBLogo) ? (
-                <Image source={{ uri: match.teamBLogo }} style={styles.hTeamLogo} resizeMode="contain" />
+                <Image source={{ uri: imageUri(match.teamBLogo) }} style={styles.hTeamLogo} resizeMode="contain" />
               ) : (
                 <View style={styles.teamCircleSmall}>
                   <Text style={styles.teamCircleSmallText}>{getInitials(match.teamB)}</Text>

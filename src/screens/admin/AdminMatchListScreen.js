@@ -26,6 +26,7 @@ import { AdminFilterPills, AdminSearchBar } from '../../components/admin/TicketP
 import EmptyState from '../../components/EmptyState';
 import { fetchMatches, cancelMatch } from '../../services/matchService';
 import { spacing, radii, typography, glass, colors } from '../../constants/theme';
+import { imageUri } from '../../utils/imageUri';
 import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
 
@@ -202,7 +203,7 @@ export default function AdminMatchListScreen({ navigation }) {
       <TouchableOpacity style={s.card} onPress={() => openDetail(item)} activeOpacity={0.88}>
         <View style={s.cardInner}>
           {hasImage ? (
-            <Image source={{ uri: item.imageUrl }} style={s.cardBanner} resizeMode="cover" />
+            <Image source={{ uri: imageUri(item.imageUrl) }} style={s.cardBanner} resizeMode="cover" />
           ) : (
             <LinearGradient colors={[`${glass.brandPurple}22`, 'rgba(7,8,11,0.95)']} style={s.cardBanner} />
           )}
@@ -227,13 +228,13 @@ export default function AdminMatchListScreen({ navigation }) {
             <View style={s.cardMiddle}>
               <View style={s.cardTeamsRow}>
                 {item.teamALogo ? (
-                  <Image source={{ uri: item.teamALogo }} style={s.miniLogo} resizeMode="contain" />
+                  <Image source={{ uri: imageUri(item.teamALogo) }} style={s.miniLogo} resizeMode="contain" />
                 ) : (
                   <View style={s.miniLogoFallback}><Text style={s.miniLogoText}>{(item.teamA || '?')[0]}</Text></View>
                 )}
                 <Text style={s.cardVs}>vs</Text>
                 {item.teamBLogo ? (
-                  <Image source={{ uri: item.teamBLogo }} style={s.miniLogo} resizeMode="contain" />
+                  <Image source={{ uri: imageUri(item.teamBLogo) }} style={s.miniLogo} resizeMode="contain" />
                 ) : (
                   <View style={s.miniLogoFallback}><Text style={s.miniLogoText}>{(item.teamB || '?')[0]}</Text></View>
                 )}
@@ -293,7 +294,7 @@ export default function AdminMatchListScreen({ navigation }) {
               {/* ── VISUAL HERO HEADER ── */}
               <View style={s.heroHeader}>
                 {m.imageUrl ? (
-                  <Image source={{ uri: m.imageUrl }} style={s.heroBanner} resizeMode="cover" />
+                  <Image source={{ uri: imageUri(m.imageUrl) }} style={s.heroBanner} resizeMode="cover" />
                 ) : null}
                 <LinearGradient
                   colors={m.imageUrl ? ['rgba(0,0,0,0.5)', 'rgba(7,8,11,0.95)'] : [`${glass.brandPurple}33`, 'rgba(7,8,11,0.98)']}
@@ -306,7 +307,7 @@ export default function AdminMatchListScreen({ navigation }) {
 
                   <View style={s.heroTeamsRow}>
                     {m.teamALogo ? (
-                      <Image source={{ uri: m.teamALogo }} style={s.heroTeamLogo} resizeMode="contain" />
+                      <Image source={{ uri: imageUri(m.teamALogo) }} style={s.heroTeamLogo} resizeMode="contain" />
                     ) : (
                       <View style={s.heroTeamFallback}><Text style={s.heroTeamFallbackText}>{(m.teamA || '?')[0]}</Text></View>
                     )}
@@ -314,7 +315,7 @@ export default function AdminMatchListScreen({ navigation }) {
                       <Text style={s.heroVsText}>VS</Text>
                     </View>
                     {m.teamBLogo ? (
-                      <Image source={{ uri: m.teamBLogo }} style={s.heroTeamLogo} resizeMode="contain" />
+                      <Image source={{ uri: imageUri(m.teamBLogo) }} style={s.heroTeamLogo} resizeMode="contain" />
                     ) : (
                       <View style={s.heroTeamFallback}><Text style={s.heroTeamFallbackText}>{(m.teamB || '?')[0]}</Text></View>
                     )}

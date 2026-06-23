@@ -22,6 +22,7 @@ import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { formatInNepal, formatTimeInNepal } from '../../utils/date';
+import { imageUri } from '../../utils/imageUri';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 
@@ -130,7 +131,7 @@ export default function MatchDetailScreen({ route, navigation }) {
               HERO — Full-bleed cinematic banner
               ═══════════════════════════════════════════════ */}
           <View style={s.hero}>
-            {hasImage && <Image source={{ uri: match.imageUrl }} style={s.heroBanner} resizeMode="cover" />}
+            {hasImage && <Image source={{ uri: imageUri(match.imageUrl) }} style={s.heroBanner} resizeMode="cover" />}
 
             <LinearGradient
               colors={hasImage
@@ -157,7 +158,7 @@ export default function MatchDetailScreen({ route, navigation }) {
                 <View style={s.teamBlock}>
                   {match.teamALogo ? (
                     <View style={[s.logoGlow, { shadowColor: status.glow !== 'transparent' ? status.glow : colors.primary }]}>
-                      <Image source={{ uri: match.teamALogo }} style={s.teamLogo} resizeMode="contain" />
+                      <Image source={{ uri: imageUri(match.teamALogo) }} style={s.teamLogo} resizeMode="contain" />
                     </View>
                   ) : (
                     <View style={s.teamEmojiFallback}>
@@ -176,7 +177,7 @@ export default function MatchDetailScreen({ route, navigation }) {
                 <View style={s.teamBlock}>
                   {match.teamBLogo ? (
                     <View style={[s.logoGlow, { shadowColor: status.glow !== 'transparent' ? status.glow : colors.primary }]}>
-                      <Image source={{ uri: match.teamBLogo }} style={s.teamLogo} resizeMode="contain" />
+                      <Image source={{ uri: imageUri(match.teamBLogo) }} style={s.teamLogo} resizeMode="contain" />
                     </View>
                   ) : (
                     <View style={s.teamEmojiFallback}>

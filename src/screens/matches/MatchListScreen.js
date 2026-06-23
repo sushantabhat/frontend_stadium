@@ -17,6 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { formatInNepal } from '../../utils/date';
+import { imageUri } from '../../utils/imageUri';
 import { fetchMatches } from '../../services/matchService';
 import MatchCard from '../../components/MatchCard';
 import DashboardHeader from '../../components/DashboardHeader';
@@ -161,7 +162,7 @@ export default function MatchListScreen({ navigation }) {
     return (
       <TouchableOpacity style={s.heroCard} onPress={() => navigateToDetail(match)} activeOpacity={0.92}>
         <View style={s.heroCardInner}>
-          {hasImage && <Image source={{ uri: match.imageUrl }} style={s.heroBanner} resizeMode="cover" />}
+          {hasImage && <Image source={{ uri: imageUri(match.imageUrl) }} style={s.heroBanner} resizeMode="cover" />}
           <LinearGradient
             colors={hasImage ? ['rgba(0,0,0,0.3)', 'rgba(7,8,11,0.9)'] : [`${colors.primary}22`, 'rgba(7,8,11,0.95)']}
             style={s.heroGradient}
@@ -187,13 +188,13 @@ export default function MatchListScreen({ navigation }) {
             </View>
             <View style={s.heroTeamsRow}>
               {match.teamALogo ? (
-                <Image source={{ uri: match.teamALogo }} style={s.heroLogo} resizeMode="contain" />
+                <Image source={{ uri: imageUri(match.teamALogo) }} style={s.heroLogo} resizeMode="contain" />
               ) : (
                 <View style={s.heroLogoFallback}><Text style={s.heroLogoText}>{(match.teamA || '?')[0]}</Text></View>
               )}
               <View style={s.heroVsWrap}><Text style={s.heroVsText}>VS</Text></View>
               {match.teamBLogo ? (
-                <Image source={{ uri: match.teamBLogo }} style={s.heroLogo} resizeMode="contain" />
+                <Image source={{ uri: imageUri(match.teamBLogo) }} style={s.heroLogo} resizeMode="contain" />
               ) : (
                 <View style={s.heroLogoFallback}><Text style={s.heroLogoText}>{(match.teamB || '?')[0]}</Text></View>
               )}

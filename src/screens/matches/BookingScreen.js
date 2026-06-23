@@ -19,6 +19,7 @@ import CardPaymentModal from '../../components/CardPaymentModal';
 import GradientButton from '../../components/GradientButton';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { formatInNepal, formatTimeInNepal } from '../../utils/date';
+import { imageUri } from '../../utils/imageUri';
 import { fetchMatchById } from '../../services/matchService';
 import { unlockSeats, initiateKhaltiPayment, verifyKhaltiPayment, initiateCardPayment, confirmCardBooking } from '../../services/bookingService';
 import { fetchDynamicPricingSuggestions } from '../../services/aiService';
@@ -218,16 +219,16 @@ export default function BookingScreen({ route, navigation }) {
         <View style={styles.card}>
           <LinearGradient colors={[`${colors.primary}15`, `${colors.primary}05`]} style={styles.cardGradient}>
             {match?.imageUrl ? (
-              <Image source={{ uri: match.imageUrl }} style={styles.cardBanner} resizeMode="cover" />
+              <Image source={{ uri: imageUri(match.imageUrl) }} style={styles.cardBanner} resizeMode="cover" />
             ) : null}
             <Text style={styles.cardHeader}>EVENT DETAILS</Text>
             <View style={styles.eventTeamsRow}>
               {match?.teamALogo ? (
-                <Image source={{ uri: match.teamALogo }} style={styles.eventTeamLogo} resizeMode="contain" />
+                <Image source={{ uri: imageUri(match.teamALogo) }} style={styles.eventTeamLogo} resizeMode="contain" />
               ) : null}
               <Text style={styles.matchTitle}>{match?.title}</Text>
               {match?.teamBLogo ? (
-                <Image source={{ uri: match.teamBLogo }} style={styles.eventTeamLogo} resizeMode="contain" />
+                <Image source={{ uri: imageUri(match.teamBLogo) }} style={styles.eventTeamLogo} resizeMode="contain" />
               ) : null}
             </View>
             <View style={styles.metaRow}>

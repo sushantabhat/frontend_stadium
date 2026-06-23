@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -18,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import PolygonEditor from '../../components/stadium/PolygonEditor';
+import ImagePickerField from '../../components/ImagePickerField';
 import { createMatch } from '../../services/matchService';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
@@ -297,45 +297,25 @@ export default function CreateMatchScreen({ navigation }) {
               <Text style={styles.sectionTitle}>Match Images</Text>
             </View>
 
-            <Text style={styles.inputLabel}>Match Banner URL</Text>
-            <TextInput
-              style={styles.inputField}
-              placeholder="https://example.com/match-banner.jpg"
-              placeholderTextColor={glass.textMuted}
+            <ImagePickerField
+              label="Match Banner"
               value={form.imageUrl}
-              onChangeText={(v) => updateField('imageUrl', v)}
-              autoCapitalize="none"
-              keyboardType="url"
+              onUpload={(url) => updateField('imageUrl', url)}
             />
-            {form.imageUrl.trim() ? (
-              <Image source={{ uri: form.imageUrl.trim() }} style={styles.imagePreview} resizeMode="cover" />
-            ) : null}
 
             <View style={styles.row}>
-              <View style={styles.halfField}>
-                <Text style={styles.inputLabel}>Team A Logo URL</Text>
-                <TextInput
-                  style={styles.inputField}
-                  placeholder="https://example.com/team-a.png"
-                  placeholderTextColor={glass.textMuted}
-                  value={form.teamALogo}
-                  onChangeText={(v) => updateField('teamALogo', v)}
-                  autoCapitalize="none"
-                  keyboardType="url"
-                />
-              </View>
-              <View style={styles.halfField}>
-                <Text style={styles.inputLabel}>Team B Logo URL</Text>
-                <TextInput
-                  style={styles.inputField}
-                  placeholder="https://example.com/team-b.png"
-                  placeholderTextColor={glass.textMuted}
-                  value={form.teamBLogo}
-                  onChangeText={(v) => updateField('teamBLogo', v)}
-                  autoCapitalize="none"
-                  keyboardType="url"
-                />
-              </View>
+              <ImagePickerField
+                label="Team A Logo"
+                value={form.teamALogo}
+                onUpload={(url) => updateField('teamALogo', url)}
+                style={{ flex: 1 }}
+              />
+              <ImagePickerField
+                label="Team B Logo"
+                value={form.teamBLogo}
+                onUpload={(url) => updateField('teamBLogo', url)}
+                style={{ flex: 1 }}
+              />
             </View>
           </View>
 
@@ -699,11 +679,6 @@ const styles = StyleSheet.create({
   halfField: { flex: 1 },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   mono: { fontFamily: glass.monoFont, fontSize: 12 },
-
-  imagePreview: {
-    width: '100%', height: 160, borderRadius: radii.md,
-    marginBottom: spacing.md, backgroundColor: 'rgba(255,255,255,0.04)',
-  },
 
   datePickerTrigger: {
     flexDirection: 'row', alignItems: 'center',
