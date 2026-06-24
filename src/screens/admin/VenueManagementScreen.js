@@ -13,6 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import { MapPin } from 'lucide-react-native';
 import ScreenHeader from '../../components/ScreenHeader';
 import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
@@ -144,7 +145,7 @@ export default function VenueManagementScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
-            <Text style={styles.emptyIcon}>🏟️</Text>
+            <MapPin size={48} color={glass.textMuted} strokeWidth={1.5} />
             <Text style={styles.emptyTitle}>No venues yet</Text>
             <Text style={styles.emptySubtitle}>Create a venue to define its stadium layout</Text>
           </View>

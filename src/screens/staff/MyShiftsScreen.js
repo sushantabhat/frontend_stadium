@@ -2,11 +2,12 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { CalendarX } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import DashboardHeader from '../../components/DashboardHeader';
 import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
-import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
+import { colors, spacing, radii, typography, shadows, glass } from '../../constants/theme';
 import { fetchMyActiveShift, fetchMyShifts } from '../../services/ticketService';
 
 export default function MyShiftsScreen({ navigation }) {
@@ -122,7 +123,7 @@ export default function MyShiftsScreen({ navigation }) {
 
               {!activeShift && upcoming.length === 0 && (
                 <View style={styles.emptyWrap}>
-                  <Text style={styles.emptyIcon}>📋</Text>
+                  <CalendarX size={48} color={glass.textMuted} strokeWidth={1.5} />
                   <Text style={styles.emptyTitle}>No shifts assigned</Text>
                   <Text style={styles.emptyDesc}>Ask your admin to assign you to a match</Text>
                 </View>

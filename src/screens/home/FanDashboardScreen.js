@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Search, Ticket, Heart } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchMatchRecommendations } from '../../services/aiService';
@@ -79,9 +80,9 @@ export default function FanDashboardScreen({ navigation }) {
         <View style={styles.section}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillsList}>
             {[
-              { icon: '🔍', label: 'Browse Matches', route: 'Browse' },
-              { icon: '🎫', label: 'My Tickets', route: 'My Tickets' },
-              { icon: '❤️', label: 'Wishlist', route: 'Wishlist' },
+              { Icon: Search, label: 'Browse Matches', route: 'Browse' },
+              { Icon: Ticket, label: 'My Tickets', route: 'My Tickets' },
+              { Icon: Heart, label: 'Wishlist', route: 'Wishlist' },
             ].map((item) => (
               <TouchableOpacity
                 key={item.label}
@@ -89,7 +90,7 @@ export default function FanDashboardScreen({ navigation }) {
                 onPress={() => navigation.navigate(item.route)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.pillIcon}>{item.icon}</Text>
+                <item.Icon size={16} color={colors.textPrimary} strokeWidth={2} />
                 <Text style={styles.pillLabel}>{item.label}</Text>
               </TouchableOpacity>
             ))}
@@ -265,7 +266,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: spacing.sm,
   },
-  pillIcon: { fontSize: 14 },
   pillLabel: {
     color: colors.textSecondary,
     fontSize: typography.small.fontSize,

@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, Alert, Modal, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { QrCode, CalendarDays, FileText, AlertTriangle, ShieldCheck, ScanLine, TriangleAlert } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchScanHistory } from '../../services/ticketService';
@@ -50,57 +51,58 @@ export default function StaffDashboardScreen({ navigation }) {
   todayStart.setHours(0, 0, 0, 0);
   const todayScans = scans.filter(s => new Date(s.entryTime) >= todayStart);
   const totalToday = todayScans.length;
+  const verifiedToday = todayScans.filter(s => s.status === 'valid' || (!s.fraud && s.status !== 'invalid')).length;
   const flaggedToday = scans.filter(s => s.status === 'duplicate' || s.status === 'invalid' || s.fraud).length;
 
   const quickActions = [
-    { icon: '🔍', label: 'Verify Ticket', route: 'TicketVerify', color: glass.brandPurple },
-    { icon: '🕒', label: 'My Shifts', route: 'MyShifts', color: glass.statusWarningText },
-    { icon: '📊', label: 'Daily Report', route: 'DailyReport', color: glass.occupancyTeal },
-    { icon: '🚨', label: 'Report Issue', route: '__report', color: glass.statusDangerText },
+    { Icon: QrCode, label: 'Verify Ticket', route: 'TicketVerify', color: glass.brandPurple },
+    { Icon: CalendarDays, label: 'My Shifts', route: 'MyShifts', color: glass.statusWarningText },
+    { Icon: FileText, label: 'Daily Report', route: 'DailyReport', color: glass.occupancyTeal },
+    { Icon: AlertTriangle, label: 'Report Issue', route: '__report', color: glass.statusDangerText },
   ];
 
   return (
     <View style={{ flex: 1 }}>
       <RefreshBar refreshing={isRefreshing} />
       <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <DashboardHeader
+        <StatusBar barStyle="light-content" />
+        <DashboardHeader
           topLabel="STAFF PORTAL"
           title={firstName}
           avatarColors={[glass.statusSuccessText, '#00A844']}
           avatarLabel={initials}
           onAvatarPress={() => navigation.navigate('Account')}
         />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
-      >
-
-        <TouchableOpacity
-          style={styles.scannerCta}
-          onPress={() => navigation.navigate('Scanner')}
-          activeOpacity={0.88}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scroll}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
         >
-          <LinearGradient
-            colors={['rgba(108,92,231,0.15)', 'rgba(108,92,231,0.05)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.scannerGradient}
+          {/* Scanner CTA */}
+          <TouchableOpacity
+            style={styles.scannerCta}
+            onPress={() => navigation.navigate('Scanner')}
+            activeOpacity={0.88}
           >
-            <Text style={styles.scannerEmoji}>📸</Text>
-            <View style={styles.scannerInfo}>
-              <Text style={styles.scannerTitle}>Open Scanner</Text>
-              <Text style={styles.scannerDesc}>Scan QR codes for gate entry</Text>
-            </View>
-            <View style={styles.scannerArrowWrap}>
-              <Text style={styles.scannerArrow}>→</Text>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={['rgba(108,92,231,0.15)', 'rgba(108,92,231,0.05)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.scannerGradient}
+            >
+              <ScanLine size={32} color={glass.brandPurple} strokeWidth={2} />
+              <View style={styles.scannerInfo}>
+                <Text style={styles.scannerTitle}>Open Scanner</Text>
+                <Text style={styles.scannerDesc}>Scan QR codes for gate entry</Text>
+              </View>
+              <View style={styles.scannerArrowWrap}>
+                <Text style={styles.scannerArrow}>→</Text>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
 
-        <AdminCard style={styles.statsCard}>
-          <View style={styles.statsHeader}>
+          {/* Today's Scans */}
+          <AdminCard style={styles.statsCard}>
             <Text style={styles.statsLabel}>SCANS TODAY</Text>
             {isLoading ? (
               <ActivityIndicator color={glass.brandPurple} size="small" />
@@ -110,132 +112,150 @@ export default function StaffDashboardScreen({ navigation }) {
             <Text style={styles.statsSub}>
               {totalToday > 0 ? `Last scan ${timeAgo(todayScans[0]?.entryTime)}` : 'No scans yet'}
             </Text>
-          </View>
-          <View style={styles.statsRow}>
-            <View style={[styles.statPill, { backgroundColor: 'rgba(0,230,118,0.1)' }]}>
-              <Text style={[styles.statPillValue, { color: glass.statusSuccessText }]}>{totalToday}</Text>
-              <Text style={styles.statPillLabel}>Verified</Text>
-            </View>
-            <View style={[styles.statPill, { backgroundColor: 'rgba(255,179,0,0.1)' }]}>
-              <Text style={[styles.statPillValue, { color: glass.statusWarningText }]}>{flaggedToday}</Text>
-              <Text style={styles.statPillLabel}>Flagged</Text>
-            </View>
-          </View>
-        </AdminCard>
-
-        <View style={styles.sectionHead}>
-          <Text style={styles.sectionTitle}>Tools</Text>
-        </View>
-        <View style={styles.toolsGrid}>
-          {quickActions.map((t) => (
-            <TouchableOpacity
-              key={t.label}
-              style={styles.toolCard}
-              onPress={() => t.route === '__report' ? setShowReportModal(true) : navigation.navigate(t.route)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.toolIconWrap, { backgroundColor: `${t.color}18` }]}>
-                <Text style={styles.toolIcon}>{t.icon}</Text>
+            <View style={styles.statsRow}>
+              <View style={[styles.statPill, { backgroundColor: 'rgba(0,230,118,0.1)' }]}>
+                <View style={styles.statPillIcon}>
+                  <ShieldCheck size={14} color={glass.statusSuccessText} strokeWidth={2.5} />
+                  <Text style={[styles.statPillLabel, { color: glass.statusSuccessText }]}>Verified</Text>
+                </View>
+                <Text style={[styles.statPillValue, { color: glass.statusSuccessText }]}>{verifiedToday}</Text>
               </View>
-              <Text style={styles.toolLabel}>{t.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.sectionHead}>
-          <Text style={styles.sectionTitle}>Recent Scans</Text>
-        </View>
-
-        {isLoading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator color={glass.brandPurple} />
-          </View>
-        ) : scans.length === 0 ? (
-          <AdminCard style={styles.emptyCard}>
-            <View style={styles.emptyWrap}>
-              <Text style={styles.emptyIcon}>📷</Text>
-              <Text style={styles.emptyTitle}>No scans yet</Text>
-              <Text style={styles.emptyText}>Start scanning tickets to see history here</Text>
+              <View style={[styles.statPill, { backgroundColor: 'rgba(255,179,0,0.1)' }]}>
+                <View style={styles.statPillIcon}>
+                  <TriangleAlert size={14} color={glass.statusWarningText} strokeWidth={2.5} />
+                  <Text style={[styles.statPillLabel, { color: glass.statusWarningText }]}>Flagged</Text>
+                </View>
+                <Text style={[styles.statPillValue, { color: glass.statusWarningText }]}>{flaggedToday}</Text>
+              </View>
             </View>
           </AdminCard>
-        ) : (
-          <AdminCard style={styles.timelineCard}>
-            {scans.slice(0, 10).map((scan, idx) => (
-              <View key={scan._id || idx} style={[styles.timelineItem, idx === 0 && { paddingTop: 0 }]}>
-                <View style={styles.timelineContent}>
-                  <View style={styles.timelineDot} />
-                  <View style={styles.timelineText}>
-                    <Text style={styles.scanName}>{scan.user?.name || 'Unknown'}</Text>
-                    <Text style={styles.scanSeat}>
-                      {scan.seat?.seatLabel || 'N/A'}
-                      {scan.match?.title ? ` · ${scan.match.title}` : ''}
-                    </Text>
-                  </View>
-                  <View style={styles.timelineRight}>
-                    <Text style={styles.scanTime}>{timeAgo(scan.entryTime)}</Text>
-                    <View style={[styles.statusBadge, styles.badgeValid]}>
-                      <Text style={styles.badgeText}>✓ Valid</Text>
+
+          {/* Tools */}
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionTitle}>Tools</Text>
+          </View>
+          <View style={styles.toolsGrid}>
+            {quickActions.map((t) => (
+              <TouchableOpacity
+                key={t.label}
+                style={styles.toolCard}
+                onPress={() => t.route === '__report' ? setShowReportModal(true) : navigation.navigate(t.route)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.toolIconWrap, { backgroundColor: `${t.color}18` }]}>
+                  <t.Icon size={22} color={t.color} strokeWidth={2} />
+                </View>
+                <Text style={styles.toolLabel}>{t.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Recent Activity */}
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionTitle}>Recent Activity</Text>
+          </View>
+
+          {isLoading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator color={glass.brandPurple} />
+            </View>
+          ) : scans.length === 0 ? (
+            <AdminCard style={styles.emptyCard}>
+              <View style={styles.emptyWrap}>
+                <View style={styles.emptyIconWrap}>
+                  <QrCode size={28} color={glass.brandPurple} strokeWidth={1.5} />
+                </View>
+                <Text style={styles.emptyTitle}>No tickets scanned today.</Text>
+                <TouchableOpacity
+                  style={styles.emptyBtn}
+                  onPress={() => navigation.navigate('Scanner')}
+                  activeOpacity={0.85}
+                >
+                  <LinearGradient colors={[glass.statusSuccessText, '#00A844']} style={styles.emptyBtnInner}>
+                    <Text style={styles.emptyBtnText}>Start Scanning</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </AdminCard>
+          ) : (
+            <AdminCard style={styles.timelineCard}>
+              {scans.slice(0, 10).map((scan, idx) => (
+                <View key={scan._id || idx} style={[styles.timelineItem, idx === 0 && { paddingTop: 0 }]}>
+                  <View style={styles.timelineContent}>
+                    <View style={styles.timelineDot} />
+                    <View style={styles.timelineText}>
+                      <Text style={styles.scanName}>{scan.user?.name || 'Unknown'}</Text>
+                      <Text style={styles.scanSeat}>
+                        {scan.seat?.seatLabel || 'N/A'}
+                        {scan.match?.title ? ` · ${scan.match.title}` : ''}
+                      </Text>
+                    </View>
+                    <View style={styles.timelineRight}>
+                      <Text style={styles.scanTime}>{timeAgo(scan.entryTime)}</Text>
+                      <View style={[styles.statusBadge, styles.badgeValid]}>
+                        <Text style={styles.badgeText}>✓ Valid</Text>
+                      </View>
                     </View>
                   </View>
                 </View>
+              ))}
+            </AdminCard>
+          )}
+
+          <View style={{ height: spacing.xxxl + 20 }} />
+        </ScrollView>
+
+        {/* Report Modal */}
+        <Modal visible={showReportModal} animationType="slide" transparent>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Report Issue</Text>
+                <TouchableOpacity onPress={() => setShowReportModal(false)} activeOpacity={0.7}>
+                  <Text style={styles.modalClose}>✕</Text>
+                </TouchableOpacity>
               </View>
-            ))}
-          </AdminCard>
-        )}
-
-        <View style={{ height: spacing.xxxl + 20 }} />
-      </ScrollView>
-
-      <Modal visible={showReportModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Report Issue</Text>
-              <TouchableOpacity onPress={() => setShowReportModal(false)} activeOpacity={0.7}>
-                <Text style={styles.modalClose}>✕</Text>
+              {[
+                { key: 'fraud', label: 'Fraud — Fake or duplicate ticket' },
+                { key: 'technical', label: 'Technical — System or API failure' },
+                { key: 'operational', label: 'Operational — Customer dispute' },
+              ].map((item) => (
+                <TouchableOpacity
+                  key={item.key}
+                  style={[styles.reportOption, reportType === item.key && styles.reportOptionActive]}
+                  onPress={() => setReportType(item.key)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.reportLabel, reportType === item.key && styles.reportLabelActive]}>{item.label}</Text>
+                  {reportType === item.key && <Text style={styles.reportCheck}>✓</Text>}
+                </TouchableOpacity>
+              ))}
+              <TextInput
+                style={styles.reportInput}
+                placeholder="Additional details..."
+                placeholderTextColor={glass.textMuted}
+                value={reportNote}
+                onChangeText={setReportNote}
+                multiline
+              />
+              <TouchableOpacity
+                style={styles.reportSubmitBtn}
+                onPress={() => {
+                  if (!reportType) { Alert.alert('Required', 'Select an issue type.'); return; }
+                  Alert.alert('Reported', 'Your issue has been sent to the supervisor on duty.', [
+                    { text: 'OK', onPress: () => { setShowReportModal(false); setReportType(''); setReportNote(''); } },
+                  ]);
+                }}
+                activeOpacity={0.85}
+              >
+                <LinearGradient colors={[glass.brandPurple, glass.neonMagenta]} style={styles.reportSubmitGradient}>
+                  <Text style={styles.reportSubmitText}>Submit Report</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
-            {[
-              { key: 'fraud', label: 'Fraud — Fake or duplicate ticket' },
-              { key: 'technical', label: 'Technical — System or API failure' },
-              { key: 'operational', label: 'Operational — Customer dispute' },
-            ].map((item) => (
-              <TouchableOpacity
-                key={item.key}
-                style={[styles.reportOption, reportType === item.key && styles.reportOptionActive]}
-                onPress={() => setReportType(item.key)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.reportLabel, reportType === item.key && styles.reportLabelActive]}>{item.label}</Text>
-                {reportType === item.key && <Text style={styles.reportCheck}>✓</Text>}
-              </TouchableOpacity>
-            ))}
-            <TextInput
-              style={styles.reportInput}
-              placeholder="Additional details..."
-              placeholderTextColor={glass.textMuted}
-              value={reportNote}
-              onChangeText={setReportNote}
-              multiline
-            />
-            <TouchableOpacity
-              style={styles.reportSubmitBtn}
-              onPress={() => {
-                if (!reportType) { Alert.alert('Required', 'Select an issue type.'); return; }
-                Alert.alert('Reported', 'Your issue has been sent to the supervisor on duty.', [
-                  { text: 'OK', onPress: () => { setShowReportModal(false); setReportType(''); setReportNote(''); } },
-                ]);
-              }}
-              activeOpacity={0.85}
-            >
-              <LinearGradient colors={[glass.brandPurple, glass.neonMagenta]} style={styles.reportSubmitGradient}>
-                <Text style={styles.reportSubmitText}>Submit Report</Text>
-              </LinearGradient>
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+        </Modal>
+      </SafeAreaView>
     </View>
   );
 }
@@ -253,7 +273,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     padding: spacing.xxl, gap: spacing.lg,
   },
-  scannerEmoji: { fontSize: 36 },
   scannerInfo: { flex: 1 },
   scannerTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800', marginBottom: spacing.xxs },
   scannerDesc: { color: glass.textMuted, fontSize: typography.small.fontSize },
@@ -265,14 +284,14 @@ const styles = StyleSheet.create({
   scannerArrow: { color: '#FFF', fontSize: 18, fontWeight: '700' },
 
   statsCard: { marginHorizontal: spacing.xl, padding: spacing.xl, marginBottom: spacing.xxl },
-  statsHeader: { marginBottom: spacing.lg },
   statsLabel: { color: glass.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1.2, marginBottom: spacing.sm },
   statsValue: { color: colors.textPrimary, fontSize: 42, fontWeight: '900', lineHeight: 46, marginBottom: spacing.xs },
-  statsSub: { color: glass.textMuted, fontSize: typography.small.fontSize },
+  statsSub: { color: glass.textMuted, fontSize: typography.small.fontSize, marginBottom: spacing.lg },
   statsRow: { flexDirection: 'row', gap: spacing.md },
   statPill: { flex: 1, borderRadius: radii.lg, padding: spacing.md, alignItems: 'center' },
+  statPillIcon: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs },
+  statPillLabel: { fontSize: 10, fontWeight: '700' },
   statPillValue: { fontSize: typography.h3.fontSize, fontWeight: '900' },
-  statPillLabel: { color: glass.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
 
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg, paddingHorizontal: spacing.xl },
   sectionTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800', letterSpacing: -0.3 },
@@ -286,8 +305,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  toolIconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  toolIcon: { fontSize: 20 },
+  toolIconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   toolLabel: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700', textAlign: 'center' },
 
   timelineCard: { marginHorizontal: spacing.xl, padding: spacing.xl },
@@ -308,9 +326,11 @@ const styles = StyleSheet.create({
   loadingWrap: { paddingVertical: spacing.xxl, alignItems: 'center' },
   emptyCard: { marginHorizontal: spacing.xl, padding: spacing.xxl },
   emptyWrap: { alignItems: 'center', gap: spacing.sm },
-  emptyIcon: { fontSize: 36 },
+  emptyIconWrap: { width: 56, height: 56, borderRadius: 16, backgroundColor: `${glass.brandPurple}18`, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
   emptyTitle: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
-  emptyText: { color: glass.textMuted, fontSize: typography.caption.fontSize, textAlign: 'center' },
+  emptyBtn: { marginTop: spacing.sm, borderRadius: radii.md, overflow: 'hidden', width: '100%' },
+  emptyBtnInner: { paddingVertical: spacing.md, alignItems: 'center' },
+  emptyBtnText: { color: '#FFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: glass.canvasStart, borderTopLeftRadius: radii.xxl, borderTopRightRadius: radii.xxl, padding: spacing.xxl, maxHeight: '85%', borderWidth: 1, borderColor: glass.border },

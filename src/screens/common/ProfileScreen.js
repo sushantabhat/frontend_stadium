@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { User, Mail, Shield, CalendarDays, Palette, Bell, MapPin, Globe, CircleHelp, MessageCircle, FileText, Lock, LogOut, Ticket, CreditCard, Users } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { getRoleDisplayName } from '../../constants/roleNavigation';
@@ -41,13 +42,13 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.section}>
           <View style={styles.statsRow}>
             {[
-              { value: isAdmin ? '12' : isSupervisor ? '8' : isStaff ? '48' : '3', label: isAdmin ? 'Matches' : isSupervisor ? 'Incidents' : isStaff ? 'Scans' : 'Bookings', icon: isAdmin ? '🏟️' : isSupervisor ? '🚨' : isStaff ? '📋' : '🎫' },
-              { value: isAdmin ? 'Rs.2.4L' : isSupervisor ? '94%' : isStaff ? '99%' : 'Rs.4,800', label: isAdmin ? 'Revenue' : isSupervisor ? 'Resolved' : isStaff ? 'Accuracy' : 'Spent', icon: isAdmin ? '💰' : isSupervisor ? '✅' : isStaff ? '✅' : '💳' },
-              { value: isAdmin ? '186' : isSupervisor ? '4' : isStaff ? '6' : '12', label: isAdmin ? 'Users' : isSupervisor ? 'Gates' : isStaff ? 'Gates' : 'Tickets', icon: isAdmin ? '👥' : isSupervisor ? '🚪' : isStaff ? '🚪' : '🎟️' },
+              { value: isAdmin ? '12' : isSupervisor ? '8' : isStaff ? '48' : '3', label: isAdmin ? 'Matches' : isSupervisor ? 'Incidents' : isStaff ? 'Scans' : 'Bookings', Icon: Ticket, color: colors.primary },
+              { value: isAdmin ? 'Rs.2.4L' : isSupervisor ? '94%' : isStaff ? '99%' : 'Rs.4,800', label: isAdmin ? 'Revenue' : isSupervisor ? 'Resolved' : isStaff ? 'Accuracy' : 'Spent', Icon: CreditCard, color: colors.warning },
+              { value: isAdmin ? '186' : isSupervisor ? '4' : isStaff ? '6' : '12', label: isAdmin ? 'Users' : isSupervisor ? 'Gates' : isStaff ? 'Gates' : 'Tickets', Icon: Users, color: colors.info },
             ].map((stat) => (
               <View key={stat.label} style={styles.statCard}>
-                <Text style={styles.statIcon}>{stat.icon}</Text>
-                <Text style={styles.statValue}>{stat.value}</Text>
+                <stat.Icon size={20} color={stat.color} strokeWidth={2} />
+                <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{stat.value}</Text>
                 <Text style={styles.statLabel}>{stat.label}</Text>
               </View>
             ))}
@@ -59,14 +60,14 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.card}>
             {[
-              { icon: '👤', label: 'Full Name', value: userInfo?.name || 'User' },
-              { icon: '📧', label: 'Email', value: userInfo?.email || 'Not available' },
-              { icon: '🛡️', label: 'Role', value: getRoleDisplayName(userInfo?.role) },
-              { icon: '📅', label: 'Member Since', value: '2025' },
+              { Icon: User, label: 'Full Name', value: userInfo?.name || 'User' },
+              { Icon: Mail, label: 'Email', value: userInfo?.email || 'Not available' },
+              { Icon: Shield, label: 'Role', value: getRoleDisplayName(userInfo?.role) },
+              { Icon: CalendarDays, label: 'Member Since', value: '2025' },
             ].map((item, idx) => (
               <View key={item.label} style={[styles.cardItem, idx < 3 && styles.cardItemBorder]}>
                 <View style={styles.cardItemLeft}>
-                  <Text style={styles.cardItemIcon}>{item.icon}</Text>
+                  <item.Icon size={18} color={colors.textMuted} strokeWidth={2} />
                   <View>
                     <Text style={styles.cardItemLabel}>{item.label}</Text>
                     <Text style={styles.cardItemValue}>{item.value}</Text>
@@ -83,14 +84,14 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Preferences</Text>
           <View style={styles.card}>
             {[
-              { icon: '🎨', label: 'Background Theme', route: 'Settings' },
-              { icon: '🔔', label: 'Notifications', value: 'On' },
-              { icon: '📍', label: 'Location', value: 'Mumbai' },
-              { icon: '🌐', label: 'Language', value: 'English' },
+              { Icon: Palette, label: 'Background Theme', route: 'Settings' },
+              { Icon: Bell, label: 'Notifications', value: 'On' },
+              { Icon: MapPin, label: 'Location', value: 'Mumbai' },
+              { Icon: Globe, label: 'Language', value: 'English' },
             ].map((item, idx) => (
               <TouchableOpacity key={item.label} style={[styles.cardItem, idx < 3 && styles.cardItemBorder]} activeOpacity={0.6} onPress={item.route ? () => navigation.navigate(item.route) : undefined}>
                 <View style={styles.cardItemLeft}>
-                  <Text style={styles.cardItemIcon}>{item.icon}</Text>
+                  <item.Icon size={18} color={colors.textMuted} strokeWidth={2} />
                   <View>
                     <Text style={styles.cardItemLabel}>{item.label}</Text>
                     <Text style={styles.cardItemValue}>{item.value}</Text>
@@ -107,14 +108,14 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Support</Text>
           <View style={styles.card}>
             {[
-              { icon: '❓', label: 'Help Center' },
-              { icon: '💬', label: 'Contact Support' },
-              { icon: '📜', label: 'Terms of Service' },
-              { icon: '🔒', label: 'Privacy Policy' },
+              { Icon: CircleHelp, label: 'Help Center' },
+              { Icon: MessageCircle, label: 'Contact Support' },
+              { Icon: FileText, label: 'Terms of Service' },
+              { Icon: Lock, label: 'Privacy Policy' },
             ].map((item, idx) => (
               <TouchableOpacity key={item.label} style={[styles.cardItem, idx < 3 && styles.cardItemBorder]} activeOpacity={0.6}>
                 <View style={styles.cardItemLeft}>
-                  <Text style={styles.cardItemIcon}>{item.icon}</Text>
+                  <item.Icon size={18} color={colors.textMuted} strokeWidth={2} />
                   <Text style={styles.cardItemLabel}>{item.label}</Text>
                 </View>
                 <Text style={styles.cardItemArrow}>›</Text>
@@ -127,7 +128,7 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.section}>
           <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.7}>
             <LinearGradient colors={[`${colors.danger}20`, `${colors.danger}08`]} style={styles.logoutInner}>
-              <Text style={styles.logoutIcon}>🚪</Text>
+              <LogOut size={18} color={colors.danger} strokeWidth={2} />
               <Text style={styles.logoutText}>Sign Out</Text>
             </LinearGradient>
           </TouchableOpacity>

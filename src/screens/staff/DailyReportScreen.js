@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ScanLine, AlertTriangle, Clock } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import DashboardHeader from '../../components/DashboardHeader';
 import { colors, spacing, radii, typography } from '../../constants/theme';
@@ -54,12 +55,12 @@ export default function DailyReportScreen({ navigation }) {
         {/* Quick stats */}
         <View style={styles.statRow}>
           {[
-            { label: 'Total Scans', value: String(REPORT_DATA.totalScans), icon: '📷', color: colors.primary },
-            { label: 'Flagged', value: String(REPORT_DATA.flagged), icon: '⚠️', color: colors.warning },
-            { label: 'Peak Hour', value: REPORT_DATA.peakHour.split('—')[0].trim(), icon: '⏰', color: colors.info },
+            { label: 'Total Scans', value: String(REPORT_DATA.totalScans), Icon: ScanLine, color: colors.primary },
+            { label: 'Flagged', value: String(REPORT_DATA.flagged), Icon: AlertTriangle, color: colors.warning },
+            { label: 'Peak Hour', value: REPORT_DATA.peakHour.split('—')[0].trim(), Icon: Clock, color: colors.info },
           ].map((s) => (
             <View key={s.label} style={styles.statCard}>
-              <Text style={styles.statIcon}>{s.icon}</Text>
+              <s.Icon size={20} color={s.color} strokeWidth={2} />
               <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
               <Text style={styles.statLabel}>{s.label}</Text>
             </View>

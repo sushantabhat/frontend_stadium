@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, Alert, Modal, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { ClipboardList, DoorOpen } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import DashboardHeader from '../../components/DashboardHeader';
 import RefreshBar from '../../components/RefreshBar';
@@ -164,7 +165,7 @@ export default function StaffShiftManagementScreen({ navigation }) {
                         <View key={gateName} style={styles.gateCard}>
                           <View style={styles.gateCardHeader}>
                             <View style={styles.gateIcon}>
-                              <Text style={styles.gateIconText}>🚪</Text>
+                              <DoorOpen size={18} color="#FFF" strokeWidth={2} />
                             </View>
                             <Text style={styles.gateName}>{gateName}</Text>
                             <Text style={styles.gateCount}>{gateShifts.length} assigned</Text>
@@ -215,7 +216,7 @@ export default function StaffShiftManagementScreen({ navigation }) {
 
               {!selectedMatch && !isLoading && (
                 <View style={styles.emptyWrap}>
-                  <Text style={styles.emptyIcon}>📋</Text>
+                  <ClipboardList size={48} color={glass.textMuted} strokeWidth={1.5} />
                   <Text style={styles.emptyTitle}>Select a match</Text>
                   <Text style={styles.emptyDesc}>Pick a match above to manage gate assignments</Text>
                 </View>

@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import { Clock, CheckCircle, XCircle, Ticket, Info } from 'lucide-react-native';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../../services/notificationService';
 import { NotificationContext } from '../../context/NotificationContext';
@@ -10,11 +11,11 @@ import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
 
 const TYPE_CONFIG = {
-  refund_processing: { icon: '⏳', color: '#FFD93D', bg: 'rgba(255,217,61,0.12)' },
-  refund_completed: { icon: '✓', color: '#A29BFE', bg: 'rgba(162,155,254,0.12)' },
-  match_cancelled: { icon: '✕', color: '#FF6B6B', bg: 'rgba(255,107,107,0.12)' },
-  booking_confirmed: { icon: '🎫', color: '#69F0AE', bg: 'rgba(105,240,174,0.12)' },
-  general: { icon: 'ℹ', color: colors.textMuted, bg: 'rgba(255,255,255,0.06)' },
+  refund_processing: { Icon: Clock, color: '#FFD93D', bg: 'rgba(255,217,61,0.12)' },
+  refund_completed: { Icon: CheckCircle, color: '#A29BFE', bg: 'rgba(162,155,254,0.12)' },
+  match_cancelled: { Icon: XCircle, color: '#FF6B6B', bg: 'rgba(255,107,107,0.12)' },
+  booking_confirmed: { Icon: Ticket, color: '#69F0AE', bg: 'rgba(105,240,174,0.12)' },
+  general: { Icon: Info, color: colors.textMuted, bg: 'rgba(255,255,255,0.06)' },
 };
 
 export default function NotificationsScreen({ navigation }) {
@@ -66,7 +67,7 @@ export default function NotificationsScreen({ navigation }) {
         activeOpacity={0.7}
       >
         <View style={[styles.notifIcon, { backgroundColor: config.bg }]}>
-          <Text style={styles.notifIconText}>{config.icon}</Text>
+          <config.Icon size={18} color={config.color} strokeWidth={2} />
         </View>
         <View style={styles.notifBody}>
           <View style={styles.notifTop}>

@@ -4,14 +4,15 @@ import { Alert, Modal, ScrollView, StatusBar, StyleSheet, Text, TextInput, Touch
 import { LinearGradient } from 'expo-linear-gradient';
 import ScreenHeader from '../../components/ScreenHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
+import { AlertTriangle, TriangleAlert, Wifi, MonitorOff, UserX } from 'lucide-react-native';
 
 /* ─── Issue types for escalation ─── */
 const ISSUE_TYPES = [
-  { key: 'fraud_duplicate', label: 'Fraud — Duplicate Scan', severity: 'high', icon: '⚠️' },
-  { key: 'fraud_fake', label: 'Fraud — Fake Ticket', severity: 'critical', icon: '🚨' },
-  { key: 'tech_api', label: 'Technical — API Timeout', severity: 'medium', icon: '📡' },
-  { key: 'tech_system', label: 'Technical — System Down', severity: 'critical', icon: '💻' },
-  { key: 'ops_complaint', label: 'Operational — Customer Complaint', severity: 'low', icon: '👤' },
+  { key: 'fraud_duplicate', label: 'Fraud — Duplicate Scan', severity: 'high', Icon: AlertTriangle },
+  { key: 'fraud_fake', label: 'Fraud — Fake Ticket', severity: 'critical', Icon: TriangleAlert },
+  { key: 'tech_api', label: 'Technical — API Timeout', severity: 'medium', Icon: Wifi },
+  { key: 'tech_system', label: 'Technical — System Down', severity: 'critical', Icon: MonitorOff },
+  { key: 'ops_complaint', label: 'Operational — Customer Complaint', severity: 'low', Icon: UserX },
 ];
 
 export default function TicketVerifyScreen({ route, navigation }) {
@@ -175,7 +176,7 @@ export default function TicketVerifyScreen({ route, navigation }) {
                   onPress={() => setSelectedIssue(issue.key)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.issueIcon}>{issue.icon}</Text>
+                  <issue.Icon size={18} color={selectedIssue === issue.key ? glass.brandPurple : glass.textMuted} strokeWidth={2} />
                   <Text style={[styles.issueLabel, selectedIssue === issue.key && styles.issueLabelActive]}>{issue.label}</Text>
                   {selectedIssue === issue.key && <Text style={styles.issueCheck}>✓</Text>}
                 </TouchableOpacity>

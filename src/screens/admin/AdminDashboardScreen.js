@@ -10,7 +10,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop, Circle } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
+import { TriangleAlert, Landmark } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { AdminCard } from '../../components/admin/TicketProHeader';
 import DashboardHeader from '../../components/DashboardHeader';
@@ -21,31 +23,68 @@ import { formatInNepal } from '../../utils/date';
 import { fetchAdminAnalytics, fetchUsers } from '../../services/adminService';
 import { fetchMatches } from '../../services/matchService';
 
-const CHART_HEIGHTS = [42, 58, 48, 72, 55, 88, 64, 95, 70, 100];
 
-function Sparkline({ heights, color, activeIndex }) {
-  return (
-    <View style={sparkStyles.wrap}>
-      {heights.map((h, i) => (
-        <View
-          key={i}
-          style={[
-            sparkStyles.bar,
-            {
-              height: `${h}%`,
-              backgroundColor: i === activeIndex ? color : `${color}35`,
-            },
-          ]}
-        />
-      ))}
-    </View>
-  );
+function generateRevenueBars(revenue, days = 7) {
+  let numVal = typeof revenue === 'string' ? parseInt(revenue) || 0 : (revenue || 0);
+  if (numVal === 0) numVal = 1;
+  const perDay = numVal / days;
+  const bars = [];
+  for (let i = 0; i < days; i++) {
+    const variance = 0.5 + Math.random() * 0.7;
+    bars.push(Math.max(10, Math.round((perDay * variance / numVal) * 100)));
+  }
+  const maxBar = Math.max(...bars);
+  if (maxBar === 0) return Array(days).fill(10);
+  return bars.map(h => Math.round((h / maxBar) * 100));
 }
 
-const sparkStyles = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 28, flex: 1 },
-  bar: { flex: 1, borderRadius: 2, minHeight: 4 },
-});
+const CHART_W = 300;
+const CHART_H = 80;
+
+function RevenueLineChart({ revenue, color, width, height }) {
+  const w = width || CHART_W;
+  const h = height || CHART_H;
+  const points = useMemo(() => {
+    const vals = generateRevenueBars(revenue, 7);
+    const step = w / (vals.length - 1);
+    return vals.map((v, i) => ({ x: i * step, y: h - (v / 100) * h }));
+  }, [revenue, w, h]);
+
+  const lineD = useMemo(() => {
+    if (points.length < 2) return '';
+    const s = w / (points.length - 1);
+    let d = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const cpx1 = prev.x + s * 0.4;
+      const cpx2 = curr.x - s * 0.4;
+      d += ` C ${cpx1} ${prev.y}, ${cpx2} ${curr.y}, ${curr.x} ${curr.y}`;
+    }
+    return d;
+  }, [points, w]);
+
+  const fillD = useMemo(() => {
+    if (!lineD) return '';
+    return `${lineD} L ${points[points.length - 1].x} ${h} L ${points[0].x} ${h} Z`;
+  }, [lineD, points, h]);
+
+  const last = points[points.length - 1];
+
+  return (
+    <Svg width={w} height={h + 4}>
+      <Defs>
+        <SvgGradient id={`fill-${color}`} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={color} stopOpacity="0.25" />
+          <Stop offset="1" stopColor={color} stopOpacity="0.02" />
+        </SvgGradient>
+      </Defs>
+      <Path d={fillD} fill={`url(#fill-${color})`} />
+      <Path d={lineD} stroke={color} strokeWidth={2} fill="none" strokeLinecap="round" />
+      <Circle cx={last.x} cy={last.y} r={3} fill={color} />
+    </Svg>
+  );
+}
 
 export default function AdminDashboardScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
@@ -102,14 +141,15 @@ export default function AdminDashboardScreen({ navigation }) {
   useFocusEffect(useCallback(() => { loadMetrics(); }, [loadMetrics]));
 
   const statCards = useMemo(() => [
-    { label: 'Tickets Sold', value: metrics.bookedSeats, delta: '+12.1%', positive: true, color: glass.statusSuccessText },
-    { label: 'Active Events', value: metrics.liveMatches, delta: '+3 this month', positive: true, color: glass.brandPurple },
+    { label: 'Tickets Sold', value: metrics.bookedSeats, delta: '+12.1%', positive: true, color: glass.statusSuccessText, route: 'AdminTicketValidation' },
+    { label: 'Active Events', value: metrics.liveMatches, delta: '+3 this month', positive: true, color: glass.brandPurple, route: 'Events' },
     {
       label: 'Scanners Online',
       value: `${metrics.scannersOnline} / ${Math.max(metrics.scannersTotal, metrics.scannersOnline)}`,
       delta: metrics.scannersTotal > metrics.scannersOnline ? `${metrics.scannersTotal - metrics.scannersOnline} offline` : 'All online',
       positive: metrics.scannersOnline >= metrics.scannersTotal,
       color: metrics.scannersOnline >= metrics.scannersTotal ? glass.statusSuccessText : glass.statusDangerText,
+      route: 'Scanners',
     },
   ], [metrics]);
 
@@ -135,37 +175,28 @@ export default function AdminDashboardScreen({ navigation }) {
               <Text style={styles.revenueValue}>Rs.{metrics.revenue.toLocaleString()}</Text>
             )}
             <Text style={styles.revenueDelta}>↗ +18.4% vs last week</Text>
-            <View style={styles.chartArea}>
-              <View style={styles.chartBars}>
-                {CHART_HEIGHTS.map((h, i) => (
-                  <View key={i} style={styles.chartCol}>
-                    <View style={[styles.chartBar, { height: `${h}%`, opacity: i >= 8 ? 1 : 0.45 }]} />
-                  </View>
-                ))}
-              </View>
-              <View style={styles.chartLabels}>
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-                  <Text key={`${d}-${i}`} style={styles.chartDay}>{d}</Text>
-                ))}
-              </View>
-            </View>
+            {!isLoading && metrics.revenue > 0 && (
+              <RevenueLineChart revenue={metrics.revenue} color={glass.brandPurple} />
+            )}
           </AdminCard>
 
           {statCards.map((card) => (
-            <AdminCard key={card.label} style={styles.statCard}>
-              <View style={styles.statTop}>
-                <View>
-                  <Text style={styles.statLabel}>{card.label}</Text>
-                  <Text style={styles.statValue}>
-                    {isLoading ? '—' : card.value}
-                  </Text>
+            <TouchableOpacity key={card.label} activeOpacity={0.75} onPress={() => navigation.navigate(card.route)}>
+              <AdminCard style={styles.statCard}>
+                <View style={styles.statTop}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.statLabel}>{card.label}</Text>
+                    <Text style={styles.statValue}>
+                      {isLoading ? '—' : card.value}
+                    </Text>
+                  </View>
+                  {!isLoading && <RevenueLineChart revenue={card.value} color={card.color} width={100} height={36} />}
                 </View>
-                <Sparkline heights={[30, 45, 40, 60, 55, 75, 65, 80]} color={card.color} activeIndex={7} />
-              </View>
-              <Text style={[styles.statDelta, { color: card.positive ? glass.statusSuccessText : glass.statusDangerText }]}>
-                {card.delta}
-              </Text>
-            </AdminCard>
+                <Text style={[styles.statDelta, { color: card.positive ? glass.statusSuccessText : glass.statusDangerText }]}>
+                  {card.delta}
+                </Text>
+              </AdminCard>
+            </TouchableOpacity>
           ))}
 
           {liveMatch && (
@@ -193,7 +224,7 @@ export default function AdminDashboardScreen({ navigation }) {
               onPress={() => navigation.navigate('AdminTicketValidation')}
               activeOpacity={0.85}
             >
-              <Text style={styles.fraudIcon}>⚠</Text>
+              <TriangleAlert size={20} color="#FF4757" strokeWidth={2.5} />
               <View style={styles.fraudText}>
                 <Text style={styles.fraudTitle}>Fraud Alert</Text>
                 <Text style={styles.fraudDesc}>{metrics.fraudCount} security incidents need review</Text>
@@ -218,7 +249,7 @@ export default function AdminDashboardScreen({ navigation }) {
                       onPress={() => navigation.navigate('Events', { screen: 'AdminMatchDetail', params: { matchId: match._id } })}
                       activeOpacity={0.85}
                     >
-                      <Text style={styles.nextIcon}>🏟</Text>
+                      <Landmark size={24} color={colors.textMuted} strokeWidth={1.8} />
                       <Text style={styles.nextTitle} numberOfLines={1}>
                         {match.title || `${match.teamA} vs ${match.teamB}`}
                       </Text>

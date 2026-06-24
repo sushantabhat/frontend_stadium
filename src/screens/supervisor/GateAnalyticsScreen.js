@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, Modal, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Radio } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import DashboardHeader from '../../components/DashboardHeader';
 import RefreshBar from '../../components/RefreshBar';
@@ -171,7 +172,7 @@ export default function GateAnalyticsScreen({ navigation }) {
                 <ActivityIndicator color={colors.primary} style={{ paddingVertical: spacing.xxl }} />
               ) : gates.length === 0 ? (
                 <View style={styles.emptyWrap}>
-                  <Text style={styles.emptyIcon}>📡</Text>
+                  <Radio size={48} color={colors.textMuted} strokeWidth={1.5} />
                   <Text style={styles.emptyTitle}>No gate data</Text>
                   <Text style={styles.emptyDesc}>No scans recorded for this match yet</Text>
                 </View>

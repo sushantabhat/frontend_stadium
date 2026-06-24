@@ -18,6 +18,7 @@ import UserManagementScreen from '../screens/admin/UserManagementScreen';
 import StaffShiftManagementScreen from '../screens/admin/StaffShiftManagementScreen';
 import AdminSettingsScreen from '../screens/admin/AdminSettingsScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
+import SettingsScreen from '../screens/common/SettingsScreen';
 import { useBackgroundColor } from '../context/ThemeContext';
 import TabBar, { tabBarStyle } from '../components/TabBar';
 
@@ -40,6 +41,7 @@ function DashboardNavigator() {
       <DashStack.Screen name="AdminTicketValidation" component={TicketValidationScreen} />
       <DashStack.Screen name="AdminSettings" component={AdminSettingsScreen} />
       <DashStack.Screen name="AdminProfile" component={ProfileScreen} />
+      <DashStack.Screen name="Settings" component={SettingsScreen} />
     </DashStack.Navigator>
   );
 }

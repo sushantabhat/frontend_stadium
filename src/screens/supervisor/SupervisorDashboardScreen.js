@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { ClipboardList, CircleDot, ScanLine, Radio, RadioTower, CheckCircle } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { fetchFraudLogs, fetchGateStats } from '../../services/adminService';
@@ -142,14 +143,14 @@ export default function SupervisorDashboardScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Operations Overview</Text>
           <View style={styles.metricsRow}>
             {[
-              { label: 'OPEN', value: openIncidents.length, icon: '📋', color: colors.warning },
-              { label: 'CRITICAL', value: criticalCount, icon: '🔴', color: colors.danger },
-              { label: 'TOTAL SCANS', value: totalScans.toLocaleString(), icon: '📸', color: colors.primary },
-              { label: 'GATES DOWN', value: '—', icon: '📡', color: colors.textMuted },
+              { label: 'OPEN', value: openIncidents.length, Icon: ClipboardList, color: colors.warning },
+              { label: 'CRITICAL', value: criticalCount, Icon: CircleDot, color: colors.danger },
+              { label: 'TOTAL SCANS', value: totalScans.toLocaleString(), Icon: ScanLine, color: colors.primary },
+              { label: 'GATES DOWN', value: '—', Icon: Radio, color: colors.textMuted },
             ].map((m) => (
               <TouchableOpacity key={m.label} style={styles.metricCard} activeOpacity={0.9}>
                 <View style={styles.metricInner}>
-                  <Text style={styles.metricIcon}>{m.icon}</Text>
+                  <m.Icon size={18} color={m.color} strokeWidth={2} />
                   <Text style={[styles.metricValue, { color: m.color }]}>{m.value}</Text>
                   <Text style={styles.metricLabel}>{m.label}</Text>
                 </View>
@@ -166,7 +167,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
           </View>
           {gates.length === 0 ? (
             <View style={styles.emptyWrap}>
-              <Text style={styles.emptyIcon}>📡</Text>
+              <RadioTower size={36} color={colors.textMuted} strokeWidth={1.5} />
               <Text style={styles.emptyTitle}>No gate data</Text>
               <Text style={styles.emptyDesc}>Assign staff to gates for match data</Text>
             </View>
@@ -208,7 +209,7 @@ export default function SupervisorDashboardScreen({ navigation }) {
             <ActivityIndicator color={colors.primary} style={{ paddingVertical: spacing.xl }} />
           ) : incidents.length === 0 ? (
             <View style={styles.emptyWrap}>
-              <Text style={styles.emptyIcon}>✅</Text>
+              <CheckCircle size={36} color={colors.success} strokeWidth={1.5} />
               <Text style={styles.emptyTitle}>All clear</Text>
               <Text style={styles.emptyDesc}>No incidents reported</Text>
             </View>
