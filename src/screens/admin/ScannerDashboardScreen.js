@@ -102,13 +102,6 @@ export default function ScannerDashboardScreen({ navigation }) {
       <RefreshBar refreshing={isRefreshing} />
       <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />
-        }
-      >
         <DashboardHeader
           topLabel="MONITORING"
           title="Scanners"
@@ -116,6 +109,13 @@ export default function ScannerDashboardScreen({ navigation }) {
           avatarLabel={initials}
           onAvatarPress={() => navigation.navigate('AdminProfile')}
         />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />
+        }
+      >
 
         <Text style={styles.heroLabel}>TICKETS SCANNED TODAY</Text>
         {isLoading ? (

@@ -147,14 +147,8 @@ export default function SeatSelectionScreen({ route, navigation }) {
       const catInfo = CATEGORY_COLORS[activeCategory] || { label: activeCategory };
       f.push({ key: 'category', label: catInfo.label });
     }
-    if (selectedSection) {
-      f.push({ key: 'section', label: `${selectedSection.sectionId} (${selectedSection.availableSeats})` });
-    }
-    if (quantity) {
-      f.push({ key: 'quantity', label: `${quantity} Ticket${quantity > 1 ? 's' : ''}` });
-    }
     return f;
-  }, [activeCategory, selectedSection, quantity]);
+  }, [activeCategory]);
 
   const handleSectionSelect = useCallback((section) => {
     setSelectedSection((prev) => (prev?.sectionId === section.sectionId ? null : section));
@@ -163,8 +157,6 @@ export default function SeatSelectionScreen({ route, navigation }) {
 
   const handleFilterRemove = useCallback((key) => {
     if (key === 'category') setActiveCategory(null);
-    if (key === 'section') setSelectedSection(null);
-    if (key === 'quantity') setQuantity(2);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -235,7 +227,6 @@ export default function SeatSelectionScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <BookingProgress currentStep="select" />
       <ScreenHeader
         title={`${match?.teamA} vs ${match?.teamB}`}
         subtitle="Select your preferred section"
@@ -253,6 +244,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
             />
 
             <View style={styles.mapContainer}>
+              <BookingProgress currentStep="select" compact />
               <StadiumMap
                 sections={filteredSections}
                 selectedSection={selectedSection}
@@ -294,6 +286,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
                       outputRange: [0, MAX_SLIDE],
                     }),
                   }],
+                  bottom: selectedSection ? 85 : 0,
                 },
             ]}
           >
@@ -345,7 +338,7 @@ export default function SeatSelectionScreen({ route, navigation }) {
       )}
 
       {/* Checkout Bar */}
-      {selectedSection && selectedSection.availableSeats > 0 && (
+      {selectedSection && (
         <View style={styles.checkoutBar}>
           <View style={styles.checkoutSummary}>
             <Text style={styles.checkoutSection}>

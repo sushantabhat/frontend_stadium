@@ -218,9 +218,9 @@ export default function GateScannerScreen({ navigation }) {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
         <DashboardHeader
-          topLabel="SECURE UTILITY"
+          topLabel="STAFF PORTAL"
           title="Gate Scanner"
-          avatarColors={['#00E5FF', '#00B8D4']}
+          avatarColors={['#00C853', '#00A844']}
           avatarLabel={(userInfo?.name || 'S').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
           onAvatarPress={() => navigation.navigate('Account')}
         />

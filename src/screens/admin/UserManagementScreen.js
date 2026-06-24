@@ -180,18 +180,18 @@ export default function UserManagementScreen({ navigation }) {
       <RefreshBar refreshing={isRefreshing} />
       <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
-      >
-        <DashboardHeader
+      <DashboardHeader
           topLabel="MANAGEMENT"
           title="Users"
           avatarColors={['#FFD700', '#FFA000']}
           avatarLabel={initials}
           onAvatarPress={() => navigation.navigate('AdminProfile')}
         />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
+      >
 
         <AdminCard style={styles.statsCard}>
           <View style={styles.statsRow}>

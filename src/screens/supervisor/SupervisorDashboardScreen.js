@@ -100,19 +100,19 @@ export default function SupervisorDashboardScreen({ navigation }) {
       <RefreshBar refreshing={isRefreshing} />
       <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+        {/* ═══ DASHBOARD HEADER ═══ */}
+        <DashboardHeader
+          topLabel="INCIDENT COMMAND"
+          title={firstName}
+          avatarColors={[colors.primary, colors.primaryDark]}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate('Account', { screen: 'SupervisorProfile' })}
+        />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
       >
-        {/* ═══ DASHBOARD HEADER ═══ */}
-        <DashboardHeader
-          topLabel="INCIDENT COMMAND"
-          title={`Hey, ${firstName}`}
-          avatarColors={[colors.primary, colors.primaryDark]}
-          avatarLabel={initials}
-          onAvatarPress={() => navigation.navigate('SupervisorProfile')}
-        />
 
         {/* ═══ ACTIVE INCIDENTS ALERT ═══ */}
         {openIncidents.length > 0 && (

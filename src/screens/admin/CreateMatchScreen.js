@@ -505,12 +505,25 @@ export default function CreateMatchScreen({ navigation }) {
             </View>
 
             <View style={styles.sheetActions}>
+              {(() => {
+                const previewIso = formatDateISO(pickerYear, pickerMonth, clampedDay, pickerHour, pickerMinute);
+                const isPast = new Date(previewIso) <= new Date();
+                return isPast ? <Text style={styles.pastDateWarning}>Cannot select a past date</Text> : null;
+              })()}
+            </View>
+
+            <View style={styles.sheetActions}>
               <TouchableOpacity style={styles.sheetCancelBtn} onPress={() => setShowDatePicker(false)} activeOpacity={0.7}>
                 <Text style={styles.sheetCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.sheetConfirmBtn} onPress={handleDateConfirm} activeOpacity={0.85}>
+              <TouchableOpacity
+                style={[styles.sheetConfirmBtn, new Date(formatDateISO(pickerYear, pickerMonth, clampedDay, pickerHour, pickerMinute)) <= new Date() && styles.sheetConfirmBtnDisabled]}
+                onPress={handleDateConfirm}
+                activeOpacity={0.85}
+                disabled={new Date(formatDateISO(pickerYear, pickerMonth, clampedDay, pickerHour, pickerMinute)) <= new Date()}
+              >
                 <LinearGradient
-                  colors={[glass.brandPurple, glass.neonPurple]}
+                  colors={new Date(formatDateISO(pickerYear, pickerMonth, clampedDay, pickerHour, pickerMinute)) <= new Date() ? ['#555', '#444'] : [glass.brandPurple, glass.neonPurple]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.sheetConfirmGradient}
@@ -632,6 +645,8 @@ const styles = StyleSheet.create({
   },
   sheetCancelText: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
   sheetConfirmBtn: { flex: 1, borderRadius: radii.md, overflow: 'hidden' },
+  sheetConfirmBtnDisabled: { opacity: 0.5 },
   sheetConfirmGradient: { paddingVertical: spacing.lg, alignItems: 'center' },
   sheetConfirmText: { color: '#FFFFFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
+  pastDateWarning: { color: '#FF4757', fontSize: typography.small.fontSize, fontWeight: '600', textAlign: 'center', flex: 1, marginTop: spacing.md },
 });

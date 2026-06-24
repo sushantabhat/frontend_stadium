@@ -109,13 +109,6 @@ export default function MatchListScreen({ navigation }) {
 
   const renderHeader = () => (
     <View style={s.headerSection}>
-      <DashboardHeader
-        topLabel="BROWSE"
-        title={`${firstName}`}
-        avatarColors={colors.gradientPurple}
-        avatarLabel={initials}
-        onAvatarPress={() => navigation.navigate('Account')}
-      />
       <View style={s.searchBar}>
         <Text style={s.searchIcon}>⌕</Text>
         <TextInput
@@ -260,6 +253,13 @@ export default function MatchListScreen({ navigation }) {
       <RefreshBar refreshing={isRefreshing} />
       <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" />
+      <DashboardHeader
+        topLabel="BROWSE"
+        title={`${firstName}`}
+        avatarColors={colors.gradientPurple}
+        avatarLabel={initials}
+        onAvatarPress={() => navigation.navigate('Account')}
+      />
       {isLoading ? (
         <View style={s.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -282,7 +282,7 @@ const s = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingBottom: spacing.xxxl + 20 },
 
-  headerSection: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.lg },
+  headerSection: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.xl },
   pageEyebrow: { color: colors.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, marginBottom: spacing.xs },
   pageTitle: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '900', letterSpacing: -0.4 },

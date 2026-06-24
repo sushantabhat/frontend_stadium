@@ -177,13 +177,6 @@ export default function AdminMatchListScreen({ navigation }) {
 
   const renderHeader = () => (
     <View style={s.headerSection}>
-      <DashboardHeader
-        topLabel="MANAGEMENT"
-        title="Events"
-        avatarColors={['#FFD700', '#FFA000']}
-        avatarLabel={initials}
-        onAvatarPress={() => navigation.navigate('AdminProfile')}
-      />
       <AdminSearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Search events..." onClear={() => setSearchQuery('')} />
       <AdminFilterPills options={FILTERS} value={activeFilter} onChange={setActiveFilter} />
     </View>
@@ -496,6 +489,13 @@ export default function AdminMatchListScreen({ navigation }) {
       <RefreshBar refreshing={isRefreshing} />
       <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" />
+      <DashboardHeader
+        topLabel="MANAGEMENT"
+        title="Events"
+        avatarColors={['#FFD700', '#FFA000']}
+        avatarLabel={initials}
+        onAvatarPress={() => navigation.navigate('AdminProfile')}
+      />
 
       {isLoading ? (
         <View style={s.center}>
@@ -560,7 +560,7 @@ const s = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   errorWrap: { flex: 1 },
   list: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl * 3 },
-  headerSection: { paddingTop: spacing.md, paddingBottom: spacing.lg },
+  headerSection: { paddingBottom: spacing.lg },
 
   /* ═══════════════════════════════════════════════════
      LIST CARD — full-bleed image, fan-aligned

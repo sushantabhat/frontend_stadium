@@ -183,13 +183,6 @@ export default function TicketValidationScreen({ navigation }) {
 
   const listHeader = useMemo(() => (
     <View>
-      <DashboardHeader
-        topLabel="MANAGEMENT"
-        title="Tickets"
-        avatarColors={['#FFD700', '#FFA000']}
-        avatarLabel={initials}
-        onAvatarPress={() => navigation.navigate(userInfo?.role === 'supervisor' ? 'SupervisorProfile' : 'AdminProfile')}
-      />
       <AdminSearchBar
         value={searchQuery}
         onChangeText={setSearchQuery}
@@ -198,13 +191,20 @@ export default function TicketValidationScreen({ navigation }) {
       />
       <AdminFilterPills options={STATUS_FILTERS} value={activeFilter} onChange={setActiveFilter} />
     </View>
-  ), [searchQuery, activeFilter, initials, navigation, userInfo?.role]);
+  ), [searchQuery, activeFilter]);
 
   return (
     <View style={{ flex: 1 }}>
       <RefreshBar refreshing={isRefreshing} />
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
+        <DashboardHeader
+          topLabel="MANAGEMENT"
+          title="Tickets"
+          avatarColors={['#FFD700', '#FFA000']}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate(userInfo?.role === 'supervisor' ? 'SupervisorProfile' : 'AdminProfile')}
+        />
         <FlatList
           data={filteredTickets}
           keyExtractor={(item) => item.id}

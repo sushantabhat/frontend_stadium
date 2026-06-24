@@ -28,7 +28,7 @@ export default function DailyReportScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <DashboardHeader
-        topLabel="REPORTING"
+          topLabel="STAFF PORTAL"
         title="Daily Report"
         avatarColors={['#00C853', '#00A844']}
         avatarLabel={initials}

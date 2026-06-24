@@ -64,18 +64,18 @@ export default function StaffDashboardScreen({ navigation }) {
       <RefreshBar refreshing={isRefreshing} />
       <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+      <DashboardHeader
+          topLabel="STAFF PORTAL"
+          title={firstName}
+          avatarColors={[glass.statusSuccessText, '#00A844']}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate('Account')}
+        />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
       >
-        <DashboardHeader
-          topLabel="GATE OPERATIONS"
-          title={`Hey, ${firstName}`}
-          avatarColors={[glass.statusSuccessText, '#00A844']}
-          avatarLabel={initials}
-          onAvatarPress={() => navigation.navigate('Account')}
-        />
 
         <TouchableOpacity
           style={styles.scannerCta}

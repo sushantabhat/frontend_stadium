@@ -66,9 +66,14 @@ export default function VenueEditorScreen({ navigation, route }) {
   const [errors, setErrors] = useState({});
   const [pricing, setPricing] = useState(() => {
     if (venue) return buildPricingFromVenue(venue);
-    const result = {};
-    for (const cat of CATEGORY_OPTIONS) result[cat] = '0';
-    return result;
+    return {
+      platinum: '3500',
+      gold: '2500',
+      silver: '1500',
+      bronze: '800',
+      general: '400',
+      supporters: '200',
+    };
   });
   const [sections, setSections] = useState(() => {
     if (venue) return buildSectionsFromVenue(venue);

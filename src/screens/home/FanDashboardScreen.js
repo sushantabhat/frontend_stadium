@@ -48,12 +48,7 @@ export default function FanDashboardScreen({ navigation }) {
       <RefreshBar refreshing={isRefreshing} />
       <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
-      >
-        {/* Top Bar — asymmetric */}
+      <View style={styles.headerRow}>
         <DashboardHeader
           topLabel="WELCOME BACK"
           title={`${firstName} 👋`}
@@ -64,6 +59,12 @@ export default function FanDashboardScreen({ navigation }) {
         <View style={styles.bellWrap}>
           <NotificationBell onPress={() => navigation.navigate('Notifications')} />
         </View>
+      </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
+      >
 
         {/* Hero Banner Carousel */}
         <BannerCarousel
@@ -206,8 +207,9 @@ export default function FanDashboardScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerRow: { position: 'relative' },
   topBar: { flexDirection: 'row', alignItems: 'center', paddingRight: spacing.xl },
-  bellWrap: { position: 'absolute', top: 20, right: 68, zIndex: 10 },
+  bellWrap: { position: 'absolute', top: 18, right: 68, zIndex: 10 },
   scroll: { paddingTop: spacing.lg },
   loadingWrap: {
     paddingVertical: spacing.huge,

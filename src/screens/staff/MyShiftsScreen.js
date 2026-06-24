@@ -57,7 +57,7 @@ export default function MyShiftsScreen({ navigation }) {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
         <DashboardHeader
-          topLabel="SCHEDULE"
+          topLabel="STAFF PORTAL"
           title="My Shifts"
           avatarColors={['#00C853', '#00A844']}
           avatarLabel={initials}

@@ -118,14 +118,14 @@ export default function AdminDashboardScreen({ navigation }) {
       <RefreshBar refreshing={refreshing} />
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}>
-          <DashboardHeader
+        <DashboardHeader
             topLabel="SYSTEM OVERVIEW"
             title={userInfo?.name || 'Admin'}
             avatarColors={colors.gradientGold}
             avatarLabel={initials}
             onAvatarPress={() => navigation.navigate('AdminProfile')}
           />
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}>
 
           <AdminCard style={styles.revenueCard}>
             <Text style={styles.cardLabel}>WEEKLY REVENUE</Text>

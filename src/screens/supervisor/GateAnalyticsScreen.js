@@ -97,7 +97,7 @@ export default function GateAnalyticsScreen({ navigation }) {
           title="Gate Analytics"
           avatarColors={[colors.primary, glass.brandPurple]}
           avatarLabel={initials}
-          onAvatarPress={() => navigation.navigate('SupervisorProfile')}
+          onAvatarPress={() => navigation.navigate('Account', { screen: 'SupervisorProfile' })}
           onBack={() => navigation.goBack()}
         />
 

@@ -73,17 +73,17 @@ export default function StatisticsScreen({ navigation }) {
       <RefreshBar refreshing={refreshing} />
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
-        {isLoading ? (
-          <View style={styles.center}><ActivityIndicator size="large" color={glass.brandPurple} /></View>
-        ) : (
-          <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}>
-            <DashboardHeader
+        <DashboardHeader
               topLabel="ANALYTICS"
               title="Reports"
               avatarColors={['#FFD700', '#FFA000']}
               avatarLabel={initials}
               onAvatarPress={() => navigation.navigate('AdminProfile')}
             />
+        {isLoading ? (
+          <View style={styles.center}><ActivityIndicator size="large" color={glass.brandPurple} /></View>
+        ) : (
+          <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}>
 
             <AdminCard style={styles.revenueCard}>
               <View style={styles.revenueHeader}>
