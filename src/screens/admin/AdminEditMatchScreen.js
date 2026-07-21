@@ -23,6 +23,10 @@ import { fetchMatchById, updateMatch } from '../../services/matchService';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
 const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
+const MATCH_TYPES = ['League', 'Cup', 'Friendly', 'International'];
+const MATCH_STAGES = ['League Stage', 'Semi-Finals', 'Finals'];
+const CRICKET_FORMATS = ['T20', 'ODI', 'T10'];
+const STAR_POWER_LEVELS = ['None', 'Local Stars', 'International', 'Global Icon'];
 
 const MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -101,6 +105,10 @@ export default function AdminEditMatchScreen({ route, navigation }) {
     imageUrl: '',
     teamALogo: '',
     teamBLogo: '',
+    match_type: 'League',
+    match_stage: 'League Stage',
+    cricket_format: 'T20',
+    star_power_level: 'None',
   });
 
   const [pricing, setPricing] = useState({
@@ -166,6 +174,10 @@ export default function AdminEditMatchScreen({ route, navigation }) {
         imageUrl: match.imageUrl || '',
         teamALogo: match.teamALogo || '',
         teamBLogo: match.teamBLogo || '',
+        match_type: match.match_type || 'League',
+        match_stage: match.match_stage || 'League Stage',
+        cricket_format: match.cricket_format || 'T20',
+        star_power_level: match.star_power_level || 'None',
       });
 
       const comps = parseDateToComponents(match.matchDate);
@@ -234,6 +246,10 @@ export default function AdminEditMatchScreen({ route, navigation }) {
         imageUrl: form.imageUrl.trim(),
         teamALogo: form.teamALogo.trim(),
         teamBLogo: form.teamBLogo.trim(),
+        match_type: form.match_type,
+        match_stage: form.match_stage,
+        cricket_format: form.cricket_format,
+        star_power_level: form.star_power_level,
         pricing: pricingObj,
       };
 
@@ -370,6 +386,66 @@ export default function AdminEditMatchScreen({ route, navigation }) {
               onChangeText={(v) => updateField('venue', v)}
             />
             {errors.venue && <Text style={styles.errorText}>{errors.venue}</Text>}
+
+            <Text style={styles.inputLabel}>Match Format (Type)</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md, paddingBottom: 4 }}>
+              {MATCH_TYPES.map(type => (
+                <TouchableOpacity
+                  key={type}
+                  style={[styles.pill, form.match_type === type && styles.pillActive]}
+                  onPress={() => updateField('match_type', type)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.pillText, form.match_type === type && styles.pillTextActive]}>{type}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <Text style={styles.inputLabel}>Cricket Format</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md, paddingBottom: 4 }}>
+              {CRICKET_FORMATS.map(format => (
+                <TouchableOpacity
+                  key={format}
+                  style={[styles.pill, form.cricket_format === format && styles.pillActive]}
+                  onPress={() => updateField('cricket_format', format)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.pillText, form.cricket_format === format && styles.pillTextActive]}>{format}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <Text style={styles.inputLabel}>Star Player Draw</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md, paddingBottom: 4 }}>
+              {STAR_POWER_LEVELS.map(level => (
+                <TouchableOpacity
+                  key={level}
+                  style={[styles.pill, form.star_power_level === level && styles.pillActive]}
+                  onPress={() => updateField('star_power_level', level)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.pillText, form.star_power_level === level && styles.pillTextActive]}>{level}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {form.match_type !== 'Friendly' && (
+              <>
+                <Text style={styles.inputLabel}>Match Stage</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.lg, paddingBottom: 4 }}>
+                  {MATCH_STAGES.map(stage => (
+                    <TouchableOpacity
+                      key={stage}
+                      style={[styles.pill, form.match_stage === stage && styles.pillActive]}
+                      onPress={() => updateField('match_stage', stage)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.pillText, form.match_stage === stage && styles.pillTextActive]}>{stage}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </>
+            )}
 
             <Text style={styles.inputLabel}>Match Date & Time</Text>
             <TouchableOpacity
@@ -1046,14 +1122,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
   },
-  halfField: {
-    flex: 1,
-  },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
+  halfField: { flex: 1 },
+  textArea: { minHeight: 80, textAlignVertical: 'top' },
 
+  pill: {
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2,
+    borderRadius: radii.full, backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1, borderColor: glass.border, marginRight: spacing.sm,
+  },
+  pillActive: { backgroundColor: glass.brandPurpleSurface, borderColor: glass.brandPurple },
+  pillText: { color: glass.textSecondary, fontSize: typography.captionMedium.fontSize, fontWeight: '600' },
+  pillTextActive: { color: glass.brandPurple, fontWeight: '800' },
 
   datePickerTrigger: {
     flexDirection: 'row',

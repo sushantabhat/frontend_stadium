@@ -6,6 +6,7 @@ import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import AdminMatchListScreen from '../screens/admin/AdminMatchListScreen';
 import CreateMatchScreen from '../screens/admin/CreateMatchScreen';
 import AdminEditMatchScreen from '../screens/admin/AdminEditMatchScreen';
+import AdminPredictAttendanceScreen from '../screens/admin/AdminPredictAttendanceScreen';
 import VenueManagementScreen from '../screens/admin/VenueManagementScreen';
 import VenueEditorScreen from '../screens/admin/VenueEditorScreen';
 import StadiumViewScreen from '../screens/admin/StadiumViewScreen';
@@ -51,8 +52,10 @@ function MatchesNavigator() {
   return (
     <MatchesStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <MatchesStack.Screen name="AdminMatchList" component={AdminMatchListScreen} />
+      <MatchesStack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
       <MatchesStack.Screen name="AdminCreateMatch" component={CreateMatchScreen} />
       <MatchesStack.Screen name="AdminEditMatch" component={AdminEditMatchScreen} />
+      <MatchesStack.Screen name="AdminPredictAttendance" component={AdminPredictAttendanceScreen} />
       <MatchesStack.Screen name="AdminVenueManagement" component={VenueManagementScreen} />
       <MatchesStack.Screen name="AdminVenueEditor" component={VenueEditorScreen} />
       <MatchesStack.Screen name="AdminStadiumView" component={StadiumViewScreen} />

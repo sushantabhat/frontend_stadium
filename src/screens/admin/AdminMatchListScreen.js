@@ -452,9 +452,10 @@ export default function AdminMatchListScreen({ navigation }) {
               >
                 <Text style={s.footerBtnSecondaryText}>Modify Fixture</Text>
               </TouchableOpacity>
+              
               <TouchableOpacity
                 style={s.footerBtnPrimary}
-                onPress={() => { closeDetail(); navigation.navigate('AdminMatchDetail', { matchId: m._id }); }}
+                onPress={() => { closeDetail(); navigation.navigate('AdminPredictAttendance', { matchId: m._id }); }}
                 activeOpacity={0.8}
               >
                 <LinearGradient
@@ -462,7 +463,7 @@ export default function AdminMatchListScreen({ navigation }) {
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={s.footerBtnGradient}
                 >
-                  <Text style={s.footerBtnPrimaryText}>Override Zone Quotas</Text>
+                  <Text style={s.footerBtnPrimaryText}>AI Predict Attendance</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>

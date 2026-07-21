@@ -22,6 +22,7 @@ import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../.
 
 const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
 const CATEGORY_COLORS_ARRAY = Object.values(CATEGORY_COLORS);
+const SUPPORTED_CITIES = ['Kathmandu', 'Pokhara', 'Chitwan', 'Biratnagar', 'Bhairahawa'];
 
 const EMPTY_SECTION = {
   sectionId: '',
@@ -62,7 +63,7 @@ export default function VenueEditorScreen({ navigation, route }) {
   const isEditing = !!venue;
 
   const [venueName, setVenueName] = useState(venue?.name || '');
-  const [venueLocation, setVenueLocation] = useState(venue?.location || '');
+  const [venueLocation, setVenueLocation] = useState(venue?.location || 'Kathmandu');
   const [errors, setErrors] = useState({});
   const [pricing, setPricing] = useState(() => {
     if (venue) return buildPricingFromVenue(venue);
@@ -204,15 +205,33 @@ export default function VenueEditorScreen({ navigation, route }) {
           />
           {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
-          <Text style={styles.inputLabel}>Location</Text>
-          <TextInput
-            style={[styles.inputField, errors.location && styles.inputError]}
-            placeholder="e.g. Kirtipur, Kathmandu"
-            placeholderTextColor={glass.textMuted}
-            value={venueLocation}
-            onChangeText={(v) => { setVenueLocation(v); if (errors.location) setErrors((p) => { const n = { ...p }; delete n.location; return n; }); }}
-          />
-          {errors.location && <Text style={styles.errorText}>{errors.location}</Text>}
+          <Text style={styles.inputLabel}>Location / City</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md, paddingBottom: 4 }}>
+            {SUPPORTED_CITIES.map(city => (
+              <TouchableOpacity
+                key={city}
+                style={[
+                  {
+                    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2,
+                    borderRadius: radii.full, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: 'rgba(255,255,255,0.03)', marginRight: spacing.sm
+                  },
+                  venueLocation === city && {
+                    backgroundColor: 'rgba(123,97,255,0.15)', borderColor: glass.brandPurple
+                  }
+                ]}
+                onPress={() => setVenueLocation(city)}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  { color: glass.textSecondary, fontSize: typography.bodyMedium.fontSize, fontWeight: '600' },
+                  venueLocation === city && { color: glass.brandPurple, fontWeight: '800' }
+                ]}>
+                  {city}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
           {/* VENUE GATES */}
           <View style={styles.sectionCard}>

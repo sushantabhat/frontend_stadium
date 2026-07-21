@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,6 +12,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,9 +21,14 @@ import ScreenHeader from '../../components/ScreenHeader';
 import ImagePickerField from '../../components/ImagePickerField';
 import { createMatch } from '../../services/matchService';
 import { fetchVenues } from '../../services/venueService';
+import api from '../../services/api';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
 const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
+const MATCH_TYPES = ['NPL', 'International', 'Friendly'];
+const MATCH_STAGES = ['League Stage', 'Qualifier / Decider', 'Quarter-Finals', 'Semi-Finals', 'Finals'];
+const CRICKET_FORMATS = ['T20', 'ODI', 'T10'];
+const STAR_POWER_LEVELS = ['None', 'Local Stars', 'International', 'Global Icon'];
 
 const DEFAULT_FORM = {
   title: '',
@@ -34,6 +40,12 @@ const DEFAULT_FORM = {
   imageUrl: '',
   teamALogo: '',
   teamBLogo: '',
+  match_type: 'NPL',
+  match_stage: 'League Stage',
+  cricket_format: 'T20',
+  global_stars_count: 0,
+  international_stars_count: 0,
+  local_stars_count: 0,
 };
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -42,7 +54,6 @@ const YEARS = Array.from({ length: 10 }, (_, i) => CURRENT_YEAR + i);
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
-
 function getDaysInMonth(year, month) {
   return new Date(year, month + 1, 0).getDate();
 }
@@ -80,16 +91,30 @@ export default function CreateMatchScreen({ navigation }) {
   const [errors, setErrors] = useState({});
 
   const [venues, setVenues] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [showVenuePicker, setShowVenuePicker] = useState(false);
   const [matchPricing, setMatchPricing] = useState({});
+  const [teamPickerVisible, setTeamPickerVisible] = useState(false);
+  const [teamPickerTarget, setTeamPickerTarget] = useState('A');
+  const [teamFilter, setTeamFilter] = useState('NPL');
 
   const maxDays = getDaysInMonth(pickerYear, pickerMonth);
   const clampedDay = Math.min(pickerDay, maxDays);
 
   useFocusEffect(useCallback(() => {
     fetchVenues().then(setVenues).catch(() => {});
+    fetchTeams();
   }, []));
+
+  const fetchTeams = async () => {
+    try {
+      const res = await api.get('/api/teams');
+      setTeams(res.data || []);
+    } catch (err) {
+      console.log('Fetch teams error', err);
+    }
+  };
 
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -130,11 +155,9 @@ export default function CreateMatchScreen({ navigation }) {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-
     setIsSubmitting(true);
     try {
       const payload = { ...form };
-
       if (selectedVenue) {
         const pricingObj = {};
         for (const [key, val] of Object.entries(matchPricing)) {
@@ -142,7 +165,6 @@ export default function CreateMatchScreen({ navigation }) {
         }
         payload.pricing = pricingObj;
         payload.venueGates = selectedVenue.gates || [];
-
         const stadiumSections = (selectedVenue.stadiumSections || []).map((s) => ({
           sectionId: s.sectionId,
           category: s.category,
@@ -155,16 +177,13 @@ export default function CreateMatchScreen({ navigation }) {
           rows: Array.isArray(s.rows) ? s.rows : [],
           gate: s.gate || '',
         }));
-
         if (stadiumSections.length > 0) {
           payload.stadiumSections = stadiumSections;
         } else {
           payload.seatLayout = selectedVenue.seatLayout || { rows: 10, seatsPerRow: 20, vipRows: 2, premiumRows: 3 };
         }
       }
-
       const match = await createMatch(payload);
-
       Alert.alert('Success', 'Match created.', [
         { text: 'View Match', onPress: () => navigation.replace('AdminMatchDetail', { matchId: match._id }) },
         { text: 'Done', onPress: () => navigation.goBack() },
@@ -190,7 +209,6 @@ export default function CreateMatchScreen({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {/* EVENT INFO */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionDot, { backgroundColor: glass.brandPurple }]} />
@@ -210,27 +228,149 @@ export default function CreateMatchScreen({ navigation }) {
             <View style={styles.row}>
               <View style={styles.halfField}>
                 <Text style={styles.inputLabel}>Team A</Text>
-                <TextInput
-                  style={[styles.inputField, errors.teamA && styles.inputError]}
-                  placeholder="Nepal"
-                  placeholderTextColor={glass.textMuted}
-                  value={form.teamA}
-                  onChangeText={(v) => updateField('teamA', v)}
-                />
+                <TouchableOpacity
+                  style={[styles.inputField, errors.teamA && styles.inputError, { justifyContent: 'center' }]}
+                  onPress={() => { setTeamPickerTarget('A'); setTeamPickerVisible(true); }}
+                >
+                  <Text style={{ color: form.teamA ? colors.textPrimary : glass.textMuted }}>
+                    {form.teamA || 'Select Team A'}
+                  </Text>
+                </TouchableOpacity>
                 {errors.teamA && <Text style={styles.errorText}>{errors.teamA}</Text>}
               </View>
+
               <View style={styles.halfField}>
                 <Text style={styles.inputLabel}>Team B</Text>
-                <TextInput
-                  style={[styles.inputField, errors.teamB && styles.inputError]}
-                  placeholder="India"
-                  placeholderTextColor={glass.textMuted}
-                  value={form.teamB}
-                  onChangeText={(v) => updateField('teamB', v)}
-                />
+                <TouchableOpacity
+                  style={[styles.inputField, errors.teamB && styles.inputError, { justifyContent: 'center' }]}
+                  onPress={() => { setTeamPickerTarget('B'); setTeamPickerVisible(true); }}
+                >
+                  <Text style={{ color: form.teamB ? colors.textPrimary : glass.textMuted }}>
+                    {form.teamB || 'Select Team B'}
+                  </Text>
+                </TouchableOpacity>
                 {errors.teamB && <Text style={styles.errorText}>{errors.teamB}</Text>}
               </View>
             </View>
+
+            <Text style={styles.inputLabel}>Match Format (Type)</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md, paddingBottom: 4 }}>
+              {MATCH_TYPES.map(type => (
+                <TouchableOpacity
+                  key={type}
+                  style={[styles.pill, form.match_type === type && styles.pillActive]}
+                  onPress={() => updateField('match_type', type)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.pillText, form.match_type === type && styles.pillTextActive]}>{type}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <Text style={styles.inputLabel}>Cricket Format</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md, paddingBottom: 4 }}>
+              {CRICKET_FORMATS.map(format => (
+                <TouchableOpacity
+                  key={format}
+                  style={[styles.pill, form.cricket_format === format && styles.pillActive]}
+                  onPress={() => updateField('cricket_format', format)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.pillText, form.cricket_format === format && styles.pillTextActive]}>{format}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {form.match_type === 'NPL' && (
+              <>
+                <Text style={styles.inputLabel}>Star Player Counters</Text>
+                <View style={styles.sectionCardInner}>
+                  <View style={styles.stepperRow}>
+                    <View style={styles.stepperLabelWrap}>
+                      <Text style={styles.stepperLabelTitle}>Global Icons</Text>
+                      <Text style={styles.stepperLabelHint}>e.g., Virat Kohli, Shikhar Dhawan</Text>
+                    </View>
+                    <View style={styles.stepperControls}>
+                      <TouchableOpacity 
+                        style={styles.stepperBtn} 
+                        onPress={() => updateField('global_stars_count', Math.max(0, form.global_stars_count - 1))}
+                      >
+                        <Text style={styles.stepperBtnText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.stepperValue}>{form.global_stars_count}</Text>
+                      <TouchableOpacity 
+                        style={styles.stepperBtn} 
+                        onPress={() => updateField('global_stars_count', form.global_stars_count + 1)}
+                      >
+                        <Text style={styles.stepperBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.stepperRow}>
+                    <View style={styles.stepperLabelWrap}>
+                      <Text style={styles.stepperLabelTitle}>International Stars</Text>
+                      <Text style={styles.stepperLabelHint}>Foreign imports, non-globals</Text>
+                    </View>
+                    <View style={styles.stepperControls}>
+                      <TouchableOpacity 
+                        style={styles.stepperBtn} 
+                        onPress={() => updateField('international_stars_count', Math.max(0, form.international_stars_count - 1))}
+                      >
+                        <Text style={styles.stepperBtnText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.stepperValue}>{form.international_stars_count}</Text>
+                      <TouchableOpacity 
+                        style={styles.stepperBtn} 
+                        onPress={() => updateField('international_stars_count', form.international_stars_count + 1)}
+                      >
+                        <Text style={styles.stepperBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={[styles.stepperRow, { borderBottomWidth: 0 }]}>
+                    <View style={styles.stepperLabelWrap}>
+                      <Text style={styles.stepperLabelTitle}>Local Stars</Text>
+                      <Text style={styles.stepperLabelHint}>Top national team players</Text>
+                    </View>
+                    <View style={styles.stepperControls}>
+                      <TouchableOpacity 
+                        style={styles.stepperBtn} 
+                        onPress={() => updateField('local_stars_count', Math.max(0, form.local_stars_count - 1))}
+                      >
+                        <Text style={styles.stepperBtnText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.stepperValue}>{form.local_stars_count}</Text>
+                      <TouchableOpacity 
+                        style={styles.stepperBtn} 
+                        onPress={() => updateField('local_stars_count', form.local_stars_count + 1)}
+                      >
+                        <Text style={styles.stepperBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </>
+            )}
+
+            {form.match_type !== 'Friendly' && (
+              <>
+                <Text style={styles.inputLabel}>Match Stage</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.lg, paddingBottom: 4 }}>
+                  {MATCH_STAGES.map(stage => (
+                    <TouchableOpacity
+                      key={stage}
+                      style={[styles.pill, form.match_stage === stage && styles.pillActive]}
+                      onPress={() => updateField('match_stage', stage)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.pillText, form.match_stage === stage && styles.pillTextActive]}>{stage}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </>
+            )}
 
             <Text style={styles.inputLabel}>Venue</Text>
             <TouchableOpacity
@@ -303,21 +443,6 @@ export default function CreateMatchScreen({ navigation }) {
               value={form.imageUrl}
               onUpload={(url) => updateField('imageUrl', url)}
             />
-
-            <View style={styles.row}>
-              <ImagePickerField
-                label="Team A Logo"
-                value={form.teamALogo}
-                onUpload={(url) => updateField('teamALogo', url)}
-                style={{ flex: 1 }}
-              />
-              <ImagePickerField
-                label="Team B Logo"
-                value={form.teamBLogo}
-                onUpload={(url) => updateField('teamBLogo', url)}
-                style={{ flex: 1 }}
-              />
-            </View>
           </View>
 
           {/* PRICING OVERRIDE */}
@@ -535,6 +660,73 @@ export default function CreateMatchScreen({ navigation }) {
           </View>
         </View>
       </Modal>
+
+      {/* TEAM PICKER MODAL */}
+      <Modal visible={teamPickerVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalBackdrop} onPress={() => setTeamPickerVisible(false)} activeOpacity={1} />
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Select Team {teamPickerTarget}</Text>
+            
+            <View style={styles.filterTabs}>
+              <TouchableOpacity
+                style={[styles.filterTab, teamFilter === 'NPL' && styles.filterTabActive]}
+                onPress={() => setTeamFilter('NPL')}
+              >
+                <Text style={[styles.filterTabText, teamFilter === 'NPL' && styles.filterTabTextActive]}>NPL Teams</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.filterTab, teamFilter === 'International' && styles.filterTabActive]}
+                onPress={() => setTeamFilter('International')}
+              >
+                <Text style={[styles.filterTabText, teamFilter === 'International' && styles.filterTabTextActive]}>National Teams</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {teams
+                .filter(t => teamFilter === 'NPL' ? t.globalRank === null : t.globalRank !== null)
+                .map(t => (
+                <TouchableOpacity
+                  key={t._id}
+                  style={styles.teamOption}
+                  onPress={() => {
+                    if (teamPickerTarget === 'A') {
+                      updateField('teamA', t.name);
+                      updateField('teamALogo', t.logoUrl);
+                    } else {
+                      updateField('teamB', t.name);
+                      updateField('teamBLogo', t.logoUrl);
+                    }
+                    setTeamPickerVisible(false);
+                  }}
+                >
+                  {t.logoUrl && !t.logoUrl.includes('wikipedia') ? (
+                    <Image source={{ uri: t.logoUrl }} style={styles.teamOptionLogo} />
+                  ) : (
+                    <View style={[styles.teamOptionLogo, { backgroundColor: 'rgba(123,97,255,0.15)', borderWidth: 1, borderColor: glass.brandPurple, justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={{ color: glass.brandPurple, fontSize: 12, fontWeight: '800' }}>{t.shortName || t.name.substring(0, 3).toUpperCase()}</Text>
+                    </View>
+                  )}
+                  <Text style={styles.teamOptionText}>{t.name}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity 
+                style={styles.teamOption} 
+                onPress={() => {
+                  Alert.alert("Manage Teams", "To add a new team, go to the Teams Database in your dashboard.");
+                }}
+              >
+                <View style={[styles.teamOptionLogo, { backgroundColor: 'transparent', borderWidth: 1, borderColor: glass.brandPurple, justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={{color: glass.brandPurple}}>+</Text>
+                </View>
+                <Text style={[styles.teamOptionText, { color: glass.brandPurple }]}>Add New Team</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -584,6 +776,15 @@ const styles = StyleSheet.create({
   halfField: { flex: 1 },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
 
+  pill: {
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2,
+    borderRadius: radii.full, backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1, borderColor: glass.border, marginRight: spacing.sm,
+  },
+  pillActive: { backgroundColor: glass.brandPurpleSurface, borderColor: glass.brandPurple },
+  pillText: { color: glass.textSecondary, fontSize: typography.captionMedium.fontSize, fontWeight: '600' },
+  pillTextActive: { color: glass.brandPurple, fontWeight: '800' },
+
   datePickerTrigger: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: radii.md,
@@ -607,6 +808,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0D0F18', borderTopLeftRadius: radii.xxl, borderTopRightRadius: radii.xxl,
     padding: spacing.xxl, paddingBottom: spacing.huge,
     borderWidth: 1, borderColor: glass.border, borderBottomWidth: 0,
+    maxHeight: '85%', marginTop: 'auto'
   },
   sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: glass.textMuted, alignSelf: 'center', marginBottom: spacing.xl },
   sheetTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800', marginBottom: spacing.lg },
@@ -649,4 +851,36 @@ const styles = StyleSheet.create({
   sheetConfirmGradient: { paddingVertical: spacing.lg, alignItems: 'center' },
   sheetConfirmText: { color: '#FFFFFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
   pastDateWarning: { color: '#FF4757', fontSize: typography.small.fontSize, fontWeight: '600', textAlign: 'center', flex: 1, marginTop: spacing.md },
+  teamOption: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: spacing.md, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
+  },
+  teamOptionLogo: { width: 40, height: 40, borderRadius: 20, marginRight: spacing.md },
+  teamOptionText: { fontSize: 16, color: colors.textPrimary, fontWeight: '500' },
+
+  filterTabs: { flexDirection: 'row', marginBottom: spacing.lg, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: radii.md, padding: 4 },
+  filterTab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: radii.sm },
+  filterTabActive: { backgroundColor: glass.brandPurple },
+  filterTabText: { color: glass.textMuted, fontSize: 14, fontWeight: '600' },
+  filterTabTextActive: { color: colors.textPrimary, fontWeight: '700' },
+
+  sectionCardInner: {
+    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: radii.md,
+    borderWidth: 1, borderColor: glass.border, paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+  },
+  stepperRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: spacing.md, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.05)'
+  },
+  stepperLabelWrap: { flex: 1 },
+  stepperLabelTitle: { color: colors.textPrimary, fontSize: typography.body.fontSize, fontWeight: '700' },
+  stepperLabelHint: { color: glass.textMuted, fontSize: typography.small.fontSize, marginTop: 2 },
+  stepperControls: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  stepperBtn: { 
+    width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.1)', 
+    alignItems: 'center', justifyContent: 'center' 
+  },
+  stepperBtnText: { color: colors.textPrimary, fontSize: 18, fontWeight: '600', lineHeight: 20 },
+  stepperValue: { color: glass.brandPurple, fontSize: 18, fontWeight: '800', width: 24, textAlign: 'center' },
 });
