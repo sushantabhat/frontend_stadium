@@ -2,7 +2,15 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 function resolveApiBaseUrl() {
-  return 'http://192.168.1.114:5009';
+  const debuggerHost = Constants.expoConfig?.hostUri;
+  let apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5009';
+
+  if (debuggerHost) {
+    const ip = debuggerHost.split(':')[0];
+    apiUrl = `http://${ip}:5009`;
+  }
+  
+  return apiUrl;
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
