@@ -831,7 +831,66 @@ export default function AdminEditMatchScreen({ route, navigation }) {
               </View>
             ))}
 
-            {!hasBookedSeats && (
+            {sections.length === 0 && seatLayout && (
+              <View style={styles.sectionItem}>
+                <Text style={styles.sectionItemTitle}>Seat Layout Grid</Text>
+                <Text style={styles.hint}>This venue uses a simple row/column grid instead of custom polygons.</Text>
+                
+                <View style={styles.row}>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Total Rows</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      keyboardType="numeric"
+                      value={String(seatLayout.rows)}
+                      onChangeText={(v) => setSeatLayout(prev => ({ ...prev, rows: v }))}
+                      editable={!hasBookedSeats}
+                    />
+                  </View>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Seats Per Row</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      keyboardType="numeric"
+                      value={String(seatLayout.seatsPerRow)}
+                      onChangeText={(v) => setSeatLayout(prev => ({ ...prev, seatsPerRow: v }))}
+                      editable={!hasBookedSeats}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.row}>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>VIP Rows</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      keyboardType="numeric"
+                      value={String(seatLayout.vipRows)}
+                      onChangeText={(v) => setSeatLayout(prev => ({ ...prev, vipRows: v }))}
+                      editable={!hasBookedSeats}
+                    />
+                  </View>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Premium Rows</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      keyboardType="numeric"
+                      value={String(seatLayout.premiumRows)}
+                      onChangeText={(v) => setSeatLayout(prev => ({ ...prev, premiumRows: v }))}
+                      editable={!hasBookedSeats}
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {sections.length === 0 && !seatLayout && (
+              <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                <Text style={styles.hint}>No stadium structure defined.</Text>
+              </View>
+            )}
+
+            {!hasBookedSeats && sections.length > 0 && (
               <TouchableOpacity
                 style={styles.addSectionBtn}
                 onPress={() => setSections((prev) => [...prev, { sectionId: `S${prev.length + 1}`, category: 'platinum', label: '', color: '#E8E8E8', pricePerTicket: '3500', totalSeats: '20', rows: 'A,B,C', polygon: '', gate: '' }])}
