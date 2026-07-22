@@ -118,6 +118,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
   });
 
   const [sections, setSections] = useState([]);
+  const [seatLayout, setSeatLayout] = useState(null);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(CURRENT_YEAR);
@@ -163,6 +164,7 @@ export default function AdminEditMatchScreen({ route, navigation }) {
           gate: s.gate || '',
         }))
       );
+      setSeatLayout(match.seatLayout || null);
 
       setVenueGates(match.venueGates || []);
 
@@ -278,6 +280,13 @@ export default function AdminEditMatchScreen({ route, navigation }) {
 
         if (stadiumSections.length > 0) {
           payload.stadiumSections = stadiumSections;
+        } else if (seatLayout) {
+          payload.seatLayout = {
+            rows: Number(seatLayout.rows) || 10,
+            seatsPerRow: Number(seatLayout.seatsPerRow) || 20,
+            vipRows: Number(seatLayout.vipRows) || 0,
+            premiumRows: Number(seatLayout.premiumRows) || 0,
+          };
         }
       }
 
@@ -600,11 +609,11 @@ export default function AdminEditMatchScreen({ route, navigation }) {
             ))}
           </View>
 
-          {/* ═══ STADIUM SECTIONS ═══ */}
+          {/* ═══ STADIUM SECTIONS OR SEAT LAYOUT ═══ */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionDot, { backgroundColor: glass.statusWarningText }]} />
-              <Text style={styles.sectionTitle}>Stadium Sections</Text>
+              <Text style={styles.sectionTitle}>Stadium Structure</Text>
             </View>
 
             {hasBookedSeats ? (
