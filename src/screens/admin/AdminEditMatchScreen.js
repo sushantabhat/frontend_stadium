@@ -23,8 +23,8 @@ import { fetchMatchById, updateMatch } from '../../services/matchService';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
 const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
-const MATCH_TYPES = ['League', 'Cup', 'Friendly', 'International'];
-const MATCH_STAGES = ['League Stage', 'Semi-Finals', 'Finals'];
+const MATCH_TYPES = ['NPL', 'International', 'Friendly'];
+const MATCH_STAGES = ['League Stage', 'Qualifier / Decider', 'Quarter-Finals', 'Semi-Finals', 'Finals'];
 const CRICKET_FORMATS = ['T20', 'ODI', 'T10'];
 const STAR_POWER_LEVELS = ['None', 'Local Stars', 'International', 'Global Icon'];
 
@@ -105,10 +105,12 @@ export default function AdminEditMatchScreen({ route, navigation }) {
     imageUrl: '',
     teamALogo: '',
     teamBLogo: '',
-    match_type: 'League',
+    match_type: 'NPL',
     match_stage: 'League Stage',
     cricket_format: 'T20',
-    star_power_level: 'None',
+    global_stars_count: 0,
+    international_stars_count: 0,
+    local_stars_count: 0,
   });
 
   const [pricing, setPricing] = useState({
@@ -174,10 +176,12 @@ export default function AdminEditMatchScreen({ route, navigation }) {
         imageUrl: match.imageUrl || '',
         teamALogo: match.teamALogo || '',
         teamBLogo: match.teamBLogo || '',
-        match_type: match.match_type || 'League',
+        match_type: match.match_type || 'NPL',
         match_stage: match.match_stage || 'League Stage',
         cricket_format: match.cricket_format || 'T20',
-        star_power_level: match.star_power_level || 'None',
+        global_stars_count: match.global_stars_count || 0,
+        international_stars_count: match.international_stars_count || 0,
+        local_stars_count: match.local_stars_count || 0,
       });
 
       const comps = parseDateToComponents(match.matchDate);
@@ -415,19 +419,78 @@ export default function AdminEditMatchScreen({ route, navigation }) {
               ))}
             </ScrollView>
 
-            <Text style={styles.inputLabel}>Star Player Draw</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md, paddingBottom: 4 }}>
-              {STAR_POWER_LEVELS.map(level => (
-                <TouchableOpacity
-                  key={level}
-                  style={[styles.pill, form.star_power_level === level && styles.pillActive]}
-                  onPress={() => updateField('star_power_level', level)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.pillText, form.star_power_level === level && styles.pillTextActive]}>{level}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            {form.match_type === 'NPL' && (
+              <>
+                <Text style={styles.inputLabel}>Star Player Counters</Text>
+                <View style={styles.sectionCardInner}>
+                  <View style={styles.stepperRow}>
+                    <View style={styles.stepperLabelWrap}>
+                      <Text style={styles.stepperLabelTitle}>Global Icons</Text>
+                      <Text style={styles.stepperLabelHint}>e.g., Virat Kohli, Shikhar Dhawan</Text>
+                    </View>
+                    <View style={styles.stepperControls}>
+                      <TouchableOpacity 
+                        style={styles.stepperBtn} 
+                        onPress={() => updateField('global_stars_count', Math.max(0, form.global_stars_count - 1))}
+                      >
+                        <Text style={styles.stepperBtnText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.stepperValue}>{form.global_stars_count}</Text>
+                      <TouchableOpacity 
+                        style={styles.stepperBtn} 
+                        onPress={() => updateField('global_stars_count', form.global_stars_count + 1)}
+                      >
+                        <Text style={styles.stepperBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.stepperRow}>
+                    <View style={styles.stepperLabelWrap}>
+                      <Text style={styles.stepperLabelTitle}>International Stars</Text>
+                      <Text style={styles.stepperLabelHint}>Foreign imports, non-globals</Text>
+                    </View>
+                    <View style={styles.stepperControls}>
+                      <TouchableOpacity 
+                        style={styles.stepperBtn} 
+                        onPress={() => updateField('international_stars_count', Math.max(0, form.international_stars_count - 1))}
+                      >
+                        <Text style={styles.stepperBtnText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.stepperValue}>{form.international_stars_count}</Text>
+                      <TouchableOpacity 
+                        style={styles.stepperBtn} 
+                        onPress={() => updateField('international_stars_count', form.international_stars_count + 1)}
+                      >
+                        <Text style={styles.stepperBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={[styles.stepperRow, { borderBottomWidth: 0 }]}>
+                    <View style={styles.stepperLabelWrap}>
+                      <Text style={styles.stepperLabelTitle}>Local Stars</Text>
+                      <Text style={styles.stepperLabelHint}>Top national team players</Text>
+                    </View>
+                    <View style={styles.stepperControls}>
+                      <TouchableOpacity 
+                        style={styles.stepperBtn} 
+                        onPress={() => updateField('local_stars_count', Math.max(0, form.local_stars_count - 1))}
+                      >
+                        <Text style={styles.stepperBtnText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.stepperValue}>{form.local_stars_count}</Text>
+                      <TouchableOpacity 
+                        style={styles.stepperBtn} 
+                        onPress={() => updateField('local_stars_count', form.local_stars_count + 1)}
+                      >
+                        <Text style={styles.stepperBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </>
+            )}
 
             {form.match_type !== 'Friendly' && (
               <>
@@ -1379,4 +1442,23 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   polygonDrawText: { color: glass.brandPurple, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
+  sectionCardInner: {
+    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: radii.md,
+    borderWidth: 1, borderColor: glass.border, paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+  },
+  stepperRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: spacing.md, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.05)'
+  },
+  stepperLabelWrap: { flex: 1 },
+  stepperLabelTitle: { color: colors.textPrimary, fontSize: typography.body.fontSize, fontWeight: '700' },
+  stepperLabelHint: { color: glass.textMuted, fontSize: typography.small.fontSize, marginTop: 2 },
+  stepperControls: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  stepperBtn: { 
+    width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.1)', 
+    alignItems: 'center', justifyContent: 'center' 
+  },
+  stepperBtnText: { color: colors.textPrimary, fontSize: 18, fontWeight: '600', lineHeight: 20 },
+  stepperValue: { color: glass.brandPurple, fontSize: 18, fontWeight: '800', width: 24, textAlign: 'center' },
 });
