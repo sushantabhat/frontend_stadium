@@ -253,6 +253,23 @@ export default function CreateMatchScreen({ navigation }) {
               </View>
             </View>
 
+            <View style={[styles.row, { marginTop: 12 }]}>
+              <View style={styles.halfField}>
+                <ImagePickerField
+                  label="Team A Logo"
+                  value={form.teamALogo}
+                  onUpload={(url) => updateField('teamALogo', url)}
+                />
+              </View>
+              <View style={styles.halfField}>
+                <ImagePickerField
+                  label="Team B Logo"
+                  value={form.teamBLogo}
+                  onUpload={(url) => updateField('teamBLogo', url)}
+                />
+              </View>
+            </View>
+
             <Text style={styles.inputLabel}>Match Format (Type)</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md, paddingBottom: 4 }}>
               {MATCH_TYPES.map(type => (
