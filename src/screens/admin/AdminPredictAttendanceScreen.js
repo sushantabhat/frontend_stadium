@@ -167,9 +167,9 @@ export default function AdminPredictAttendanceScreen({ route, navigation }) {
           <View style={styles.factorGrid}>
             
             <View style={styles.factorCard}>
-              <Text style={styles.factorIcon}>🔥</Text>
-              <Text style={styles.factorValue}>{factors.expected_popularity}/10</Text>
-              <Text style={styles.factorName}>Calculated Popularity</Text>
+              <Text style={styles.factorIcon}>{factors.has_team_rivalry ? '⚔️' : '🔥'}</Text>
+              <Text style={styles.factorValue}>T{factors.team_a_tier || '?'} v T{factors.team_b_tier || '?'}</Text>
+              <Text style={styles.factorName}>{factors.has_team_rivalry ? 'Rivalry Match' : 'Franchise Match'}</Text>
             </View>
 
             <View style={styles.factorCard}>
