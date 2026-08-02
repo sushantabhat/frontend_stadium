@@ -25,10 +25,8 @@ import api from '../../services/api';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
 const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
-const MATCH_TYPES = ['NPL', 'International', 'Friendly'];
 const MATCH_STAGES = ['League Stage', 'Qualifier / Decider', 'Quarter-Finals', 'Semi-Finals', 'Finals'];
 const CRICKET_FORMATS = ['T20', 'ODI', 'T10'];
-const STAR_POWER_LEVELS = ['None', 'Local Stars', 'International', 'Global Icon'];
 
 const DEFAULT_FORM = {
   title: '',
@@ -40,12 +38,8 @@ const DEFAULT_FORM = {
   imageUrl: '',
   teamALogo: '',
   teamBLogo: '',
-  match_type: 'NPL',
   match_stage: 'League Stage',
   cricket_format: 'T20',
-  global_stars_count: 0,
-  international_stars_count: 0,
-  local_stars_count: 0,
 };
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -97,7 +91,6 @@ export default function CreateMatchScreen({ navigation }) {
   const [matchPricing, setMatchPricing] = useState({});
   const [teamPickerVisible, setTeamPickerVisible] = useState(false);
   const [teamPickerTarget, setTeamPickerTarget] = useState('A');
-  const [teamFilter, setTeamFilter] = useState('NPL');
 
   const maxDays = getDaysInMonth(pickerYear, pickerMonth);
   const clampedDay = Math.min(pickerDay, maxDays);
@@ -270,124 +263,19 @@ export default function CreateMatchScreen({ navigation }) {
               </View>
             </View>
 
-            <Text style={styles.inputLabel}>Match Format (Type)</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md, paddingBottom: 4 }}>
-              {MATCH_TYPES.map(type => (
+            <Text style={styles.inputLabel}>Match Stage</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.lg, paddingBottom: 4 }}>
+              {MATCH_STAGES.map(stage => (
                 <TouchableOpacity
-                  key={type}
-                  style={[styles.pill, form.match_type === type && styles.pillActive]}
-                  onPress={() => updateField('match_type', type)}
+                  key={stage}
+                  style={[styles.pill, form.match_stage === stage && styles.pillActive]}
+                  onPress={() => updateField('match_stage', stage)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.pillText, form.match_type === type && styles.pillTextActive]}>{type}</Text>
+                  <Text style={[styles.pillText, form.match_stage === stage && styles.pillTextActive]}>{stage}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
-
-            <Text style={styles.inputLabel}>Cricket Format</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md, paddingBottom: 4 }}>
-              {CRICKET_FORMATS.map(format => (
-                <TouchableOpacity
-                  key={format}
-                  style={[styles.pill, form.cricket_format === format && styles.pillActive]}
-                  onPress={() => updateField('cricket_format', format)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.pillText, form.cricket_format === format && styles.pillTextActive]}>{format}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {form.match_type === 'NPL' && (
-              <>
-                <Text style={styles.inputLabel}>Star Player Counters</Text>
-                <View style={styles.sectionCardInner}>
-                  <View style={styles.stepperRow}>
-                    <View style={styles.stepperLabelWrap}>
-                      <Text style={styles.stepperLabelTitle}>Global Icons</Text>
-                      <Text style={styles.stepperLabelHint}>e.g., Virat Kohli, Shikhar Dhawan</Text>
-                    </View>
-                    <View style={styles.stepperControls}>
-                      <TouchableOpacity 
-                        style={styles.stepperBtn} 
-                        onPress={() => updateField('global_stars_count', Math.max(0, form.global_stars_count - 1))}
-                      >
-                        <Text style={styles.stepperBtnText}>-</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.stepperValue}>{form.global_stars_count}</Text>
-                      <TouchableOpacity 
-                        style={styles.stepperBtn} 
-                        onPress={() => updateField('global_stars_count', form.global_stars_count + 1)}
-                      >
-                        <Text style={styles.stepperBtnText}>+</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={styles.stepperRow}>
-                    <View style={styles.stepperLabelWrap}>
-                      <Text style={styles.stepperLabelTitle}>International Stars</Text>
-                      <Text style={styles.stepperLabelHint}>Foreign imports, non-globals</Text>
-                    </View>
-                    <View style={styles.stepperControls}>
-                      <TouchableOpacity 
-                        style={styles.stepperBtn} 
-                        onPress={() => updateField('international_stars_count', Math.max(0, form.international_stars_count - 1))}
-                      >
-                        <Text style={styles.stepperBtnText}>-</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.stepperValue}>{form.international_stars_count}</Text>
-                      <TouchableOpacity 
-                        style={styles.stepperBtn} 
-                        onPress={() => updateField('international_stars_count', form.international_stars_count + 1)}
-                      >
-                        <Text style={styles.stepperBtnText}>+</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={[styles.stepperRow, { borderBottomWidth: 0 }]}>
-                    <View style={styles.stepperLabelWrap}>
-                      <Text style={styles.stepperLabelTitle}>Local Stars</Text>
-                      <Text style={styles.stepperLabelHint}>Top national team players</Text>
-                    </View>
-                    <View style={styles.stepperControls}>
-                      <TouchableOpacity 
-                        style={styles.stepperBtn} 
-                        onPress={() => updateField('local_stars_count', Math.max(0, form.local_stars_count - 1))}
-                      >
-                        <Text style={styles.stepperBtnText}>-</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.stepperValue}>{form.local_stars_count}</Text>
-                      <TouchableOpacity 
-                        style={styles.stepperBtn} 
-                        onPress={() => updateField('local_stars_count', form.local_stars_count + 1)}
-                      >
-                        <Text style={styles.stepperBtnText}>+</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              </>
-            )}
-
-            {form.match_type !== 'Friendly' && (
-              <>
-                <Text style={styles.inputLabel}>Match Stage</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.lg, paddingBottom: 4 }}>
-                  {MATCH_STAGES.map(stage => (
-                    <TouchableOpacity
-                      key={stage}
-                      style={[styles.pill, form.match_stage === stage && styles.pillActive]}
-                      onPress={() => updateField('match_stage', stage)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.pillText, form.match_stage === stage && styles.pillTextActive]}>{stage}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </>
-            )}
 
             <Text style={styles.inputLabel}>Venue</Text>
             <TouchableOpacity
@@ -686,24 +574,8 @@ export default function CreateMatchScreen({ navigation }) {
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>Select Team {teamPickerTarget}</Text>
             
-            <View style={styles.filterTabs}>
-              <TouchableOpacity
-                style={[styles.filterTab, teamFilter === 'NPL' && styles.filterTabActive]}
-                onPress={() => setTeamFilter('NPL')}
-              >
-                <Text style={[styles.filterTabText, teamFilter === 'NPL' && styles.filterTabTextActive]}>NPL Teams</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.filterTab, teamFilter === 'International' && styles.filterTabActive]}
-                onPress={() => setTeamFilter('International')}
-              >
-                <Text style={[styles.filterTabText, teamFilter === 'International' && styles.filterTabTextActive]}>National Teams</Text>
-              </TouchableOpacity>
-            </View>
-
             <ScrollView showsVerticalScrollIndicator={false}>
               {teams
-                .filter(t => teamFilter === 'NPL' ? t.globalRank === null : t.globalRank !== null)
                 .map(t => (
                 <TouchableOpacity
                   key={t._id}
