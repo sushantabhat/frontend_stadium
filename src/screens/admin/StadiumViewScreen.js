@@ -86,7 +86,7 @@ export default function StadiumViewScreen({ navigation, route }) {
                 <Text style={styles.legendLabel}>{section.sectionId || 'Unnamed'}</Text>
                 <Text style={styles.legendCategory}>{catData?.label || section.category}</Text>
                 <Text style={styles.legendSeats}>{section.totalSeats || 0} seats</Text>
-                <Text style={styles.legendPrice}>Rs {section.pricePerTicket || 0}</Text>
+                <Text style={styles.legendPrice}>Rs {section.pricePerTicket || (venue?.pricing ? venue.pricing[section.category] : 0) || 0}</Text>
               </View>
             );
           })}
@@ -124,7 +124,7 @@ export default function StadiumViewScreen({ navigation, route }) {
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Price / Ticket</Text>
-                  <Text style={[styles.detailValue, { color: glass.brandPurple }]}>Rs {selectedSection.pricePerTicket || 0}</Text>
+                  <Text style={[styles.detailValue, { color: glass.brandPurple }]}>Rs {selectedSection.pricePerTicket || (venue?.pricing ? venue.pricing[selectedSection.category] : 0) || 0}</Text>
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Gate</Text>
