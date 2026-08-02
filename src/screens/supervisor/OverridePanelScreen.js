@@ -1,49 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { formatTimeInNepal } from '../../utils/date';
 import DashboardHeader from '../../components/DashboardHeader';
-
-/* ─── Mock locked seats data ───
- * In production: GET /api/admin/locked-seats */
-const MOCK_LOCKED_SEATS = [
-  { id: 's1', match: 'ICC T20 Finals', seat: 'A-14', category: 'VIP', lockedBy: 'Rahul S.', lockedAt: '2026-06-18T18:30:00Z', status: 'orphaned' },
-  { id: 's2', match: 'ICC T20 Finals', seat: 'B-07', category: 'Premium', lockedBy: 'System', lockedAt: '2026-06-18T17:45:00Z', status: 'active' },
-  { id: 's3', match: 'IPL Match 1', seat: 'C-22', category: 'General', lockedBy: 'Amit K.', lockedAt: '2026-06-17T14:00:00Z', status: 'orphaned' },
-];
+import api from '../../services/api';
 
 export default function OverridePanelScreen({ navigation }) {
   const [ticketCode, setTicketCode] = useState('');
   const [manualNote, setManualNote] = useState('');
   const [activeSection, setActiveSection] = useState('unlock');
+  const [lockedSeats, setLockedSeats] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  /* ── Force unlock handler (mock) ── */
-  const handleForceUnlock = (seat) => {
+  const fetchSeats = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get('/api/admin/locked-seats');
+      setLockedSeats(data.seats || []);
+    } catch (err) {
+      console.log('Error fetching locked seats', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSeats();
+  }, []);
+
+  const handleOverride = (seat, action) => {
+    const actionNames = { unlock: 'Available', maintenance: 'Maintenance', vip: 'VIP' };
     Alert.alert(
-      'Force Unlock',
-      `Release lock on ${seat.seat} (${seat.category})?`,
+      'Confirm Override',
+      `Change seat ${seat.seatLabel} to ${actionNames[action]}?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Unlock', onPress: () => Alert.alert('Unlocked', `${seat.seat} has been released.`) },
+        { 
+          text: 'Confirm', 
+          onPress: async () => {
+            try {
+              await api.post(`/api/admin/seats/${seat._id}/override`, { action });
+              Alert.alert('Success', `Seat is now ${actionNames[action]}`);
+              fetchSeats();
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.message || 'Failed to override seat');
+            }
+          } 
+        },
       ]
     );
   };
 
-  /* ── Manual entry approval (mock) ── */
-  const handleManualEntry = () => {
+  const handleManualEntry = async () => {
     if (!ticketCode.trim()) {
       Alert.alert('Required', 'Enter a valid ticket code.');
       return;
     }
-    Alert.alert(
-      'Approve Manual Entry',
-      `Allow entry for ticket ${ticketCode.trim()}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Approve', onPress: () => { setTicketCode(''); setManualNote(''); Alert.alert('Approved', 'Manual entry logged.'); } },
-      ]
-    );
+    try {
+      await api.post('/api/admin/tickets/manual-entry', { ticketCode: ticketCode.trim(), notes: manualNote });
+      Alert.alert('Approved', 'Manual entry successfully logged.');
+      setTicketCode('');
+      setManualNote('');
+    } catch (err) {
+      Alert.alert('Entry Failed', err.response?.data?.message || 'Invalid ticket code or already scanned.');
+    }
   };
 
   return (
@@ -88,32 +109,42 @@ export default function OverridePanelScreen({ navigation }) {
               <Text style={styles.sectionSubtitle}>Force unlock orphaned or stuck seat locks</Text>
             </View>
 
-            {MOCK_LOCKED_SEATS.map((seat) => (
-              <View key={seat.id} style={styles.seatCard}>
-                <View style={styles.seatInner}>
-                  <View style={styles.seatInfo}>
-                    <View style={styles.seatHeader}>
-                      <Text style={styles.seatLabel}>{seat.seat}</Text>
-                      <View style={[styles.categoryPill, { backgroundColor: seat.category === 'VIP' ? 'rgba(255,215,0,0.15)' : seat.category === 'Premium' ? 'rgba(138,43,226,0.15)' : 'rgba(255,255,255,0.06)' }]}>
-                        <Text style={[styles.categoryText, { color: seat.category === 'VIP' ? colors.accent : seat.category === 'Premium' ? colors.primary : colors.textMuted }]}>{seat.category}</Text>
+            {loading ? (
+              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
+            ) : lockedSeats.length === 0 ? (
+              <Text style={{ textAlign: 'center', color: colors.textMuted, marginTop: spacing.xl }}>No locked seats currently.</Text>
+            ) : (
+              lockedSeats.map((seat) => (
+                <View key={seat._id} style={styles.seatCard}>
+                  <View style={styles.seatInner}>
+                    <View style={styles.seatInfo}>
+                      <View style={styles.seatHeader}>
+                        <Text style={styles.seatLabel}>{seat.seatLabel}</Text>
+                        <View style={[styles.categoryPill, { backgroundColor: seat.category === 'vip' ? 'rgba(255,215,0,0.15)' : 'rgba(255,255,255,0.06)' }]}>
+                          <Text style={[styles.categoryText, { color: seat.category === 'vip' ? colors.accent : colors.textMuted }]}>{seat.category}</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.seatMatch}>{seat.match?.title || 'Unknown Match'}</Text>
+                      <Text style={styles.seatMeta}>Locked by: {seat.lockedBy?.name || 'System'} · {seat.lockedUntil ? formatTimeInNepal(seat.lockedUntil, { hour: '2-digit', minute: '2-digit' }) : 'Indefinite'}</Text>
+                      <View style={[styles.statusBadge, { backgroundColor: colors.warningSurface }]}>
+                        <Text style={[styles.statusText, { color: colors.warning }]}>LOCKED</Text>
                       </View>
                     </View>
-                    <Text style={styles.seatMatch}>{seat.match}</Text>
-                    <Text style={styles.seatMeta}>Locked by: {seat.lockedBy} · {formatTimeInNepal(seat.lockedAt, { hour: '2-digit', minute: '2-digit' })}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: seat.status === 'orphaned' ? colors.dangerSurface : colors.warningSurface }]}>
-                      <Text style={[styles.statusText, { color: seat.status === 'orphaned' ? colors.danger : colors.warning }]}>
-                        {seat.status === 'orphaned' ? 'ORPHANED' : 'ACTIVE LOCK'}
-                      </Text>
+                    <View style={styles.actionColumn}>
+                      <TouchableOpacity style={[styles.unlockBtn, { backgroundColor: colors.successSurface, borderColor: colors.successSurface }]} onPress={() => handleOverride(seat, 'unlock')} activeOpacity={0.7}>
+                        <Text style={[styles.unlockBtnText, { color: colors.success }]}>Unlock</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.unlockBtn, { backgroundColor: colors.warningSurface, borderColor: colors.warningSurface }]} onPress={() => handleOverride(seat, 'maintenance')} activeOpacity={0.7}>
+                        <Text style={[styles.unlockBtnText, { color: colors.warning }]}>Maint</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.unlockBtn, { backgroundColor: colors.primarySurface, borderColor: colors.primarySurface }]} onPress={() => handleOverride(seat, 'vip')} activeOpacity={0.7}>
+                        <Text style={[styles.unlockBtnText, { color: colors.primary }]}>VIP</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
-                  <TouchableOpacity style={styles.unlockBtn} onPress={() => handleForceUnlock(seat)} activeOpacity={0.7}>
-                    <View style={styles.unlockBtnInner}>
-                      <Text style={styles.unlockBtnText}>Force{'\n'}Unlock</Text>
-                    </View>
-                  </TouchableOpacity>
                 </View>
-              </View>
-            ))}
+              ))
+            )}
           </>
         )}
 
@@ -206,9 +237,9 @@ const styles = StyleSheet.create({
   statusBadge: { alignSelf: 'flex-start', paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radii.full },
   statusText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.6 },
 
-  unlockBtn: { borderRadius: radii.lg, overflow: 'hidden' },
-  unlockBtnInner: { paddingHorizontal: spacing.lg, paddingVertical: spacing.xl, alignItems: 'center', justifyContent: 'center', borderRadius: radii.lg, borderWidth: 1, borderColor: colors.dangerSurface, backgroundColor: colors.dangerSurface },
-  unlockBtnText: { color: colors.danger, fontSize: typography.captionMedium.fontSize, fontWeight: '700', textAlign: 'center', lineHeight: 18 },
+  actionColumn: { justifyContent: 'center', gap: spacing.xs },
+  unlockBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, borderWidth: 1, alignItems: 'center' },
+  unlockBtnText: { fontSize: 10, fontWeight: '800' },
 
   card: { marginHorizontal: spacing.xl, marginBottom: spacing.md, backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border },
   cardInner: { padding: spacing.xl },
