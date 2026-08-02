@@ -12,6 +12,7 @@ export default function OverridePanelScreen({ navigation }) {
   const [activeSection, setActiveSection] = useState('unlock');
   const [lockedSeats, setLockedSeats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchSeats = async () => {
     setLoading(true);
@@ -107,14 +108,32 @@ export default function OverridePanelScreen({ navigation }) {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Locked Seats</Text>
               <Text style={styles.sectionSubtitle}>Force unlock orphaned or stuck seat locks</Text>
+              
+              <TextInput
+                style={[styles.input, { marginTop: spacing.md, marginBottom: 0 }]}
+                placeholder="Search by seat (A-14), user, or match..."
+                placeholderTextColor={colors.textMuted}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
             </View>
 
             {loading ? (
               <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
-            ) : lockedSeats.length === 0 ? (
-              <Text style={{ textAlign: 'center', color: colors.textMuted, marginTop: spacing.xl }}>No locked seats currently.</Text>
+            ) : lockedSeats.filter(s => 
+                (s.seatLabel || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (s.lockedBy?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (s.match?.title || '').toLowerCase().includes(searchQuery.toLowerCase())
+              ).length === 0 ? (
+              <Text style={{ textAlign: 'center', color: colors.textMuted, marginTop: spacing.xl }}>
+                {searchQuery ? 'No seats match your search.' : 'No locked seats currently.'}
+              </Text>
             ) : (
-              lockedSeats.map((seat) => (
+              lockedSeats.filter(s => 
+                (s.seatLabel || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (s.lockedBy?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (s.match?.title || '').toLowerCase().includes(searchQuery.toLowerCase())
+              ).map((seat) => (
                 <View key={seat._id} style={styles.seatCard}>
                   <View style={styles.seatInner}>
                     <View style={styles.seatInfo}>
