@@ -221,15 +221,15 @@ export default function AdminMatchListScreen({ navigation }) {
             <View style={s.cardMiddle}>
               <View style={s.cardTeamsRow}>
                 {item.teamALogo ? (
-                  <Image source={{ uri: imageUri(item.teamALogo) }} style={s.miniLogo} resizeMode="contain" />
+                  <Image source={{ uri: imageUri(item.teamALogo) }} style={s.miniLogo} resizeMode="cover" />
                 ) : (
-                  <View style={s.miniLogoFallback}><Text style={s.miniLogoText}>{(item.teamA || '?')[0]}</Text></View>
+                  <View style={s.miniLogoFallback}><Text style={s.miniLogoText}>{(item.teamA?.trim() || '?')[0].toUpperCase()}</Text></View>
                 )}
                 <Text style={s.cardVs}>vs</Text>
                 {item.teamBLogo ? (
-                  <Image source={{ uri: imageUri(item.teamBLogo) }} style={s.miniLogo} resizeMode="contain" />
+                  <Image source={{ uri: imageUri(item.teamBLogo) }} style={s.miniLogo} resizeMode="cover" />
                 ) : (
-                  <View style={s.miniLogoFallback}><Text style={s.miniLogoText}>{(item.teamB || '?')[0]}</Text></View>
+                  <View style={s.miniLogoFallback}><Text style={s.miniLogoText}>{(item.teamB?.trim() || '?')[0].toUpperCase()}</Text></View>
                 )}
               </View>
               <Text style={s.cardTitle} numberOfLines={1}>{title}</Text>
@@ -635,16 +635,16 @@ const s = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: 2,
   },
-  miniLogo: { width: 28, height: 28 },
+  miniLogo: { width: 64, height: 64, borderRadius: 32 },
   miniLogoFallback: {
-    width: 28,
-    height: 28,
-    borderRadius: radii.sm,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  miniLogoText: { color: '#FFF', fontSize: 12, fontWeight: '800' },
+  miniLogoText: { color: '#FFF', fontSize: 20, fontWeight: '800' },
   cardVs: {
     color: 'rgba(255,255,255,0.5)',
     fontSize: typography.tiny.fontSize,

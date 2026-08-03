@@ -22,6 +22,7 @@ import ImagePickerField from '../../components/ImagePickerField';
 import { createMatch } from '../../services/matchService';
 import { fetchVenues } from '../../services/venueService';
 import api from '../../services/api';
+import { imageUri } from '../../utils/imageUri';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
 const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
@@ -140,6 +141,9 @@ export default function CreateMatchScreen({ navigation }) {
     if (!form.title.trim()) newErrors.title = 'Title is required';
     if (!form.teamA.trim()) newErrors.teamA = 'Team A is required';
     if (!form.teamB.trim()) newErrors.teamB = 'Team B is required';
+    if (form.teamA.trim() && form.teamB.trim() && form.teamA.trim() === form.teamB.trim()) {
+      newErrors.teamB = 'Team B cannot be the same as Team A';
+    }
     if (!form.venue.trim()) newErrors.venue = 'Venue is required';
     if (!form.matchDate) newErrors.matchDate = 'Date & time is required';
     setErrors(newErrors);
@@ -592,13 +596,13 @@ export default function CreateMatchScreen({ navigation }) {
                   }}
                 >
                   {t.logoUrl && !t.logoUrl.includes('wikipedia') ? (
-                    <Image source={{ uri: t.logoUrl }} style={styles.teamOptionLogo} />
+                    <Image source={{ uri: imageUri(t.logoUrl) }} style={styles.teamOptionLogo} resizeMode="cover" />
                   ) : (
                     <View style={[styles.teamOptionLogo, { backgroundColor: 'rgba(123,97,255,0.15)', borderWidth: 1, borderColor: glass.brandPurple, justifyContent: 'center', alignItems: 'center' }]}>
                       <Text style={{ color: glass.brandPurple, fontSize: 12, fontWeight: '800' }}>{t.shortName || t.name.substring(0, 3).toUpperCase()}</Text>
                     </View>
                   )}
-                  <Text style={styles.teamOptionText}>{t.name}</Text>
+                  <Text style={styles.teamOptionText}>{t.name} <Text style={{ color: glass.textMuted }}>({t.shortName || t.name.substring(0, 3).toUpperCase()})</Text></Text>
                 </TouchableOpacity>
               ))}
               <TouchableOpacity 
