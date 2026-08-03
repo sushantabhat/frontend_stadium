@@ -26,6 +26,14 @@ import { imageUri } from '../../utils/imageUri';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
 const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
+const DEFAULT_PRICES = {
+  platinum: '5000',
+  gold: '3000',
+  silver: '2000',
+  bronze: '1000',
+  general: '500',
+  supporters: '200',
+};
 const MATCH_STAGES = ['League Stage', 'Qualifier / Decider', 'Quarter-Finals', 'Semi-Finals', 'Finals'];
 const CRICKET_FORMATS = ['T20', 'ODI', 'T10'];
 
@@ -120,7 +128,7 @@ export default function CreateMatchScreen({ navigation }) {
     updateField('venue', venue.name);
     const vp = {};
     for (const cat of CATEGORY_OPTIONS) {
-      vp[cat] = venue.pricing?.[cat] != null ? String(venue.pricing[cat]) : '0';
+      vp[cat] = venue.pricing?.[cat] != null ? String(venue.pricing[cat]) : DEFAULT_PRICES[cat];
     }
     setMatchPricing(vp);
     setShowVenuePicker(false);
@@ -372,7 +380,7 @@ export default function CreateMatchScreen({ navigation }) {
                     <TextInput
                       style={styles.priceInput}
                       keyboardType="numeric"
-                      value={matchPricing[cat] || '0'}
+                      value={matchPricing[cat] || DEFAULT_PRICES[cat]}
                       onChangeText={(v) => setMatchPricing((prev) => ({ ...prev, [cat]: v }))}
                     />
                   </View>

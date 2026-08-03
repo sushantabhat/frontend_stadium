@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -25,6 +25,14 @@ import { imageUri } from '../../utils/imageUri';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
 const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
+const DEFAULT_PRICES = {
+  platinum: '5000',
+  gold: '3000',
+  silver: '2000',
+  bronze: '1000',
+  general: '500',
+  supporters: '200',
+};
 const MATCH_STAGES = ['League Stage', 'Qualifier / Decider', 'Quarter-Finals', 'Semi-Finals', 'Finals'];
 const CRICKET_FORMATS = ['T20', 'ODI', 'T10'];
 const STAR_POWER_LEVELS = ['None', 'Local Stars', 'International', 'Global Icon'];
@@ -111,7 +119,12 @@ export default function AdminEditMatchScreen({ route, navigation }) {
   });
 
   const [pricing, setPricing] = useState({
-    platinum: '', gold: '', silver: '', bronze: '', general: '', supporters: '',
+    platinum: DEFAULT_PRICES.platinum,
+    gold: DEFAULT_PRICES.gold,
+    silver: DEFAULT_PRICES.silver,
+    bronze: DEFAULT_PRICES.bronze,
+    general: DEFAULT_PRICES.general,
+    supporters: DEFAULT_PRICES.supporters,
   });
 
   const [sections, setSections] = useState([]);
@@ -137,8 +150,8 @@ export default function AdminEditMatchScreen({ route, navigation }) {
 
   const fetchTeams = async () => {
     try {
-      const res = await api.get('/teams');
-      setTeams(res.data.data);
+      const res = await api.get('/api/teams');
+      setTeams(res.data);
     } catch (e) {
       console.log('Error fetching teams:', e);
     }
@@ -157,12 +170,12 @@ export default function AdminEditMatchScreen({ route, navigation }) {
 
       const pricingObj = match.pricing || {};
       setPricing({
-        platinum: String(pricingObj.platinum ?? ''),
-        gold: String(pricingObj.gold ?? ''),
-        silver: String(pricingObj.silver ?? ''),
-        bronze: String(pricingObj.bronze ?? ''),
-        general: String(pricingObj.general ?? ''),
-        supporters: String(pricingObj.supporters ?? ''),
+        platinum: pricingObj.platinum ? String(pricingObj.platinum) : DEFAULT_PRICES.platinum,
+        gold: pricingObj.gold ? String(pricingObj.gold) : DEFAULT_PRICES.gold,
+        silver: pricingObj.silver ? String(pricingObj.silver) : DEFAULT_PRICES.silver,
+        bronze: pricingObj.bronze ? String(pricingObj.bronze) : DEFAULT_PRICES.bronze,
+        general: pricingObj.general ? String(pricingObj.general) : DEFAULT_PRICES.general,
+        supporters: pricingObj.supporters ? String(pricingObj.supporters) : DEFAULT_PRICES.supporters,
       });
 
       setSections(
