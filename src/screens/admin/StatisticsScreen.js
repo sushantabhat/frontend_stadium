@@ -78,7 +78,7 @@ export default function StatisticsScreen({ navigation }) {
               title="Reports"
               avatarColors={['#FFD700', '#FFA000']}
               avatarLabel={initials}
-              onAvatarPress={() => navigation.navigate('AdminProfile')}
+              onAvatarPress={() => navigation.navigate('Home', { screen: 'AdminProfile' })}
             />
         {isLoading ? (
           <View style={styles.center}><ActivityIndicator size="large" color={glass.brandPurple} /></View>

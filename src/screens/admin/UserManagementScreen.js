@@ -185,7 +185,7 @@ export default function UserManagementScreen({ navigation }) {
           title="Users"
           avatarColors={['#FFD700', '#FFA000']}
           avatarLabel={initials}
-          onAvatarPress={() => navigation.navigate('AdminProfile')}
+          onAvatarPress={() => navigation.navigate('Home', { screen: 'AdminProfile' })}
         />
       <ScrollView
         showsVerticalScrollIndicator={false}

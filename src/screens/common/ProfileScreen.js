@@ -67,7 +67,7 @@ export default function ProfileScreen({ navigation }) {
             ].map((item, idx) => (
               <View key={item.label} style={[styles.cardItem, idx < 3 && styles.cardItemBorder]}>
                 <View style={styles.cardItemLeft}>
-                  <item.Icon size={18} color={colors.textMuted} strokeWidth={2} />
+                  <item.Icon size={18} color={colors.textSecondary} strokeWidth={2} />
                   <View>
                     <Text style={styles.cardItemLabel}>{item.label}</Text>
                     <Text style={styles.cardItemValue}>{item.value}</Text>
@@ -86,12 +86,12 @@ export default function ProfileScreen({ navigation }) {
             {[
               { Icon: Palette, label: 'Background Theme', route: 'Settings' },
               { Icon: Bell, label: 'Notifications', value: 'On' },
-              { Icon: MapPin, label: 'Location', value: 'Mumbai' },
+              { Icon: MapPin, label: 'Location', value: 'Nepal' },
               { Icon: Globe, label: 'Language', value: 'English' },
             ].map((item, idx) => (
               <TouchableOpacity key={item.label} style={[styles.cardItem, idx < 3 && styles.cardItemBorder]} activeOpacity={0.6} onPress={item.route ? () => navigation.navigate(item.route) : undefined}>
                 <View style={styles.cardItemLeft}>
-                  <item.Icon size={18} color={colors.textMuted} strokeWidth={2} />
+                  <item.Icon size={18} color={colors.textSecondary} strokeWidth={2} />
                   <View>
                     <Text style={styles.cardItemLabel}>{item.label}</Text>
                     <Text style={styles.cardItemValue}>{item.value}</Text>
@@ -115,7 +115,7 @@ export default function ProfileScreen({ navigation }) {
             ].map((item, idx) => (
               <TouchableOpacity key={item.label} style={[styles.cardItem, idx < 3 && styles.cardItemBorder]} activeOpacity={0.6}>
                 <View style={styles.cardItemLeft}>
-                  <item.Icon size={18} color={colors.textMuted} strokeWidth={2} />
+                  <item.Icon size={18} color={colors.textSecondary} strokeWidth={2} />
                   <Text style={styles.cardItemLabel}>{item.label}</Text>
                 </View>
                 <Text style={styles.cardItemArrow}>›</Text>
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   },
   statIcon: { fontSize: 20, marginBottom: spacing.sm },
   statValue: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '900', marginBottom: spacing.xxs },
-  statLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '600' },
+  statLabel: { color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.5 },
 
   // Sections
   sectionTitle: {
@@ -229,9 +229,9 @@ const styles = StyleSheet.create({
   cardItemBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderSubtle },
   cardItemLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
   cardItemIcon: { fontSize: 18 },
-  cardItemLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '700', letterSpacing: 0.5, marginBottom: 1 },
+  cardItemLabel: { color: colors.textSecondary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 1 },
   cardItemValue: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '600' },
-  cardItemArrow: { color: colors.textMuted, fontSize: 20, fontWeight: '300' },
+  cardItemArrow: { color: colors.textSecondary, fontSize: 20, fontWeight: '300' },
 
   // Logout
   logoutBtn: { borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: `${colors.danger}25` },
@@ -246,8 +246,8 @@ const styles = StyleSheet.create({
   logoutText: { color: colors.danger, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
 
   version: {
-    color: colors.textMuted,
-    fontSize: 9,
+    color: colors.textSecondary,
+    fontSize: 10,
     textAlign: 'center',
     opacity: 0.5,
   },

@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
@@ -14,8 +14,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
 import DashboardHeader from '../../components/DashboardHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
-import { fetchAdminAnalytics, fetchUsers } from '../../services/adminService';
+import { fetchAdminAnalytics, fetchUsers, fetchGateStats } from '../../services/adminService';
 import { fetchScanHistory } from '../../services/ticketService';
+import { fetchMatches } from '../../services/matchService';
 import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
 
@@ -45,47 +46,85 @@ export default function ScannerDashboardScreen({ navigation }) {
   const [scanLogs, setScanLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [latestMatches, setLatestMatches] = useState([]);
+  const [selectedMatchId, setSelectedMatchId] = useState(null);
+  const [gateStats, setGateStats] = useState([]);
+
   const loadData = useCallback(async (refreshing = false) => {
     if (!refreshing) setIsLoading(true);
     try {
-      const [stats, users, scans] = await Promise.all([
+      const [stats, users, scans, matches] = await Promise.all([
         fetchAdminAnalytics(),
         fetchUsers(),
         fetchScanHistory(),
+        fetchMatches(),
       ]);
       setAnalytics(stats);
       setStaff(users.filter((u) => ['staff', 'supervisor'].includes(u.role)));
       setScanLogs(scans || []);
+
+      if (matches && matches.length > 0) {
+        const top3 = matches.slice(0, 3);
+        setLatestMatches(top3);
+        if (!selectedMatchId && top3.length > 0) {
+          setSelectedMatchId(top3[0]._id);
+        }
+      }
     } catch (e) {
       console.log('Scanner dashboard error:', e.message);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedMatchId]);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+
+  useEffect(() => {
+    async function loadGates() {
+      if (!selectedMatchId) return;
+      try {
+        const stats = await fetchGateStats(selectedMatchId);
+        setGateStats(stats || []);
+      } catch (e) {
+        console.log('Error fetching gate stats:', e);
+      }
+    }
+    loadGates();
+  }, [selectedMatchId]);
 
   const { refreshing: isRefreshing, onRefresh } = useRefresh(() => loadData(true));
 
   const gates = useMemo(() => {
-    const scannedToday = analytics?.attendance?.scannedTickets || scanLogs.length;
-    const entryRate = analytics?.attendance?.entryRate || '98.4';
-    const pool = staff.length > 0 ? staff : [{ name: 'Gate Staff', status: 'active', role: 'staff', _id: 'default' }];
+    if (gateStats.length === 0) return [];
 
-    return pool.slice(0, 5).map((member, idx) => {
-      const gateScans = Math.max(0, Math.round(scannedToday / Math.max(pool.length, 1)));
-      const status = gateStatus(member);
+    return gateStats.map((gs, idx) => {
+      const isOnline = gs.status === 'active' || (gs.staff && gs.staff.length > 0);
+      const isOffline = gs.scanned === 0 && (!gs.staff || gs.staff.length === 0);
+      let statusLabel = 'Standby';
+      let color = glass.statusWarningText;
+      let border = 'rgba(255,179,0,0.2)';
+
+      if (isOnline) {
+        statusLabel = 'Online';
+        color = glass.statusSuccessText;
+        border = 'rgba(0,230,118,0.2)';
+      } else if (isOffline) {
+        statusLabel = 'Offline';
+        color = glass.statusDangerText;
+        border = 'rgba(255,23,68,0.25)';
+      }
+
       return {
-        id: member._id || String(idx),
-        name: GATE_LABELS[idx] || `Gate ${String.fromCharCode(65 + idx)}`,
-        venue: member.venue || 'Stadium Arena',
-        status,
-        scanned: gateScans,
-        staff: member.name,
-        initials: getInitials(member.name),
+        id: gs.gate || String(idx),
+        name: gs.gate || `Gate ${idx + 1}`,
+        venue: 'Stadium Arena',
+        status: { label: statusLabel, color, border },
+        scanned: gs.scanned || 0,
+        staff: gs.staff && gs.staff.length > 0 ? gs.staff.join(', ') : 'Unassigned',
+        initials: getInitials(gs.staff && gs.staff.length > 0 ? gs.staff[0] : 'U'),
       };
     });
-  }, [staff, analytics, scanLogs]);
+  }, [gateStats]);
 
   const statusCounts = useMemo(() => {
     const online = gates.filter((g) => g.status.label === 'Online').length;
@@ -94,7 +133,9 @@ export default function ScannerDashboardScreen({ navigation }) {
     return { online, standby, offline };
   }, [gates]);
 
-  const scannedToday = analytics?.attendance?.scannedTickets || scanLogs.length;
+  const scannedToday = useMemo(() => {
+    return gates.reduce((sum, g) => sum + g.scanned, 0);
+  }, [gates]);
   const acceptanceRate = analytics?.attendance?.entryRate || '98.4';
 
   return (
@@ -107,7 +148,7 @@ export default function ScannerDashboardScreen({ navigation }) {
           title="Scanners"
           avatarColors={['#FFD700', '#FFA000']}
           avatarLabel={initials}
-          onAvatarPress={() => navigation.navigate('AdminProfile')}
+          onAvatarPress={() => navigation.navigate('Home', { screen: 'AdminProfile' })}
         />
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -117,8 +158,31 @@ export default function ScannerDashboardScreen({ navigation }) {
         }
       >
 
-        <Text style={styles.heroLabel}>TICKETS SCANNED TODAY</Text>
-        {isLoading ? (
+        <View style={{ marginBottom: spacing.lg }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.xl, gap: spacing.sm }}>
+            {latestMatches.map(m => (
+              <TouchableOpacity
+                key={m._id}
+                onPress={() => setSelectedMatchId(m._id)}
+                style={{
+                  paddingVertical: spacing.xs,
+                  paddingHorizontal: spacing.md,
+                  borderRadius: radii.full,
+                  backgroundColor: selectedMatchId === m._id ? glass.brandPurple : 'rgba(255,255,255,0.05)',
+                  borderWidth: 1,
+                  borderColor: selectedMatchId === m._id ? glass.brandPurple : glass.border,
+                }}
+              >
+                <Text style={{ color: selectedMatchId === m._id ? '#FFF' : glass.textMuted, fontWeight: '600' }}>
+                  {m.teamA} vs {m.teamB}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        <Text style={styles.heroLabel}>TICKETS SCANNED FOR MATCH</Text>
+        {isLoading && gates.length === 0 ? (
           <ActivityIndicator color={glass.brandPurple} style={{ marginBottom: spacing.xl }} />
         ) : (
           <Text style={styles.heroValue}>{scannedToday.toLocaleString()}</Text>

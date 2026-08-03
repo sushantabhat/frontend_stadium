@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Modal, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Rect, Text as SvgText, Line, G } from 'react-native-svg';
+import Svg, { Path, Rect, Text as SvgText, Line, G, Circle } from 'react-native-svg';
 import ScreenHeader from '../../components/ScreenHeader';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
 const STADIUM_OUTLINE = 'M50,30 Q200,0 350,30 Q380,175 350,320 Q200,350 50,320 Q20,175 50,30 Z';
-const PITCH = { x: 120, y: 100, w: 160, h: 150 };
+const PITCH = { cx: 200, cy: 175, r: 80 };
 
 function parsePath(d) {
   const re = /[ML](-?\d+\.?\d*),(-?\d+\.?\d*)/g;
@@ -52,8 +52,8 @@ export default function StadiumViewScreen({ navigation, route }) {
         <View style={styles.svgCard}>
           <Svg width="100%" height="100%" viewBox={viewBox} preserveAspectRatio="xMidYMid meet" style={styles.svg}>
             <Path d={STADIUM_OUTLINE} fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
-            <Rect x={PITCH.x} y={PITCH.y} width={PITCH.w} height={PITCH.h} fill="#1B5E20" stroke="rgba(255,255,255,0.3)" strokeWidth={1} rx={4} />
-            <SvgText x={PITCH.x + PITCH.w / 2} y={PITCH.y + PITCH.h / 2} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={12} fontWeight="800">PITCH</SvgText>
+            <Circle cx={PITCH.cx} cy={PITCH.cy} r={PITCH.r} fill="#1B5E20" stroke="rgba(255,255,255,0.3)" strokeWidth={1} />
+            <SvgText x={PITCH.cx} y={PITCH.cy} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={12} fontWeight="800">PITCH</SvgText>
 
             {[100, 200, 300].map((x) => (
               <Line key={`v${x}`} x1={x} y1={0} x2={x} y2={350} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />

@@ -207,7 +207,7 @@ export default function TicketValidationScreen({ navigation }) {
             if (userInfo?.role === 'supervisor') {
               navigation.navigate('Account', { screen: 'SupervisorProfile' });
             } else {
-              navigation.navigate('Account', { screen: 'AdminProfile' });
+              navigation.navigate('Home', { screen: 'AdminProfile' });
             }
           }}
         />

@@ -24,6 +24,8 @@ import { fetchAdminAnalytics, fetchUsers } from '../../services/adminService';
 import { fetchMatches } from '../../services/matchService';
 
 
+
+
 function generateRevenueBars(revenue, days = 7) {
   let numVal = typeof revenue === 'string' ? parseInt(revenue) || 0 : (revenue || 0);
   if (numVal === 0) numVal = 1;
@@ -163,7 +165,7 @@ export default function AdminDashboardScreen({ navigation }) {
             title={userInfo?.name || 'Admin'}
             avatarColors={colors.gradientGold}
             avatarLabel={initials}
-            onAvatarPress={() => navigation.navigate('AdminProfile')}
+            onAvatarPress={() => navigation.navigate('Home', { screen: 'AdminProfile' })}
           />
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}>
 

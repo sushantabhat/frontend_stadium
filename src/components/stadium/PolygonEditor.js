@@ -4,7 +4,7 @@ import Svg, { Path, Circle, G, Text as SvgText, Rect, Line } from 'react-native-
 import { colors, spacing, radii, typography } from '../../constants/theme';
 
 const STADIUM_OUTLINE = 'M50,30 Q200,0 350,30 Q380,175 350,320 Q200,350 50,320 Q20,175 50,30 Z';
-const PITCH = { x: 120, y: 100, w: 160, h: 150 };
+const PITCH = { cx: 200, cy: 175, r: 80 };
 
 const PRESETS = [
   { id: 'north', label: 'North Stand', color: '#FF6B6B', path: 'M130,45 L270,45 L280,70 L120,70 Z' },
@@ -207,8 +207,8 @@ export default function PolygonEditor({
             style={styles.svg}
           >
             <Path d={STADIUM_OUTLINE} fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
-            <Rect x={PITCH.x} y={PITCH.y} width={PITCH.w} height={PITCH.h} fill="#1B5E20" stroke="rgba(255,255,255,0.3)" strokeWidth={1} rx={4} />
-            <SvgText x={PITCH.x + PITCH.w / 2} y={PITCH.y + PITCH.h / 2} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={12} fontWeight="800">PITCH</SvgText>
+            <Circle cx={PITCH.cx} cy={PITCH.cy} r={PITCH.r} fill="#1B5E20" stroke="rgba(255,255,255,0.3)" strokeWidth={1} />
+            <SvgText x={PITCH.cx} y={PITCH.cy} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={12} fontWeight="800">PITCH</SvgText>
 
             {[100, 200, 300].map((x) => (
               <Line key={`v${x}`} x1={x} y1={0} x2={x} y2={350} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />

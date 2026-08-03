@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Path, G, Text as SvgText, Rect } from 'react-native-svg';
+import Svg, { Path, G, Text as SvgText, Rect, Circle } from 'react-native-svg';
 import { colors, CATEGORY_COLORS } from '../../constants/theme';
 
 const STADIUM_OUTLINE = 'M50,30 Q200,0 350,30 Q380,175 350,320 Q200,350 50,320 Q20,175 50,30 Z';
-const PITCH = 'M120,120 L280,120 L280,230 L120,230 Z';
+const PITCH = { cx: 200, cy: 175, r: 80 };
 
 function computeGridPositions(sections, viewBox) {
   if (!sections.length) return [];
@@ -105,15 +105,15 @@ export default function StadiumMap({
             strokeWidth={1}
           />
 
-          <Path
-            d={PITCH}
+          <Circle
+            cx={PITCH.cx} cy={PITCH.cy} r={PITCH.r}
             fill="#1B5E20"
             stroke="rgba(255,255,255,0.3)"
             strokeWidth={1}
           />
           <SvgText
-            x={200}
-            y={180}
+            x={PITCH.cx}
+            y={PITCH.cy}
             textAnchor="middle"
             fill="rgba(255,255,255,0.5)"
             fontSize={11}

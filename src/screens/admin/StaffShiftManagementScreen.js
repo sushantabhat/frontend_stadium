@@ -107,7 +107,7 @@ export default function StaffShiftManagementScreen({ navigation }) {
           title="Shift Management"
           avatarColors={[colors.primary, glass.brandPurple]}
           avatarLabel={initials}
-          onAvatarPress={() => navigation.navigate('AdminProfile')}
+          onAvatarPress={() => navigation.navigate('Home', { screen: 'AdminProfile' })}
           onBack={() => navigation.goBack()}
         />
 
