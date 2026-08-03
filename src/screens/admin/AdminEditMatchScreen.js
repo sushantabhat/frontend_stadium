@@ -19,7 +19,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import ScreenHeader from '../../components/ScreenHeader';
 import PolygonEditor from '../../components/stadium/PolygonEditor';
 import ImagePickerField from '../../components/ImagePickerField';
+import api from '../../services/api';
 import { fetchMatchById, updateMatch } from '../../services/matchService';
+import { imageUri } from '../../utils/imageUri';
 import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
 
 const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
@@ -125,6 +127,23 @@ export default function AdminEditMatchScreen({ route, navigation }) {
   const [venueGates, setVenueGates] = useState([]);
   const [errors, setErrors] = useState({});
 
+  const [teams, setTeams] = useState([]);
+  const [teamPickerVisible, setTeamPickerVisible] = useState(false);
+  const [activeTeamSelect, setActiveTeamSelect] = useState(null);
+
+  useEffect(() => {
+    fetchTeams();
+  }, []);
+
+  const fetchTeams = async () => {
+    try {
+      const res = await api.get('/teams');
+      setTeams(res.data.data);
+    } catch (e) {
+      console.log('Error fetching teams:', e);
+    }
+  };
+
   const maxDays = getDaysInMonth(pickerYear, pickerMonth);
   const clampedDay = Math.min(pickerDay, maxDays);
 
@@ -212,6 +231,9 @@ export default function AdminEditMatchScreen({ route, navigation }) {
     if (!form.title.trim()) newErrors.title = 'Title is required';
     if (!form.teamA.trim()) newErrors.teamA = 'Team A is required';
     if (!form.teamB.trim()) newErrors.teamB = 'Team B is required';
+    if (form.teamA.trim() && form.teamB.trim() && form.teamA.trim() === form.teamB.trim()) {
+      newErrors.teamB = 'Team B cannot be the same as Team A';
+    }
     if (!form.venue.trim()) newErrors.venue = 'Venue is required';
     if (!form.matchDate) newErrors.matchDate = 'Date & time is required';
     const usedCategories = [...new Set(sections.map((s) => s.category))];
@@ -355,26 +377,28 @@ export default function AdminEditMatchScreen({ route, navigation }) {
             {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
 
             <View style={styles.row}>
-              <View style={styles.halfField}>
+              <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Team A</Text>
-                <TextInput
-                  style={[styles.inputField, errors.teamA && styles.inputError]}
-                  placeholder="Nepal"
-                  placeholderTextColor={glass.textMuted}
-                  value={form.teamA}
-                  onChangeText={(v) => updateField('teamA', v)}
-                />
+                <TouchableOpacity 
+                  style={[styles.inputField, errors.teamA && styles.inputError, { justifyContent: 'center' }]}
+                  onPress={() => { setActiveTeamSelect('teamA'); setTeamPickerVisible(true); }}
+                >
+                  <Text style={{ color: form.teamA ? colors.textPrimary : glass.textMuted }}>
+                    {form.teamA || 'Select Team A'}
+                  </Text>
+                </TouchableOpacity>
                 {errors.teamA && <Text style={styles.errorText}>{errors.teamA}</Text>}
               </View>
-              <View style={styles.halfField}>
+              <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Team B</Text>
-                <TextInput
-                  style={[styles.inputField, errors.teamB && styles.inputError]}
-                  placeholder="India"
-                  placeholderTextColor={glass.textMuted}
-                  value={form.teamB}
-                  onChangeText={(v) => updateField('teamB', v)}
-                />
+                <TouchableOpacity 
+                  style={[styles.inputField, errors.teamB && styles.inputError, { justifyContent: 'center' }]}
+                  onPress={() => { setActiveTeamSelect('teamB'); setTeamPickerVisible(true); }}
+                >
+                  <Text style={{ color: form.teamB ? colors.textPrimary : glass.textMuted }}>
+                    {form.teamB || 'Select Team B'}
+                  </Text>
+                </TouchableOpacity>
                 {errors.teamB && <Text style={styles.errorText}>{errors.teamB}</Text>}
               </View>
             </View>
@@ -816,10 +840,59 @@ export default function AdminEditMatchScreen({ route, navigation }) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* ═══════════════════════════════════════════════════
-         DATE / TIME PICKER MODAL
-         ═══════════════════════════════════════════════════ */}
-      <Modal visible={showDatePicker} animationType="slide" transparent>
+      <Modal visible={teamPickerVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select {activeTeamSelect === 'teamA' ? 'Team A' : 'Team B'}</Text>
+              <TouchableOpacity onPress={() => setTeamPickerVisible(false)}>
+                <Text style={styles.closeBtn}>Close</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ marginTop: spacing.md }} showsVerticalScrollIndicator={false}>
+              {teams.map((t) => (
+                <TouchableOpacity 
+                  key={t._id} 
+                  style={styles.teamOption}
+                  onPress={() => {
+                    if (activeTeamSelect === 'teamA') {
+                      updateField('teamA', t.name);
+                      updateField('teamALogo', t.logoUrl);
+                    } else {
+                      updateField('teamB', t.name);
+                      updateField('teamBLogo', t.logoUrl);
+                    }
+                    setTeamPickerVisible(false);
+                  }}
+                >
+                  {t.logoUrl && !t.logoUrl.includes('wikipedia') ? (
+                    <Image source={{ uri: imageUri(t.logoUrl) }} style={styles.teamOptionLogo} resizeMode="cover" />
+                  ) : (
+                    <View style={[styles.teamOptionLogo, { backgroundColor: 'rgba(123,97,255,0.15)', borderWidth: 1, borderColor: glass.brandPurple, justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={{ color: glass.brandPurple, fontSize: 12, fontWeight: '800' }}>{t.shortName || t.name.substring(0, 3).toUpperCase()}</Text>
+                    </View>
+                  )}
+                  <Text style={styles.teamOptionText}>{t.name} <Text style={{ color: glass.textMuted }}>({t.shortName || t.name.substring(0, 3).toUpperCase()})</Text></Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity 
+                style={styles.teamOption} 
+                onPress={() => {
+                  Alert.alert("Manage Teams", "To add a new team, go to the Teams Database in your dashboard.");
+                }}
+              >
+                <View style={[styles.teamOptionLogo, { backgroundColor: 'transparent', borderWidth: 1, borderColor: glass.brandPurple, justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={{color: glass.brandPurple}}>+</Text>
+                </View>
+                <Text style={[styles.teamOptionText, { color: glass.brandPurple }]}>Add New Team</Text>
+              </TouchableOpacity>
+              <View style={{ height: 40 }} />
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showDatePicker} animationType="fade" transparent>
         <View style={styles.modalOverlay}>
           <TouchableOpacity
             style={styles.modalBackdrop}
@@ -1137,6 +1210,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
   },
+  inputGroup: { flex: 1 },
   halfField: { flex: 1 },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
 
@@ -1237,6 +1311,32 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#0D0F18',
+    borderTopLeftRadius: radii.xxl,
+    borderTopRightRadius: radii.xxl,
+    padding: spacing.xxl,
+    paddingBottom: spacing.huge,
+    maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: glass.border,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalTitle: {
+    color: colors.textPrimary,
+    fontSize: typography.h3.fontSize,
+    fontWeight: '800',
+  },
+  closeBtn: {
+    color: glass.brandPurple,
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: '700',
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -1394,23 +1494,23 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   polygonDrawText: { color: glass.brandPurple, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
-  sectionCardInner: {
-    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: radii.md,
-    borderWidth: 1, borderColor: glass.border, paddingHorizontal: spacing.md,
-    marginBottom: spacing.md,
+  
+  teamOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
-  stepperRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: spacing.md, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.05)'
+  teamOptionLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: spacing.md,
   },
-  stepperLabelWrap: { flex: 1 },
-  stepperLabelTitle: { color: colors.textPrimary, fontSize: typography.body.fontSize, fontWeight: '700' },
-  stepperLabelHint: { color: glass.textMuted, fontSize: typography.small.fontSize, marginTop: 2 },
-  stepperControls: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  stepperBtn: { 
-    width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.1)', 
-    alignItems: 'center', justifyContent: 'center' 
+  teamOptionText: {
+    color: '#FFF',
+    fontSize: typography.body.fontSize,
+    fontWeight: '600',
   },
-  stepperBtnText: { color: colors.textPrimary, fontSize: 18, fontWeight: '600', lineHeight: 20 },
-  stepperValue: { color: glass.brandPurple, fontSize: 18, fontWeight: '800', width: 24, textAlign: 'center' },
 });

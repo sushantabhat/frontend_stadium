@@ -203,7 +203,13 @@ export default function TicketValidationScreen({ navigation }) {
           title="Tickets"
           avatarColors={['#FFD700', '#FFA000']}
           avatarLabel={initials}
-          onAvatarPress={() => navigation.navigate(userInfo?.role === 'supervisor' ? 'SupervisorProfile' : 'AdminProfile')}
+          onAvatarPress={() => {
+            if (userInfo?.role === 'supervisor') {
+              navigation.navigate('Account', { screen: 'SupervisorProfile' });
+            } else {
+              navigation.navigate('Account', { screen: 'AdminProfile' });
+            }
+          }}
         />
         <FlatList
           data={filteredTickets}
