@@ -64,6 +64,14 @@ export default function RegisterScreen({ navigation }) {
           style={styles.flex}
         >
           <View style={styles.scroll}>
+            <TouchableOpacity 
+              style={styles.backBtn} 
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.backBtnText}>← Back</Text>
+            </TouchableOpacity>
+
             {/* Brand */}
             <View style={styles.brandSection}>
               <View style={styles.brandMark}>
@@ -199,6 +207,19 @@ const styles = StyleSheet.create({
     textAlign: 'center', letterSpacing: 3, lineHeight: 38, marginBottom: spacing.sm,
   },
   brandSubtitle: { color: colors.textMuted, fontSize: typography.caption.fontSize, textAlign: 'center' },
+
+  backBtn: {
+    position: 'absolute',
+    top: spacing.xl,
+    left: spacing.lg,
+    zIndex: 10,
+    padding: spacing.xs,
+  },
+  backBtnText: {
+    color: colors.textMuted,
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: '600',
+  },
 
   formCard: {
     backgroundColor: colors.surface, marginHorizontal: spacing.xl,
