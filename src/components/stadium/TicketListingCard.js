@@ -30,8 +30,20 @@ export default function TicketListingCard({ section, seats, onSelect, isSelected
       <View style={styles.details}>
         <View style={styles.detailItem}>
           <Text style={styles.detailLabel}>Rows</Text>
-          <Text style={styles.detailValue}>
-            {Array.isArray(section.rows) ? section.rows.join(', ') : '—'}
+          <Text style={styles.detailValue} numberOfLines={2}>
+            {(() => {
+              let rowsArray = section.rows;
+              if (Array.isArray(rowsArray) && rowsArray.length === 1 && typeof rowsArray[0] === 'string' && rowsArray[0].includes(',')) {
+                rowsArray = rowsArray[0].split(',').map(s => s.trim());
+              }
+              
+              if (Array.isArray(rowsArray)) {
+                return rowsArray.length > 3
+                  ? `${rowsArray[0]} - ${rowsArray[rowsArray.length - 1]}`
+                  : rowsArray.join(', ');
+              }
+              return rowsArray || '—';
+            })()}
           </Text>
         </View>
         <View style={styles.detailItem}>

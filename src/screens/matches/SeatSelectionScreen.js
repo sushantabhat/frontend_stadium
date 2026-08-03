@@ -96,12 +96,8 @@ export default function SeatSelectionScreen({ route, navigation }) {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [matchData, seatsData] = await Promise.all([
-        fetchMatchById(matchId),
-        fetchMatchSeats(matchId),
-      ]);
+      const matchData = await fetchMatchById(matchId);
       setMatch(matchData);
-      setSeats(seatsData);
     } catch (error) {
       Alert.alert('Error', error.response?.data?.message || 'Failed to load stadium');
     } finally {
@@ -116,18 +112,17 @@ export default function SeatSelectionScreen({ route, navigation }) {
   const sections = useMemo(() => {
     if (match?.stadiumSections && match.stadiumSections.length > 0) {
       return match.stadiumSections.map((section) => {
-        const sectionSeats = seats.filter((s) => s.sectionId === section.sectionId);
-        const available = sectionSeats.filter((s) => s.status === 'available').length;
+        const available = match.seatStats?.[`section_${section.sectionId}_available`] || 0;
+        const total = match.seatStats?.[`section_${section.sectionId}_total`] || section.totalSeats;
         return {
           ...section,
-          totalSeats: sectionSeats.length || section.totalSeats,
+          totalSeats: total,
           availableSeats: available,
-          seats: sectionSeats,
         };
       });
     }
     return [];
-  }, [match, seats]);
+  }, [match]);
 
   const filteredSections = useMemo(() => {
     if (!activeCategory) return sections;
@@ -135,11 +130,13 @@ export default function SeatSelectionScreen({ route, navigation }) {
   }, [sections, activeCategory]);
 
   const seatStats = useMemo(() => {
-    const available = seats.filter((s) => s.status === 'available').length;
-    const booked = seats.filter((s) => s.status === 'booked').length;
-    const locked = seats.filter((s) => s.status === 'locked').length;
-    return { total: seats.length, available, booked, locked };
-  }, [seats]);
+    return { 
+      total: match?.seatStats?.total || 0, 
+      available: match?.seatStats?.available || 0, 
+      booked: match?.seatStats?.booked || 0, 
+      locked: match?.seatStats?.locked || 0 
+    };
+  }, [match]);
 
   const filters = useMemo(() => {
     const f = [];
@@ -178,7 +175,8 @@ export default function SeatSelectionScreen({ route, navigation }) {
 
     setIsSubmitting(true);
     try {
-      const sectionSeats = (selectedSection.seats || [])
+      const fetchedSeats = await fetchMatchSeats(matchId, { sectionId: selectedSection.sectionId });
+      const sectionSeats = (fetchedSeats || [])
         .filter((s) => s.status === 'available')
         .slice(0, quantity)
         .map((s) => ({

@@ -110,7 +110,7 @@ export default function NotificationsScreen({ navigation }) {
               <View style={styles.emptyWrap}>
                 <Text style={styles.emptyIcon}>🔔</Text>
                 <Text style={styles.emptyTitle}>No Notifications</Text>
-                <Text style={styles.emptyText}>You're all caught up</Text>
+                <Text style={styles.emptyText}>You&apos;re all caught up</Text>
               </View>
             ) : null
           }

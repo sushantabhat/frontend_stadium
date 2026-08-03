@@ -1165,7 +1165,6 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   inputError: { borderColor: '#FF4757' },
-  errorText: { color: '#FF4757', fontSize: 11, fontWeight: '600', marginBottom: spacing.md, marginTop: -spacing.sm },
 
   priceRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm,
