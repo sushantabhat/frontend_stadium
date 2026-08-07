@@ -236,7 +236,7 @@ export default function AdminMatchListScreen({ navigation }) {
             </View>
 
             <View style={s.cardBottom}>
-              <Text style={s.cardMeta}>📍 {item.venue || 'TBD'}</Text>
+              <Text style={s.cardMeta}>📍 {item.venue?.name || item.venue || 'TBD'}</Text>
               <View style={s.cardBottomRight}>
                 <Text style={s.cardMetaMono}>{dt.time}</Text>
                 {revenue > 0 && (
@@ -315,7 +315,7 @@ export default function AdminMatchListScreen({ navigation }) {
                   </View>
 
                   <Text style={s.heroTitle}>{title}</Text>
-                  <Text style={s.heroVenue}>📍 {m.venue || 'Venue TBD'}</Text>
+                  <Text style={s.heroVenue}>📍 {m.venue?.name || m.venue || 'Venue TBD'}</Text>
 
                   <View style={s.heroMetaRow}>
                     <View style={s.heroMetaPill}>

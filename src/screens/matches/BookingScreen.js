@@ -22,12 +22,12 @@ import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 import { imageUri } from '../../utils/imageUri';
 import { fetchMatchById } from '../../services/matchService';
 import { unlockSeats, initiateKhaltiPayment, verifyKhaltiPayment, initiateCardPayment, confirmCardBooking } from '../../services/bookingService';
-import { fetchDynamicPricingSuggestions } from '../../services/aiService';
+
 
 export default function BookingScreen({ route, navigation }) {
   const { matchId, selectedSeats = [] } = route.params || {};
   const [match, setMatch] = useState(null);
-  const [pricingSuggestions, setPricingSuggestions] = useState(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isPaying, setIsPaying] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
@@ -43,7 +43,7 @@ export default function BookingScreen({ route, navigation }) {
       try {
         const matchData = await fetchMatchById(matchId);
         setMatch(matchData);
-        try { setPricingSuggestions(await fetchDynamicPricingSuggestions(matchId)); } catch { setPricingSuggestions(null); }
+
       } catch { Alert.alert('Error', 'Failed to load checkout details'); }
       finally { setIsLoading(false); }
     }
@@ -54,9 +54,9 @@ export default function BookingScreen({ route, navigation }) {
     if (!match || !selectedSeats) return 0;
     return selectedSeats.reduce((sum, seat) => {
       const basePrice = match.pricing?.[seat.category] || 0;
-      return sum + basePrice * (pricingSuggestions?.multiplier || 1.0);
+      return sum + basePrice;
     }, 0);
-  }, [match, selectedSeats, pricingSuggestions]);
+  }, [match, selectedSeats]);
 
   const handleKhaltiPayment = async () => {
     setIsPaying(true);
@@ -207,8 +207,8 @@ export default function BookingScreen({ route, navigation }) {
     );
   }
 
-  const demandLevel = pricingSuggestions?.demandLevel || 'Normal';
-  const multiplier = pricingSuggestions?.multiplier || 1.0;
+  const demandLevel = 'Normal';
+  const multiplier = 1.0;
 
   return (
     <SafeAreaView style={styles.container}>

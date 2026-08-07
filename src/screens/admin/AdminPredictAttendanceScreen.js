@@ -179,7 +179,7 @@ export default function AdminPredictAttendanceScreen({ route, navigation }) {
             </View>
 
             <View style={styles.factorCard}>
-              <Text style={styles.factorIcon}>📅</Text>
+              <Text style={styles.factorIcon}>{factors.is_weekend ? '📅' : '📆'}</Text>
               <Text style={styles.factorValue}>{factors.is_weekend ? 'Yes' : 'No'}</Text>
               <Text style={styles.factorName}>Weekend Match</Text>
             </View>
@@ -190,6 +190,18 @@ export default function AdminPredictAttendanceScreen({ route, navigation }) {
               <Text style={styles.factorName}>Stadium Capacity</Text>
             </View>
 
+            <View style={styles.factorCard}>
+              <Text style={styles.factorIcon}>🏆</Text>
+              <Text style={styles.factorValue}>{factors.match_stage || 'League Stage'}</Text>
+              <Text style={styles.factorName}>Match Stage</Text>
+            </View>
+
+            <View style={styles.factorCard}>
+              <Text style={styles.factorIcon}>{factors.is_home_match ? '🏠' : '✈️'}</Text>
+              <Text style={styles.factorValue}>{factors.is_home_match ? 'Home' : 'Away'}</Text>
+              <Text style={styles.factorName}>Home Advantage</Text>
+            </View>
+
           </View>
         </Animated.View>
 
@@ -198,7 +210,7 @@ export default function AdminPredictAttendanceScreen({ route, navigation }) {
             <View style={styles.insightTextWrap}>
               <Text style={styles.insightTitle}>AI Insight</Text>
               <Text style={styles.insightDesc}>
-                This prediction is generated using a Random Forest model trained on 10,000 authentic matches. It relies purely on behavioral math rather than hardcoded team names, making it completely unbiased and scalable.
+                This prediction uses a Random Forest ML model analyzing team tiers, match stage, weather, rivalry, and crowd patterns. Higher-tier matchups and knockout stages drive significantly higher attendance.
               </Text>
             </View>
         </Animated.View>

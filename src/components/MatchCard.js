@@ -11,7 +11,7 @@ function getInitials(name) {
 }
 
 function isValidLogo(uri) {
-  return typeof uri === 'string' && uri.trim().length > 10 && uri.startsWith('http');
+  return typeof uri === 'string' && uri.trim().length > 0;
 }
 
 const TINT_THEMES = [
@@ -93,7 +93,7 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
           </View>
 
           <Text style={styles.heroTitle}>{match.title}</Text>
-          <Text style={styles.heroVenue}>📍 {match.venue}</Text>
+          <Text style={styles.heroVenue}>📍 {match.venue?.name || match.venue}</Text>
 
           {/* Bottom: time + sold bar */}
           <View style={styles.heroBottom}>
@@ -119,7 +119,7 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
     );
   }
 
-  // Horizontal variant — full-bleed image card
+  // Horizontal variant — full-bleed image card (admin-aligned)
   const hasThumb = Boolean(match.imageUrl);
   const pricing = match.pricing || {};
   const prices = Object.values(pricing).filter((p) => typeof p === 'number' && p > 0);
@@ -144,8 +144,10 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
           {/* Top row: status + availability */}
           <View style={styles.hTopRow}>
             <View style={styles.hTopLeft}>
-              <View style={[styles.hStatusDot, { backgroundColor: statusConfig.bg }]} />
-              <Text style={[styles.hStatus, { color: statusConfig.color }]}>{statusConfig.label}</Text>
+              <View style={[styles.hStatusBadge, { backgroundColor: `${statusConfig.color}22` }]}>
+                <View style={[styles.hStatusDot, { backgroundColor: statusConfig.color }]} />
+                <Text style={[styles.hStatus, { color: statusConfig.color }]}>{statusConfig.label}</Text>
+              </View>
             </View>
             {available === 0 && total > 0 ? (
               <View style={[styles.hAvailBadge, { backgroundColor: 'rgba(255,23,68,0.25)' }]}>
@@ -162,31 +164,31 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
             ) : null}
           </View>
 
-          {/* Middle: teams + title */}
+          {/* Middle: centered teams with large logos */}
           <View style={styles.hMiddle}>
-            <View style={styles.hTeamsRow}>
+            <View style={styles.hTeamsRowCentered}>
               {isValidLogo(match.teamALogo) ? (
-                <Image source={{ uri: imageUri(match.teamALogo) }} style={styles.hTeamLogo} resizeMode="contain" />
+                <Image source={{ uri: imageUri(match.teamALogo) }} style={styles.hTeamLogoLarge} resizeMode="cover" />
               ) : (
-                <View style={styles.teamCircleSmall}>
-                  <Text style={styles.teamCircleSmallText}>{getInitials(match.teamA)}</Text>
+                <View style={styles.hTeamCircleLarge}>
+                  <Text style={styles.hTeamCircleLargeText}>{getInitials(match.teamA)}</Text>
                 </View>
               )}
-              <Text style={styles.hTeams}>{match.teamA || 'TBA'} vs {match.teamB || 'TBA'}</Text>
+              <Text style={styles.hVsText}>vs</Text>
               {isValidLogo(match.teamBLogo) ? (
-                <Image source={{ uri: imageUri(match.teamBLogo) }} style={styles.hTeamLogo} resizeMode="contain" />
+                <Image source={{ uri: imageUri(match.teamBLogo) }} style={styles.hTeamLogoLarge} resizeMode="cover" />
               ) : (
-                <View style={styles.teamCircleSmall}>
-                  <Text style={styles.teamCircleSmallText}>{getInitials(match.teamB)}</Text>
+                <View style={styles.hTeamCircleLarge}>
+                  <Text style={styles.hTeamCircleLargeText}>{getInitials(match.teamB)}</Text>
                 </View>
               )}
             </View>
-            <Text style={styles.hTitle} numberOfLines={1}>{match.title}</Text>
+            <Text style={styles.hTitleCentered} numberOfLines={2}>{match.title || `${match.teamA} vs ${match.teamB}`}</Text>
           </View>
 
           {/* Bottom row: venue + date + price */}
           <View style={styles.hBottomRow}>
-            <Text style={styles.hVenue} numberOfLines={1}>📍 {match.venue}</Text>
+            <Text style={styles.hVenue} numberOfLines={1}>📍 {match.venue?.name || match.venue}</Text>
             <View style={styles.hBottomRight}>
               {match.matchDate && (
                 <Text style={styles.hDate}>
@@ -442,15 +444,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
+  hStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+  },
   hStatusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
   },
   hStatus: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   hAvailBadge: {
     paddingHorizontal: 8,
@@ -463,28 +473,47 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   hMiddle: {
-    alignItems: 'flex-start',
-    gap: 2,
+    alignItems: 'center',
+    gap: 4,
   },
-  hTeamsRow: {
+  hTeamsRowCentered: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
-    marginBottom: 2,
+    marginBottom: spacing.xs,
   },
-  hTeamLogo: {
-    width: 24,
-    height: 24,
+  hTeamLogoLarge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
-  hTeams: {
+  hTeamCircleLarge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hTeamCircleLargeText: {
     color: '#FFF',
-    fontSize: typography.captionMedium.fontSize,
+    fontSize: 16,
     fontWeight: '800',
   },
-  hTitle: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: typography.small.fontSize,
-    fontWeight: '700',
+  hVsText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: typography.tiny.fontSize,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  hTitleCentered: {
+    color: '#FFF',
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   hBottomRow: {
     flexDirection: 'row',
