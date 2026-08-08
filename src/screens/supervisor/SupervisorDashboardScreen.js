@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ClipboardList, CircleDot, ScanLine, Radio, RadioTower, CheckCircle } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography } from '../../constants/theme';
-import { fetchFraudLogs, fetchGateStats } from '../../services/adminService';
+import { fetchIncidents, fetchGateStats } from '../../services/adminService';
 import { fetchScanHistory } from '../../services/ticketService';
 import { fetchMatches } from '../../services/matchService';
 import DashboardHeader from '../../components/DashboardHeader';
@@ -35,22 +35,22 @@ export default function SupervisorDashboardScreen({ navigation }) {
   const loadData = useCallback(async (refreshing = false) => {
     if (!refreshing) setIsLoading(true);
     try {
-      const [frauds, scanLogsData, matchesData] = await Promise.all([
-        fetchFraudLogs('open'),
+      const [incidentsData, scanLogsData, matchesData] = await Promise.all([
+        fetchIncidents(),
         fetchScanHistory(),
         fetchMatches(),
       ]);
       setScanLogs(scanLogsData || []);
-      const mapped = (frauds || []).map(f => ({
+      const mapped = (incidentsData || []).map(f => ({
         id: f._id,
-        type: f.reason === 'duplicate_scan' ? 'fraud' : 'technical',
-        severity: f.reason === 'duplicate_scan' ? 'high' : 'medium',
-        title: f.reason === 'duplicate_scan' ? 'Duplicate Scan Detected' : 'Invalid Ticket Attempt',
+        type: f.type,
+        severity: f.severity,
+        title: f.type.replace(/_/g, ' ').toUpperCase(),
         ticketCode: f.ticketCode || '—',
-        details: f.details,
-        staff: f.scannedBy?.name || 'Gate staff',
-        timestamp: f.timestamp || f.createdAt,
-        status: f.status || 'open',
+        details: f.notes,
+        staff: f.reportedBy?.name || 'Gate staff',
+        timestamp: f.createdAt,
+        status: f.status?.toLowerCase() || 'open',
       }));
       setIncidents(mapped);
 

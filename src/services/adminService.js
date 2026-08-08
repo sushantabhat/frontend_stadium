@@ -1,5 +1,19 @@
 import api from './api';
 
+export async function fetchIncidents() {
+  const response = await api.get('/api/incidents');
+  return response.data.incidents;
+}
+
+export async function fetchIncidentById(id) {
+  const response = await api.get(`/api/incidents/${id}`);
+  return response.data.incident;
+}
+
+export async function updateIncidentStatus(id, status, notes) {
+  const response = await api.put(`/api/incidents/${id}/status`, { status, notes });
+  return response.data;
+}
 export async function fetchAdminAnalytics() {
   const response = await api.get('/api/admin/analytics');
   return response.data.analytics;

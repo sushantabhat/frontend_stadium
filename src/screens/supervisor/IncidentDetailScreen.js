@@ -4,7 +4,7 @@ import { ActivityIndicator, Alert, ScrollView, StatusBar, StyleSheet, Text, Touc
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { formatInNepal } from '../../utils/date';
 import DashboardHeader from '../../components/DashboardHeader';
-import { fetchFraudLogById, fetchFraudLogAttendance, resolveFraudLog, escalateFraudLog } from '../../services/adminService';
+import { fetchIncidentById, updateIncidentStatus } from '../../services/adminService';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -16,7 +16,7 @@ const TABS = [
 export default function IncidentDetailScreen({ route, navigation }) {
   const { incidentId } = route.params || {};
   const [activeTab, setActiveTab] = useState('overview');
-  const [fraudLog, setFraudLog] = useState(null);
+  const [incident, setIncident] = useState(null);
   const [attendanceLogs, setAttendanceLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -25,12 +25,9 @@ export default function IncidentDetailScreen({ route, navigation }) {
     if (!incidentId) return;
     setLoading(true);
     try {
-      const [log, attLogs] = await Promise.all([
-        fetchFraudLogById(incidentId),
-        fetchFraudLogAttendance(incidentId),
-      ]);
-      setFraudLog(log);
-      setAttendanceLogs(attLogs || []);
+      const inc = await fetchIncidentById(incidentId);
+      setIncident(inc);
+      setAttendanceLogs([]); // The new system doesn't attach attendance to incidents directly
     } catch (err) {
       console.log('Incident load error:', err.message);
       Alert.alert('Error', 'Failed to load incident details');
@@ -56,17 +53,17 @@ export default function IncidentDetailScreen({ route, navigation }) {
     setActionLoading(true);
     try {
       if (action === 'allow') {
-        await resolveFraudLog(incidentId, 'allowed', '');
+        await updateIncidentStatus(incidentId, 'Resolved', 'Manually allowed entry.');
         Alert.alert('Entry Allowed', 'Ticket has been manually approved. Entry granted.', [
           { text: 'OK', onPress: () => navigation.goBack() },
         ]);
       } else if (action === 'dismiss') {
-        await resolveFraudLog(incidentId, 'dismissed', '');
+        await updateIncidentStatus(incidentId, 'Resolved', 'Incident dismissed.');
         Alert.alert('Dismissed', 'Incident dismissed. No further action.', [
           { text: 'OK', onPress: () => navigation.goBack() },
         ]);
       } else if (action === 'escalate') {
-        await escalateFraudLog(incidentId, '');
+        await updateIncidentStatus(incidentId, 'In Progress', 'Escalated to admin.');
         Alert.alert('Escalated', 'This incident has been escalated to admin.', [
           { text: 'OK', onPress: () => navigation.goBack() },
         ]);
@@ -87,7 +84,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
     );
   }
 
-  if (!fraudLog) {
+  if (!incident) {
     return (
       <SafeAreaView style={styles.container}>
         <DashboardHeader topLabel="INVESTIGATION" title="Incident Detail" onBack={() => navigation.goBack()} />
@@ -96,11 +93,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
     );
   }
 
-  const ticket = fraudLog.ticket || {};
-  const seat = ticket.seat || {};
-  const matchInfo = fraudLog.match || {};
-  const userData = ticket.user || {};
-  const scannedBy = fraudLog.scannedBy || {};
+  const reportedBy = incident.reportedBy || {};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -137,31 +130,31 @@ export default function IncidentDetailScreen({ route, navigation }) {
               <View style={styles.cardInner}>
                 <Text style={styles.cardHeader}>INCIDENT SUMMARY</Text>
                 <View style={styles.detailRow}>
-                  <Text style={styles.label}>Reason</Text>
-                  <Text style={styles.value}>{fraudLog.reason?.replace(/_/g, ' ').toUpperCase() || '—'}</Text>
+                  <Text style={styles.label}>Type</Text>
+                  <Text style={styles.value}>{incident.type?.replace(/_/g, ' ').toUpperCase() || '—'}</Text>
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.label}>Severity</Text>
-                  <Text style={[styles.value, { color: fraudLog.reason === 'duplicate_scan' ? colors.warning : colors.danger }]}>
-                    {fraudLog.reason === 'duplicate_scan' ? 'HIGH' : 'MEDIUM'}
+                  <Text style={[styles.value, { color: incident.severity === 'critical' ? colors.danger : colors.warning }]}>
+                    {incident.severity?.toUpperCase() || 'MEDIUM'}
                   </Text>
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.label}>Reported By</Text>
-                  <Text style={styles.value}>{scannedBy.name || 'Gate staff'}</Text>
+                  <Text style={styles.value}>{reportedBy.name || 'Gate staff'}</Text>
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.label}>Ticket Code</Text>
-                  <Text style={[styles.value, { fontFamily: 'monospace' }]}>{fraudLog.ticketCode || '—'}</Text>
+                  <Text style={[styles.value, { fontFamily: 'monospace' }]}>{incident.ticketCode || '—'}</Text>
                 </View>
                 <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
                   <Text style={styles.label}>Time</Text>
-                  <Text style={styles.value}>{timeAgo(fraudLog.timestamp)}</Text>
+                  <Text style={styles.value}>{timeAgo(incident.createdAt)}</Text>
                 </View>
-                {fraudLog.details ? (
+                {incident.notes ? (
                   <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
-                    <Text style={styles.label}>Details</Text>
-                    <Text style={[styles.value, { flex: 2 }]}>{fraudLog.details}</Text>
+                    <Text style={styles.label}>Notes</Text>
+                    <Text style={[styles.value, { flex: 2 }]}>{incident.notes}</Text>
                   </View>
                 ) : null}
               </View>
@@ -174,14 +167,8 @@ export default function IncidentDetailScreen({ route, navigation }) {
             <View style={styles.cardInner}>
               <Text style={styles.cardHeader}>TICKET FORENSICS</Text>
               {[
-                { label: 'Ticket Code', value: fraudLog.ticketCode, mono: true },
-                { label: 'Purchased By', value: userData.name || '—' },
-                { label: 'Email', value: userData.email || '—' },
-                { label: 'Payment', value: seat.price ? `Rs.${seat.price.toLocaleString()}` : '—' },
-                { label: 'Seat', value: seat.seatLabel ? `${seat.seatLabel} (${(seat.category || '').toUpperCase()})` : '—' },
-                { label: 'Gate', value: seat.gate || '—' },
-                { label: 'Match', value: matchInfo.title || '—' },
-                { label: 'Match Date', value: matchInfo.matchDate ? formatInNepal(matchInfo.matchDate, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' },
+                { label: 'Ticket Code', value: incident.ticketCode || '—', mono: true },
+                { label: 'Data Unavailable', value: 'Requires backend integration' },
               ].map((item, idx, arr) => (
                 <View key={item.label} style={[styles.detailRow, idx === arr.length - 1 && { borderBottomWidth: 0 }]}>
                   <Text style={styles.label}>{item.label}</Text>
@@ -214,18 +201,18 @@ export default function IncidentDetailScreen({ route, navigation }) {
                   </View>
                 ))
               )}
-              {fraudLog.ticketCode ? (
+              {incident.ticketCode ? (
                 <View style={[styles.scanRow, styles.scanRowBorder]}>
                   <View style={styles.scanLeft}>
                     <View style={[styles.scanDot, { backgroundColor: colors.danger }]} />
                     <View>
-                      <Text style={styles.scanGate}>{scannedBy.name || 'Staff'} </Text>
-                      <Text style={styles.scanTime}>{fraudLog.timestamp ? timeAgo(fraudLog.timestamp) : '—'}</Text>
+                      <Text style={styles.scanGate}>{reportedBy.name || 'Staff'} </Text>
+                      <Text style={styles.scanTime}>{timeAgo(incident.createdAt)}</Text>
                     </View>
                   </View>
                   <View style={[styles.scanStatusPill, { backgroundColor: colors.dangerSurface }]}>
                     <Text style={[styles.scanStatusText, { color: colors.danger }]}>
-                      {fraudLog.reason === 'duplicate_scan' ? 'DUPLICATE' : 'DENIED'}
+                      {incident.type?.replace(/_/g, ' ').toUpperCase() || 'DENIED'}
                     </Text>
                   </View>
                 </View>
@@ -239,9 +226,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
             <View style={styles.cardInner}>
               <Text style={styles.cardHeader}>CUSTOMER PROFILE</Text>
               {[
-                { label: 'Name', value: userData.name || '—' },
-                { label: 'Email', value: userData.email || '—' },
-                { label: 'Phone', value: userData.phone || '—' },
+                { label: 'Data Unavailable', value: '—' },
               ].map((item, idx, arr) => (
                 <View key={item.label} style={[styles.detailRow, idx === arr.length - 1 && { borderBottomWidth: 0 }]}>
                   <Text style={styles.label}>{item.label}</Text>
@@ -253,7 +238,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
         )}
       </ScrollView>
 
-      {fraudLog.status === 'open' && (
+      {incident.status === 'Open' && (
         <View style={styles.bottomBar}>
           <TouchableOpacity
             style={styles.bottomBtn}
