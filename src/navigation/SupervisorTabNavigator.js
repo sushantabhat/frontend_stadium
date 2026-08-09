@@ -48,7 +48,7 @@ function ScannerNavigator() {
   return (
     <ScannerStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <ScannerStack.Screen name="SupervisorGateScanner" component={GateScannerScreen} />
-      <ScannerStack.Screen name="SupervisorTicketVerify" component={TicketVerifyScreen} />
+      <ScannerStack.Screen name="TicketVerify" component={TicketVerifyScreen} />
     </ScannerStack.Navigator>
   );
 }

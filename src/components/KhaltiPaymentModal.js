@@ -13,10 +13,12 @@ export default function KhaltiPaymentModal({ visible, paymentUrl, onSuccess, onE
 
     if (!handledRef.current && url.includes('example.com/khalti/success')) {
       handledRef.current = true;
-      const params = new URLSearchParams(url.split('?')[1] || '');
-      const pidx = params.get('pidx');
+      const pidxMatch = url.match(/[?&]pidx=([^&]+)/);
+      const pidx = pidxMatch ? pidxMatch[1] : null;
       if (pidx) {
         onSuccess(pidx);
+      } else {
+        onError('Payment succeeded but missing transaction ID');
       }
     }
 
@@ -43,6 +45,8 @@ export default function KhaltiPaymentModal({ visible, paymentUrl, onSuccess, onE
           javaScriptEnabled
           domStorageEnabled
           startInLoadingState
+          sharedCookiesEnabled={true}
+          thirdPartyCookiesEnabled={true}
         />
       </View>
     </Modal>
