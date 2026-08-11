@@ -39,3 +39,13 @@ export async function confirmCardBooking(transactionId, matchId, seatIds) {
   const response = await api.post('/api/payments/card/confirm', { transactionId, matchId, seatIds });
   return response.data;
 }
+
+export async function initiateEsewaPayment(matchId, seatIds, amount) {
+  const response = await api.post('/api/payments/esewa/initiate', { matchId, seatIds, amount });
+  return response.data;
+}
+
+export async function verifyEsewaPayment(data) {
+  const response = await api.post('/api/payments/esewa/verify', { data });
+  return response.data;
+}

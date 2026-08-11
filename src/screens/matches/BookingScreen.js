@@ -15,13 +15,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
 import BookingProgress from '../../components/BookingProgress';
 import KhaltiPaymentModal from '../../components/KhaltiPaymentModal';
+import EsewaPaymentModal from '../../components/EsewaPaymentModal';
 import CardPaymentModal from '../../components/CardPaymentModal';
 import GradientButton from '../../components/GradientButton';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 import { imageUri } from '../../utils/imageUri';
 import { fetchMatchById } from '../../services/matchService';
-import { unlockSeats, initiateKhaltiPayment, verifyKhaltiPayment, initiateCardPayment, confirmCardBooking } from '../../services/bookingService';
+import { unlockSeats, initiateKhaltiPayment, verifyKhaltiPayment, initiateCardPayment, confirmCardBooking, initiateEsewaPayment, verifyEsewaPayment } from '../../services/bookingService';
 
 
 export default function BookingScreen({ route, navigation }) {
@@ -35,7 +36,9 @@ export default function BookingScreen({ route, navigation }) {
   const [pendingPayment, setPendingPayment] = useState(null);
   const [khaltiData, setKhaltiData] = useState(null);
   const [khaltiVisible, setKhaltiVisible] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('khalti');
+  const [esewaData, setEsewaData] = useState(null);
+  const [esewaVisible, setEsewaVisible] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('esewa');
   const [cardVisible, setCardVisible] = useState(false);
 
   useEffect(() => {
@@ -86,6 +89,34 @@ export default function BookingScreen({ route, navigation }) {
     Alert.alert('Payment Failed', msg);
   };
 
+  const handleEsewaPayment = async () => {
+    setIsPaying(true);
+    try {
+      const seatIds = selectedSeats.map(s => s.id || s._id);
+      const result = await initiateEsewaPayment(matchId, seatIds, totalAmount);
+      setEsewaData(result);
+      setPendingPayment({ matchId, seatIds });
+      setEsewaVisible(true);
+    } catch (err) { Alert.alert('Payment Error', err.response?.data?.message || err.message); }
+    finally { setIsPaying(false); }
+  };
+
+  const handleEsewaSuccess = async (data) => {
+    setEsewaVisible(false);
+    setIsPaying(true);
+    try {
+      const result = await verifyEsewaPayment(data);
+      setIsBooked(true);
+      setBookedTickets(result.tickets || []);
+    } catch (err) { Alert.alert('Verification failed', err.response?.data?.message || err.message); }
+    finally { setIsPaying(false); }
+  };
+
+  const handleEsewaError = (msg) => {
+    setEsewaVisible(false);
+    Alert.alert('Payment Failed', msg);
+  };
+
   const handleCardPayment = () => {
     const seatIds = selectedSeats.map(s => s.id || s._id);
     setPendingPayment({ matchId, seatIds });
@@ -132,9 +163,10 @@ export default function BookingScreen({ route, navigation }) {
         <StatusBar barStyle="light-content" />
         <BookingProgress currentStep="done" />
         <ScrollView contentContainerStyle={styles.successScroll}>
-          {/* Success Hero */}
-          <View style={styles.successCard}>
-            <LinearGradient colors={[`${colors.primary}DD`, `${colors.primaryDark}EE`]} style={styles.successGradient}>
+          {/* Success Hero - shadow wrapper separate from overflow:hidden wrapper (Android fix) */}
+          <View style={styles.successCardShadow}>
+            <View style={styles.successCard}>
+              <LinearGradient colors={[colors.primary, colors.primaryDark || '#1a1a6e']} style={styles.successGradient}>
               <View style={styles.successIconWrap}>
                 <Text style={styles.successIcon}>✅</Text>
               </View>
@@ -147,8 +179,8 @@ export default function BookingScreen({ route, navigation }) {
                     <QRCode
                       value={firstTicket.ticketCode}
                       size={140}
-                      backgroundColor="transparent"
-                      color="#FFFFFF"
+                      backgroundColor="white"
+                      color="#000000"
                     />
                     <View style={[styles.qrCorner, styles.qrCornerTL]} />
                     <View style={[styles.qrCorner, styles.qrCornerTR]} />
@@ -199,7 +231,9 @@ export default function BookingScreen({ route, navigation }) {
                   </View>
                 </View>
             </LinearGradient>
+            </View>
           </View>
+
 
           <GradientButton title="Done" onPress={handleDone} style={{ marginHorizontal: spacing.xl, marginTop: spacing.xl }} />
         </ScrollView>
@@ -312,6 +346,13 @@ export default function BookingScreen({ route, navigation }) {
               <Text style={[styles.paymentOptionText, paymentMethod === 'khalti' && styles.paymentOptionTextActive]}>Khalti</Text>
             </TouchableOpacity>
             <TouchableOpacity
+              style={[styles.paymentOption, paymentMethod === 'esewa' && styles.paymentOptionActive, { borderColor: paymentMethod === 'esewa' ? '#62BA46' : colors.border, backgroundColor: paymentMethod === 'esewa' ? '#62BA4615' : 'transparent' }]}
+              onPress={() => setPaymentMethod('esewa')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.paymentOptionText, paymentMethod === 'esewa' && { color: '#62BA46' }]}>eSewa</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               style={[styles.paymentOption, paymentMethod === 'card' && styles.paymentOptionActive]}
               onPress={() => setPaymentMethod('card')}
               activeOpacity={0.7}
@@ -332,6 +373,14 @@ export default function BookingScreen({ route, navigation }) {
         onClose={() => setKhaltiVisible(false)}
       />
 
+      <EsewaPaymentModal
+        visible={esewaVisible}
+        esewaData={esewaData}
+        onSuccess={handleEsewaSuccess}
+        onError={handleEsewaError}
+        onClose={() => setEsewaVisible(false)}
+      />
+
       <CardPaymentModal
         visible={cardVisible}
         amount={totalAmount}
@@ -348,8 +397,8 @@ export default function BookingScreen({ route, navigation }) {
           <Text style={styles.cancelBtnText}>Cancel</Text>
         </TouchableOpacity>
         <GradientButton
-          title={isPaying ? 'Processing...' : `Pay via ${paymentMethod === 'khalti' ? 'Khalti' : 'Card'} Rs.${Math.round(totalAmount)}`}
-          onPress={paymentMethod === 'khalti' ? handleKhaltiPayment : handleCardPayment}
+          title={isPaying ? 'Processing...' : `Pay via ${paymentMethod === 'khalti' ? 'Khalti' : paymentMethod === 'esewa' ? 'eSewa' : 'Card'} Rs.${Math.round(totalAmount)}`}
+          onPress={paymentMethod === 'khalti' ? handleKhaltiPayment : paymentMethod === 'esewa' ? handleEsewaPayment : handleCardPayment}
           disabled={isPaying}
           style={{ flex: 1 }}
         />
@@ -425,7 +474,9 @@ const styles = StyleSheet.create({
 
   // Success
   successScroll: { padding: spacing.xl, paddingTop: spacing.xxl },
-  successCard: { borderRadius: radii.xxl, overflow: 'hidden', ...shadows.lg },
+  // Android: shadow and overflow:hidden must be on SEPARATE views
+  successCardShadow: { ...shadows.lg, borderRadius: radii.xxl, marginBottom: spacing.lg },
+  successCard: { borderRadius: radii.xxl, overflow: 'hidden' },
   successGradient: { padding: spacing.xxl, alignItems: 'center' },
   successIconWrap: {
     width: 64, height: 64, borderRadius: 32,
