@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Eye, EyeOff } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { validateLoginForm } from '../../utils/validation';
@@ -17,6 +18,7 @@ export default function LoginScreen({ navigation }) {
   const { login, isLoading } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ email: null, password: null });
   const [serverError, setServerError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -118,14 +120,24 @@ export default function LoginScreen({ navigation }) {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>PASSWORD</Text>
-                <TextInput
-                  style={[styles.input, errors.password && styles.inputError]}
-                  placeholder="Enter your password"
-                  placeholderTextColor={colors.textMuted}
-                  secureTextEntry
-                  value={password}
-                  onChangeText={(text) => { setPassword(text); clearFieldError('password'); }}
-                />
+                <View style={styles.passwordWrap}>
+                  <TextInput
+                    style={[styles.input, styles.passwordInput, errors.password && styles.inputError]}
+                    placeholder="Enter your password"
+                    placeholderTextColor={colors.textMuted}
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={(text) => { setPassword(text); clearFieldError('password'); }}
+                  />
+                  <TouchableOpacity
+                    style={styles.passwordToggle}
+                    onPress={() => setShowPassword((prev) => !prev)}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.passwordToggleText}>{showPassword ? <EyeOff size={18} color={colors.textSecondary} strokeWidth={2} /> : <Eye size={18} color={colors.textSecondary} strokeWidth={2} />}</Text>
+                  </TouchableOpacity>
+                </View>
                 {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
               </View>
 
@@ -382,6 +394,22 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: colors.danger,
+  },
+  passwordWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    flex: 1,
+    paddingRight: spacing.xl + 4,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: spacing.md,
+    padding: spacing.xs,
+  },
+  passwordToggleText: {
+    fontSize: 16,
   },
   errorText: {
     color: colors.dangerLight,
