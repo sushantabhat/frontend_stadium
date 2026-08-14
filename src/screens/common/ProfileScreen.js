@@ -1,9 +1,9 @@
 import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { User, Mail, Shield, CalendarDays, Palette, Bell, MapPin, Globe, CircleHelp, MessageCircle, FileText, Lock, LogOut, Ticket, CreditCard, Users } from 'lucide-react-native';
+import { User, Mail, Shield, CalendarDays, Palette, Bell, MapPin, Globe, CircleHelp, MessageCircle, FileText, Lock, LogOut, Ticket, CreditCard, Users, Pencil, Check, X } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { getRoleDisplayName } from '../../constants/roleNavigation';
@@ -12,13 +12,47 @@ import { fetchMyBookings } from '../../services/bookingService';
 import { fetchMyTickets } from '../../services/ticketService';
 
 export default function ProfileScreen({ navigation }) {
-  const { userInfo, logout } = useContext(AuthContext);
+  const { userInfo, logout, updateUserInfo } = useContext(AuthContext);
   const [fanStats, setFanStats] = useState(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [isSavingName, setIsSavingName] = useState(false);
   const initials = (userInfo?.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const isAdmin = userInfo?.role === ROLES.ADMIN;
   const isStaff = userInfo?.role === ROLES.STAFF;
   const isSupervisor = userInfo?.role === ROLES.SUPERVISOR;
   const isFan = userInfo?.role === ROLES.USER;
+
+  const startEditingName = () => {
+    setNameDraft(userInfo?.name || '');
+    setIsEditingName(true);
+  };
+
+  const cancelEditingName = () => {
+    setIsEditingName(false);
+    setNameDraft('');
+  };
+
+  const saveName = async () => {
+    const trimmed = nameDraft.trim();
+    if (trimmed.length < 3) {
+      Alert.alert('Invalid Name', 'Name must be at least 3 characters.');
+      return;
+    }
+    if (trimmed === (userInfo?.name || '').trim()) {
+      cancelEditingName();
+      return;
+    }
+    setIsSavingName(true);
+    try {
+      await updateUserInfo({ name: trimmed });
+      cancelEditingName();
+    } catch (err) {
+      Alert.alert('Update Failed', err.response?.data?.message || 'Could not update your name.');
+    } finally {
+      setIsSavingName(false);
+    }
+  };
 
   const loadFanStats = useCallback(async () => {
     if (!isFan) return;
@@ -50,7 +84,33 @@ export default function ProfileScreen({ navigation }) {
               </View>
             </LinearGradient>
           </View>
-          <Text style={styles.name}>{userInfo?.name || 'User'}</Text>
+          {isEditingName ? (
+            <View style={styles.nameEditRow}>
+              <TextInput
+                style={styles.nameInput}
+                value={nameDraft}
+                onChangeText={setNameDraft}
+                placeholder="Your full name"
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                autoCapitalize="words"
+                maxLength={100}
+                editable={!isSavingName}
+                onSubmitEditing={saveName}
+                returnKeyType="done"
+              />
+              <TouchableOpacity style={styles.nameActionBtn} onPress={saveName} disabled={isSavingName} activeOpacity={0.7}>
+                {isSavingName ? <ActivityIndicator color="#FFF" size="small" /> : <Check size={20} color="#FFF" strokeWidth={2.5} />}
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.nameActionBtn, styles.nameActionBtnMuted]} onPress={cancelEditingName} disabled={isSavingName} activeOpacity={0.7}>
+                <X size={20} color="rgba(255,255,255,0.8)" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.nameRow} onPress={startEditingName} activeOpacity={0.7}>
+              <Text style={styles.name}>{userInfo?.name || 'User'}</Text>
+              <Pencil size={16} color="rgba(255,255,255,0.7)" strokeWidth={2} />
+            </TouchableOpacity>
+          )}
           <Text style={styles.email}>{userInfo?.email || 'Not available'}</Text>
           <View style={styles.roleBadge}>
             <LinearGradient colors={[`${colors.primary}30`, `${colors.primary}15`]} style={styles.roleBadgeInner}>
@@ -193,6 +253,41 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: '#FFF', fontSize: 32, fontWeight: '900' },
   name: { color: '#FFF', fontSize: typography.h2.fontSize, fontWeight: '900', marginBottom: spacing.xs },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  nameEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  nameInput: {
+    color: '#FFF',
+    fontSize: typography.h2.fontSize,
+    fontWeight: '900',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    minWidth: 180,
+  },
+  nameActionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.success,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nameActionBtnMuted: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
   email: { color: 'rgba(255,255,255,0.6)', fontSize: typography.caption.fontSize, marginBottom: spacing.lg },
   roleBadge: { borderRadius: radii.full, overflow: 'hidden' },
   roleBadgeInner: {
