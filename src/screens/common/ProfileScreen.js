@@ -1,19 +1,41 @@
-import React, { useContext } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { User, Mail, Shield, CalendarDays, Palette, Bell, MapPin, Globe, CircleHelp, MessageCircle, FileText, Lock, LogOut, Ticket, CreditCard, Users } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { getRoleDisplayName } from '../../constants/roleNavigation';
 import { ROLES } from '../../constants/config';
+import { fetchMyBookings } from '../../services/bookingService';
+import { fetchMyTickets } from '../../services/ticketService';
 
 export default function ProfileScreen({ navigation }) {
   const { userInfo, logout } = useContext(AuthContext);
+  const [fanStats, setFanStats] = useState(null);
   const initials = (userInfo?.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const isAdmin = userInfo?.role === ROLES.ADMIN;
   const isStaff = userInfo?.role === ROLES.STAFF;
   const isSupervisor = userInfo?.role === ROLES.SUPERVISOR;
+  const isFan = userInfo?.role === ROLES.USER;
+
+  const loadFanStats = useCallback(async () => {
+    if (!isFan) return;
+    try {
+      const [bookings, tickets] = await Promise.all([fetchMyBookings(), fetchMyTickets()]);
+      const confirmed = (bookings || []).filter((b) => b.status === 'confirmed');
+      setFanStats({
+        bookings: confirmed.length,
+        spent: confirmed.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0),
+        tickets: (tickets || []).length,
+      });
+    } catch (_err) {
+      setFanStats(null);
+    }
+  }, [isFan]);
+
+  useFocusEffect(useCallback(() => { loadFanStats(); }, [loadFanStats]));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -42,9 +64,9 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.section}>
           <View style={styles.statsRow}>
             {[
-              { value: isAdmin ? '12' : isSupervisor ? '8' : isStaff ? '48' : '3', label: isAdmin ? 'Matches' : isSupervisor ? 'Incidents' : isStaff ? 'Scans' : 'Bookings', Icon: Ticket, color: colors.primary },
-              { value: isAdmin ? 'Rs.2.4L' : isSupervisor ? '94%' : isStaff ? '99%' : 'Rs.4,800', label: isAdmin ? 'Revenue' : isSupervisor ? 'Resolved' : isStaff ? 'Accuracy' : 'Spent', Icon: CreditCard, color: colors.warning },
-              { value: isAdmin ? '186' : isSupervisor ? '4' : isStaff ? '6' : '12', label: isAdmin ? 'Users' : isSupervisor ? 'Gates' : isStaff ? 'Gates' : 'Tickets', Icon: Users, color: colors.info },
+              { value: isAdmin ? '12' : isSupervisor ? '8' : isStaff ? '48' : fanStats ? String(fanStats.bookings) : '—', label: isAdmin ? 'Matches' : isSupervisor ? 'Incidents' : isStaff ? 'Scans' : 'Bookings', Icon: Ticket, color: colors.primary },
+              { value: isAdmin ? 'Rs.2.4L' : isSupervisor ? '94%' : isStaff ? '99%' : fanStats ? `Rs.${fanStats.spent.toLocaleString()}` : '—', label: isAdmin ? 'Revenue' : isSupervisor ? 'Resolved' : isStaff ? 'Accuracy' : 'Spent', Icon: CreditCard, color: colors.warning },
+              { value: isAdmin ? '186' : isSupervisor ? '4' : isStaff ? '6' : fanStats ? String(fanStats.tickets) : '—', label: isAdmin ? 'Users' : isSupervisor ? 'Gates' : isStaff ? 'Gates' : 'Tickets', Icon: Users, color: colors.info },
             ].map((stat) => (
               <View key={stat.label} style={styles.statCard}>
                 <stat.Icon size={20} color={stat.color} strokeWidth={2} />
