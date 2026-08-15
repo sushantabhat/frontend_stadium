@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -26,7 +26,7 @@ import { unlockSeats, initiateKhaltiPayment, verifyKhaltiPayment, initiateCardPa
 
 
 export default function BookingScreen({ route, navigation }) {
-  const { matchId, selectedSeats = [] } = route.params || {};
+  const { matchId, selectedSeats = [], lockedUntil } = route.params || {};
   const [match, setMatch] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +40,69 @@ export default function BookingScreen({ route, navigation }) {
   const [esewaVisible, setEsewaVisible] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('esewa');
   const [cardVisible, setCardVisible] = useState(false);
+  const releasedRef = useRef(false);
+  const isBookedRef = useRef(false);
+  isBookedRef.current = isBooked;
+
+  const lockDeadline = lockedUntil ? new Date(lockedUntil).getTime() : null;
+  const [timeLeftSec, setTimeLeftSec] = useState(
+    lockDeadline ? Math.max(0, Math.floor((lockDeadline - Date.now()) / 1000)) : null
+  );
+  const lockExpiredRef = useRef(false);
+
+  useEffect(() => {
+    if (!lockDeadline) return undefined;
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((lockDeadline - Date.now()) / 1000));
+      setTimeLeftSec(remaining);
+      if (remaining === 0 && !lockExpiredRef.current) {
+        lockExpiredRef.current = true;
+      }
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [lockDeadline]);
+
+  useEffect(() => {
+    if (timeLeftSec === 0 && lockExpiredRef.current && !isBookedRef.current) {
+      Alert.alert(
+        'Seat Hold Expired',
+        'Your 5-minute seat hold has expired. Please select your seats again.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+    }
+  }, [timeLeftSec, navigation]);
+
+  const formatTimeLeft = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const releaseSeats = useCallback(async () => {
+    if (releasedRef.current || isBookedRef.current) return;
+    releasedRef.current = true;
+    try {
+      await unlockSeats(matchId, selectedSeats.map(s => s.id || s._id));
+    } catch (err) {
+      releasedRef.current = false;
+      console.warn('Failed to release seats', err);
+    }
+  }, [matchId, selectedSeats]);
+
+  useEffect(() => {
+    return navigation.addListener('beforeRemove', () => {
+      if (isBookedRef.current) return;
+      releaseSeats();
+    });
+  }, [navigation, releaseSeats]);
+
+  useEffect(() => {
+    return () => {
+      if (!isBookedRef.current) releaseSeats();
+    };
+  }, [releaseSeats]);
 
   useEffect(() => {
     async function loadData() {
@@ -136,7 +199,7 @@ export default function BookingScreen({ route, navigation }) {
 
   const handleCancel = async () => {
     try {
-      await unlockSeats(matchId, selectedSeats.map(s => s.id || s._id));
+      await releaseSeats();
     } catch {
       Alert.alert('Error', 'Failed to release seats. Please try again.');
       return;
@@ -244,10 +307,30 @@ export default function BookingScreen({ route, navigation }) {
   const demandLevel = 'Normal';
   const multiplier = 1.0;
 
+  const lockUrgent = timeLeftSec !== null && timeLeftSec <= 60;
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <BookingProgress currentStep="pay" />
+      {timeLeftSec !== null && (
+        <View style={[styles.lockBanner, lockUrgent && styles.lockBannerUrgent]}>
+          <Text style={[styles.lockBannerIcon, lockUrgent && styles.lockBannerIconUrgent]}>⏳</Text>
+          <View style={styles.lockBannerTextWrap}>
+            <Text style={styles.lockBannerText}>
+              Seats held for you
+            </Text>
+            <Text style={[styles.lockBannerSub, lockUrgent && styles.lockBannerSubUrgent]}>
+              {timeLeftSec === 0 ? 'Expiring now...' : 'Complete payment before the timer runs out'}
+            </Text>
+          </View>
+          <View style={[styles.lockTimer, lockUrgent && styles.lockTimerUrgent]}>
+            <Text style={[styles.lockTimerText, lockUrgent && styles.lockTimerTextUrgent]}>
+              {formatTimeLeft(timeLeftSec)}
+            </Text>
+          </View>
+        </View>
+      )}
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Event Card */}
         <View style={styles.card}>
@@ -411,6 +494,54 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: spacing.xl, paddingBottom: spacing.xxxl },
+
+  // Lock countdown banner
+  lockBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: `${colors.warning}40`,
+    backgroundColor: `${colors.warning}12`,
+  },
+  lockBannerUrgent: {
+    borderColor: colors.danger,
+    backgroundColor: `${colors.danger}15`,
+  },
+  lockBannerIcon: { fontSize: 18 },
+  lockBannerIconUrgent: {},
+  lockBannerTextWrap: { flex: 1 },
+  lockBannerText: {
+    color: colors.textPrimary,
+    fontSize: typography.captionMedium.fontSize,
+    fontWeight: '800',
+  },
+  lockBannerSub: {
+    color: colors.textMuted,
+    fontSize: typography.small.fontSize,
+    marginTop: 2,
+  },
+  lockBannerSubUrgent: { color: colors.danger },
+  lockTimer: {
+    minWidth: 56,
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: `${colors.warning}25`,
+  },
+  lockTimerUrgent: { backgroundColor: `${colors.danger}25` },
+  lockTimerText: {
+    color: colors.warning,
+    fontSize: typography.h3.fontSize,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+  },
+  lockTimerTextUrgent: { color: colors.danger },
 
   // Cards
   card: { backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg, overflow: 'hidden' },

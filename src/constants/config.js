@@ -3,13 +3,15 @@ import Constants from 'expo-constants';
 
 function resolveApiBaseUrl() {
   const debuggerHost = Constants.expoConfig?.hostUri;
-  let apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5009';
+  let apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001';
 
   if (debuggerHost) {
     const ip = debuggerHost.split(':')[0];
-    apiUrl = `http://${ip}:5009`;
+    const port = process.env.EXPO_PUBLIC_API_URL ? process.env.EXPO_PUBLIC_API_URL.split(':').pop() : '5001';
+    apiUrl = `http://${ip}:${port}`;
   }
-  
+
+  console.log('API Base URL resolved to:', apiUrl);
   return apiUrl;
 }
 
