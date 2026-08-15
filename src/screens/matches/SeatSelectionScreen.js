@@ -194,8 +194,12 @@ export default function SeatSelectionScreen({ route, navigation }) {
         return;
       }
 
-      await lockSeats(matchId, sectionSeats.map((s) => s.id));
-      navigation.navigate('Booking', { matchId, selectedSeats: sectionSeats });
+      const lockResult = await lockSeats(matchId, sectionSeats.map((s) => s.id));
+      navigation.navigate('Booking', {
+        matchId,
+        selectedSeats: sectionSeats,
+        lockedUntil: lockResult?.lockedUntil,
+      });
     } catch (error) {
       Alert.alert('Booking Error', error.response?.data?.message || 'Could not lock seats');
     } finally {
