@@ -1,53 +1,48 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { spacing, typography } from '../constants/theme';
-import { useColors } from '../context/ThemeContext';
+import { colors, spacing, typography } from '../constants/theme';
 
 export default function DashboardHeader({
   topLabel,
   title,
   subtitle,
   avatarLabel,
-  avatarColors,
-  avatarBorderColor,
+  avatarColors = colors.gradientPurple,
+  avatarBorderColor = colors.primary,
   fallbackIcon,
   onAvatarPress,
   onBack,
 }) {
-  const colors = useColors();
   const showAvatar = avatarLabel && (onAvatarPress || fallbackIcon);
   const showFallback = !avatarLabel && fallbackIcon;
-
-  const resolvedAvatarColors = avatarColors || colors.gradientPurple;
-  const resolvedBorderColor = avatarBorderColor || colors.primary;
 
   return (
     <View style={styles.container}>
       <View style={styles.left}>
         {onBack && (
-          <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]} onPress={onBack} activeOpacity={0.7}>
-            <Text style={[styles.backBtnText, { color: colors.textPrimary }]}>←</Text>
+          <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
+            <Text style={styles.backBtnText}>←</Text>
           </TouchableOpacity>
         )}
         <View style={onBack ? styles.titleWithBack : styles.titleOnly}>
-          {topLabel ? <Text style={[styles.topLabel, { color: colors.textMuted }]}>{topLabel}</Text> : null}
-          <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>{title}</Text>
-          {subtitle ? <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text> : null}
+          {topLabel ? <Text style={styles.topLabel}>{topLabel}</Text> : null}
+          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
       </View>
       {showAvatar ? (
         <TouchableOpacity
-          style={[styles.avatarWrap, { borderColor: resolvedBorderColor }]}
+          style={[styles.avatarWrap, { borderColor: avatarBorderColor }]}
           onPress={onAvatarPress}
           activeOpacity={0.8}
         >
-          <LinearGradient colors={resolvedAvatarColors} style={styles.avatarGradient}>
+          <LinearGradient colors={avatarColors} style={styles.avatarGradient}>
             <Text style={styles.avatarText}>{avatarLabel}</Text>
           </LinearGradient>
         </TouchableOpacity>
       ) : showFallback ? (
-        <View style={[styles.avatarWrap, { borderColor: resolvedBorderColor }]}>
+        <View style={[styles.avatarWrap, { borderColor: avatarBorderColor }]}>
           <Text style={styles.fallbackIcon}>{fallbackIcon}</Text>
         </View>
       ) : null}
@@ -67,23 +62,26 @@ const styles = StyleSheet.create({
   left: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: spacing.md },
   backBtn: {
     width: 36, height: 36, borderRadius: 18,
-    borderWidth: 1,
+    backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border,
     alignItems: 'center', justifyContent: 'center', marginRight: spacing.md,
   },
-  backBtnText: { fontSize: 16, fontWeight: '700' },
+  backBtnText: { color: colors.textPrimary, fontSize: 16, fontWeight: '700' },
   titleWithBack: { flex: 1 },
   titleOnly: { flex: 1 },
   topLabel: {
+    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: 1,
     marginBottom: 4,
   },
   title: {
+    color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '700',
   },
   subtitle: {
+    color: colors.textMuted,
     fontSize: typography.caption.fontSize,
     marginTop: 2,
   },

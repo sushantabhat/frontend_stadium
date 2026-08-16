@@ -1,11 +1,10 @@
-import React, { useCallback, useContext, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Search, Ticket, Heart } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
-import { spacing, radii, typography } from '../../constants/theme';
-import { useColors } from '../../context/ThemeContext';
+import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchMatchRecommendations } from '../../services/aiService';
 import MatchCard from '../../components/MatchCard';
 import BannerCarousel from '../../components/BannerCarousel';
@@ -16,113 +15,7 @@ import useRefresh from '../../hooks/useRefresh';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-function createStyles(colors) {
-  return StyleSheet.create({
-    container: { flex: 1 },
-    headerRow: { position: 'relative' },
-    topBar: { flexDirection: 'row', alignItems: 'center', paddingRight: spacing.xl },
-    bellWrap: { position: 'absolute', top: 18, right: 68, zIndex: 10 },
-    scroll: { paddingTop: spacing.lg },
-    loadingWrap: {
-      paddingVertical: spacing.huge,
-      alignItems: 'center',
-    },
-
-    // Sections
-    section: {
-      marginBottom: spacing.xxl,
-      paddingHorizontal: spacing.xl,
-    },
-    sectionHead: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: spacing.lg,
-    },
-    sectionHeadLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
-    },
-    liveDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.danger,
-    },
-    sectionTitle: {
-      color: colors.textPrimary,
-      fontSize: typography.h3.fontSize,
-      fontWeight: '800',
-      letterSpacing: -0.3,
-    },
-    seeAll: {
-      color: colors.primaryLight,
-      fontSize: typography.small.fontSize,
-      fontWeight: '600',
-    },
-
-    // Pills — horizontal scroll
-    pillsList: {
-      gap: spacing.sm,
-    },
-    pill: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderRadius: radii.full,
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-      gap: spacing.sm,
-    },
-    pillLabel: {
-      color: colors.textSecondary,
-      fontSize: typography.small.fontSize,
-      fontWeight: '600',
-    },
-
-    // Horizontal match list
-    horizontalList: {
-      gap: spacing.md,
-      paddingVertical: spacing.xs,
-    },
-    horizontalCard: {
-      width: SCREEN_WIDTH * 0.72,
-    },
-
-    matchItem: {
-      marginBottom: spacing.md,
-    },
-
-    // Empty
-    emptyWrap: {
-      alignItems: 'center',
-      paddingVertical: spacing.huge,
-      paddingHorizontal: spacing.xxl,
-    },
-    emptyIcon: { fontSize: 48, marginBottom: spacing.lg },
-    emptyTitle: {
-      color: colors.textPrimary,
-      fontSize: typography.h3.fontSize,
-      fontWeight: '700',
-      marginBottom: spacing.sm,
-    },
-    emptyText: {
-      color: colors.textMuted,
-      fontSize: typography.caption.fontSize,
-      textAlign: 'center',
-    },
-    bottomSpacer: {
-      height: 52,
-    },
-  });
-}
-
 export default function FanDashboardScreen({ navigation }) {
-  const colors = useColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
   const { userInfo } = useContext(AuthContext);
   const [recommendations, setRecommendations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -312,3 +205,105 @@ export default function FanDashboardScreen({ navigation }) {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  headerRow: { position: 'relative' },
+  topBar: { flexDirection: 'row', alignItems: 'center', paddingRight: spacing.xl },
+  bellWrap: { position: 'absolute', top: 18, right: 68, zIndex: 10 },
+  scroll: { paddingTop: spacing.lg },
+  loadingWrap: {
+    paddingVertical: spacing.huge,
+    alignItems: 'center',
+  },
+
+  // Sections
+  section: {
+    marginBottom: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+  },
+  sectionHead: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  sectionHeadLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.danger,
+  },
+  sectionTitle: {
+    color: colors.textPrimary,
+    fontSize: typography.h3.fontSize,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  seeAll: {
+    color: colors.primaryLight,
+    fontSize: typography.small.fontSize,
+    fontWeight: '600',
+  },
+
+  // Pills — horizontal scroll
+  pillsList: {
+    gap: spacing.sm,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radii.full,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.sm,
+  },
+  pillLabel: {
+    color: colors.textSecondary,
+    fontSize: typography.small.fontSize,
+    fontWeight: '600',
+  },
+
+  // Horizontal match list
+  horizontalList: {
+    gap: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  horizontalCard: {
+    width: SCREEN_WIDTH * 0.72,
+  },
+
+  matchItem: {
+    marginBottom: spacing.md,
+  },
+
+  // Empty
+  emptyWrap: {
+    alignItems: 'center',
+    paddingVertical: spacing.huge,
+    paddingHorizontal: spacing.xxl,
+  },
+  emptyIcon: { fontSize: 48, marginBottom: spacing.lg },
+  emptyTitle: {
+    color: colors.textPrimary,
+    fontSize: typography.h3.fontSize,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
+  },
+  emptyText: {
+    color: colors.textMuted,
+    fontSize: typography.caption.fontSize,
+    textAlign: 'center',
+  },
+  bottomSpacer: {
+    height: 52,
+  },
+});

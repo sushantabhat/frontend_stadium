@@ -2,8 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
-import { spacing, radii, typography, shadows } from '../constants/theme';
-import { useColors } from '../context/ThemeContext';
+import { colors, spacing, radii, typography, shadows } from '../constants/theme';
 import { formatInNepal, formatTimeInNepal } from '../utils/date';
 
 const CATEGORY_THEMES = {
@@ -13,7 +12,7 @@ const CATEGORY_THEMES = {
   bronze: { gradient: ['#CD7F32', '#A0652A'], label: 'BRONZE' },
   general: { gradient: ['#5B9BD5', '#4A7FBA'], label: 'GENERAL' },
   supporters: { gradient: ['#2E7D32', '#1B5E20'], label: 'SUPPORTERS' },
-  premium: { gradient: ['#6C5CE7', '#5A4BD1'], label: 'PREMIUM' },
+  premium: { gradient: [colors.primary, '#5A4BD1'], label: 'PREMIUM' },
   category1: { gradient: ['#FFD700', '#E6A800'], label: 'CATEGORY 1' },
   category2: { gradient: ['#FF6B6B', '#E53935'], label: 'CATEGORY 2' },
   category3: { gradient: ['#6C5CE7', '#4834D4'], label: 'CATEGORY 3' },
@@ -44,7 +43,6 @@ function getRefundDisplay(refund) {
 }
 
 export default function BookedTicketCard({ ticket, onPress }) {
-  const colors = useColors();
   const category = (ticket.seat?.category || 'general').toLowerCase();
   const theme = CATEGORY_THEMES[category] || CATEGORY_THEMES.general;
   const matchDate = ticket.match?.matchDate ? new Date(ticket.match.matchDate) : null;
@@ -178,7 +176,7 @@ const styles = StyleSheet.create({
   },
   notch: {
     position: 'absolute', width: 24, height: 24, borderRadius: 12,
-    backgroundColor: '#07080B', top: '50%', marginTop: -12,
+    backgroundColor: colors.background, top: '50%', marginTop: -12,
   },
   notchLeft: { left: -12 },
   notchRight: { right: -12 },

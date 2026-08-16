@@ -5,12 +5,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ticket } from 'lucide-react-native';
 import ScreenHeader from '../../components/ScreenHeader';
 import BookedTicketCard from '../../components/BookedTicketCard';
-import { spacing, radii, typography } from '../../constants/theme';
-import { useColors } from '../../context/ThemeContext';
+import { colors, spacing, radii, typography } from '../../constants/theme';
 import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 
 export default function MatchTicketsScreen({ route, navigation }) {
-  const colors = useColors();
   const { match, tickets } = route.params;
   const matchDate = match?.matchDate ? new Date(match.matchDate) : null;
 
@@ -19,12 +17,12 @@ export default function MatchTicketsScreen({ route, navigation }) {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" />
       <ScreenHeader title="My Tickets" onBack={() => navigation.goBack()} />
 
       <LinearGradient
-        colors={colors.gradientHero}
+        colors={['#1a0533', '#0d1b3e']}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         style={styles.matchBanner}
       >
@@ -42,9 +40,9 @@ export default function MatchTicketsScreen({ route, navigation }) {
           )}
           {match?.venue ? <Text style={styles.bannerMeta}> · {match.venue}</Text> : null}
         </View>
-        <View style={[styles.bannerCountPill, { backgroundColor: `${colors.primaryLight}25`, borderColor: `${colors.primaryLight}40` }]}>
+        <View style={styles.bannerCountPill}>
           <Ticket size={12} color={colors.primaryLight} strokeWidth={2.5} />
-          <Text style={[styles.bannerCountText, { color: colors.primaryLight }]}>
+          <Text style={styles.bannerCountText}>
             {tickets.length} ticket{tickets.length !== 1 ? 's' : ''} booked
           </Text>
         </View>
@@ -59,7 +57,7 @@ export default function MatchTicketsScreen({ route, navigation }) {
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
             <Text style={styles.emptyIcon}>🎫</Text>
-            <Text style={[styles.emptyTitle, { color: colors.textMuted }]}>No tickets for this match</Text>
+            <Text style={styles.emptyTitle}>No tickets for this match</Text>
           </View>
         }
       />
@@ -88,15 +86,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    backgroundColor: colors.primarySurface,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radii.full,
     marginTop: spacing.md,
     borderWidth: 1,
+    borderColor: `${colors.primary}30`,
   },
-  bannerCountText: { fontSize: 10, fontWeight: '800' },
+  bannerCountText: { color: colors.primaryLight, fontSize: 10, fontWeight: '800' },
 
   emptyWrap: { alignItems: 'center', paddingVertical: spacing.huge },
   emptyIcon: { fontSize: 32 },
-  emptyTitle: { fontSize: typography.caption.fontSize, fontWeight: '600', marginTop: spacing.md },
+  emptyTitle: { color: colors.textMuted, fontSize: typography.caption.fontSize, fontWeight: '600', marginTop: spacing.md },
 });
