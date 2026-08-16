@@ -2,7 +2,7 @@ import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, FlatList, RefreshControl, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ticket, ChevronRight } from 'lucide-react-native';
+import { Ticket, ChevronRight, Clock, History } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 import { fetchMyTickets } from '../../services/ticketService';
@@ -37,10 +37,22 @@ function isActiveTicket(ticket) {
   return true;
 }
 
+function isPastMatch(group) {
+  const { match } = group;
+  if (match?.status === 'completed' || match?.status === 'cancelled') return true;
+  const matchDate = match?.matchDate ? new Date(match.matchDate) : null;
+  return matchDate && matchDate < new Date();
+}
+
+function hasNoActiveTickets(group) {
+  return group.tickets.every(t => !isActiveTicket(t));
+}
+
 export default function MyTicketsScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('upcoming');
 
   const loadTickets = useCallback(async (isRefresh = false) => {
     if (!isRefresh) setIsLoading(true);
@@ -53,6 +65,13 @@ export default function MyTicketsScreen({ navigation }) {
   const initials = (userInfo?.name || 'F').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const matchGroups = useMemo(() => groupTicketsByMatch(tickets), [tickets]);
+  const filteredMatchGroups = useMemo(() => {
+    return matchGroups.filter(group => {
+      if (activeTab === 'history') return isPastMatch(group);
+      if (activeTab === 'scanned') return !isPastMatch(group) && hasNoActiveTickets(group);
+      return !isPastMatch(group) && !hasNoActiveTickets(group);
+    });
+  }, [matchGroups, activeTab]);
   const totalTickets = tickets.length;
 
   useFocusEffect(useCallback(() => { loadTickets(); }, [loadTickets]));
@@ -140,16 +159,42 @@ export default function MyTicketsScreen({ navigation }) {
           onAvatarPress={() => navigation.navigate('Account')}
         />
         <FlatList
-          data={matchGroups}
+          data={filteredMatchGroups}
           renderItem={renderMatch}
           keyExtractor={(item) => item.match._id}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
           ListHeaderComponent={
             <View style={styles.header}>
-              {matchGroups.length > 0 && (
+              <View style={styles.toggleRow}>
+                <TouchableOpacity
+                  style={[styles.toggleBtn, activeTab === 'upcoming' && styles.toggleBtnActive]}
+                  activeOpacity={0.8}
+                  onPress={() => setActiveTab('upcoming')}
+                >
+                  <Clock size={14} color={activeTab === 'upcoming' ? '#FFF' : colors.textMuted} strokeWidth={2.5} />
+                  <Text style={[styles.toggleBtnText, activeTab === 'upcoming' && styles.toggleBtnTextActive]}>Upcoming</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.toggleBtn, activeTab === 'scanned' && styles.toggleBtnActive]}
+                  activeOpacity={0.8}
+                  onPress={() => setActiveTab('scanned')}
+                >
+                  <Ticket size={14} color={activeTab === 'scanned' ? '#FFF' : colors.textMuted} strokeWidth={2.5} />
+                  <Text style={[styles.toggleBtnText, activeTab === 'scanned' && styles.toggleBtnTextActive]}>Scanned</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.toggleBtn, activeTab === 'history' && styles.toggleBtnActive]}
+                  activeOpacity={0.8}
+                  onPress={() => setActiveTab('history')}
+                >
+                  <History size={14} color={activeTab === 'history' ? '#FFF' : colors.textMuted} strokeWidth={2.5} />
+                  <Text style={[styles.toggleBtnText, activeTab === 'history' && styles.toggleBtnTextActive]}>History</Text>
+                </TouchableOpacity>
+              </View>
+              {filteredMatchGroups.length > 0 && (
                 <View style={styles.ticketCount}>
                   <Text style={styles.ticketCountText}>
-                    {matchGroups.length} match{matchGroups.length !== 1 ? 'es' : ''} · {totalTickets} ticket{totalTickets !== 1 ? 's' : ''}
+                    {filteredMatchGroups.length} match{filteredMatchGroups.length !== 1 ? 'es' : ''} · {filteredMatchGroups.reduce((sum, g) => sum + g.tickets.length, 0)} ticket{filteredMatchGroups.reduce((sum, g) => sum + g.tickets.length, 0) !== 1 ? 's' : ''}
                   </Text>
                 </View>
               )}
@@ -159,10 +204,14 @@ export default function MyTicketsScreen({ navigation }) {
             !isLoading ? (
               <View style={styles.emptyWrap}>
                 <View style={styles.emptyIconWrap}>
-                  <Text style={styles.emptyIcon}>{'🎫'}</Text>
+                  <Text style={styles.emptyIcon}>{activeTab === 'history' ? '📋' : activeTab === 'scanned' ? '✅' : '🎫'}</Text>
                 </View>
-                <Text style={styles.emptyTitle}>No Tickets Yet</Text>
-                <Text style={styles.emptyText}>Book a match to see your tickets here</Text>
+                <Text style={styles.emptyTitle}>
+                  {activeTab === 'history' ? 'No Past Tickets' : activeTab === 'scanned' ? 'No Scanned Matches' : 'No Upcoming Tickets'}
+                </Text>
+                <Text style={styles.emptyText}>
+                  {activeTab === 'history' ? 'Your completed matches will appear here' : activeTab === 'scanned' ? 'Matches with all tickets scanned will appear here' : 'Book a match to see your tickets here'}
+                </Text>
               </View>
             ) : null
           }
@@ -183,6 +232,37 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, marginBottom: spacing.xl },
   ticketCount: { marginTop: spacing.md, backgroundColor: colors.primarySurface, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radii.full, alignSelf: 'flex-start', borderWidth: 1, borderColor: `${colors.primary}25` },
   ticketCountText: { color: colors.primaryLight, fontSize: 9, fontWeight: '700' },
+
+  // Toggle buttons
+  toggleRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  toggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radii.full,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  toggleBtnActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  toggleBtnText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  toggleBtnTextActive: {
+    color: '#FFF',
+  },
 
   // Match card
   matchCard: {
