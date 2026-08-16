@@ -99,7 +99,7 @@ export default function TicketValidationScreen({ navigation }) {
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter((t) =>
-        t.code?.toLowerCase() === q ||
+        t.code?.toLowerCase().includes(q) ||
         t.userName?.toLowerCase().includes(q) ||
         t.userEmail?.toLowerCase().includes(q) ||
         t.title?.toLowerCase().includes(q) ||
