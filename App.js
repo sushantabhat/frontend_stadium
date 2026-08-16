@@ -2,6 +2,8 @@ import 'react-native-gesture-handler';
 import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
+import { ThemeProvider } from './src/context/ThemeContext';
+import { NotificationProvider } from './src/context/NotificationContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import LoadingScreen from './src/components/LoadingScreen';
 
@@ -22,7 +24,11 @@ function RootNavigator() {
 export default function App() {
   return (
     <AuthProvider>
-      <RootNavigator />
+      <ThemeProvider>
+        <NotificationProvider>
+          <RootNavigator />
+        </NotificationProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

@@ -2,6 +2,7 @@ import React, { useContext, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Eye, EyeOff } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { validateRegisterForm } from '../../utils/validation';
@@ -24,6 +25,7 @@ export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ name: null, email: null, password: null, confirmPassword: null });
   const [serverError, setServerError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -64,6 +66,14 @@ export default function RegisterScreen({ navigation }) {
           style={styles.flex}
         >
           <View style={styles.scroll}>
+            <TouchableOpacity 
+              style={styles.backBtn} 
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.backBtnText}>← Back</Text>
+            </TouchableOpacity>
+
             {/* Brand */}
             <View style={styles.brandSection}>
               <View style={styles.brandMark}>
@@ -121,14 +131,24 @@ export default function RegisterScreen({ navigation }) {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>PASSWORD</Text>
-                <TextInput
-                  style={[styles.input, errors.password && styles.inputError]}
-                  placeholder="Create a password"
-                  placeholderTextColor={colors.textMuted}
-                  secureTextEntry
-                  value={password}
-                  onChangeText={(text) => { setPassword(text); clearFieldError('password'); }}
-                />
+                <View style={styles.passwordWrap}>
+                  <TextInput
+                    style={[styles.input, styles.passwordInput, errors.password && styles.inputError]}
+                    placeholder="Create a password"
+                    placeholderTextColor={colors.textMuted}
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={(text) => { setPassword(text); clearFieldError('password'); }}
+                  />
+                  <TouchableOpacity
+                    style={styles.passwordToggle}
+                    onPress={() => setShowPassword((prev) => !prev)}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.passwordToggleText}>{showPassword ? <EyeOff size={18} color={colors.textSecondary} strokeWidth={2} /> : <Eye size={18} color={colors.textSecondary} strokeWidth={2} />}</Text>
+                  </TouchableOpacity>
+                </View>
                 {strength ? (
                   <View style={styles.strengthContainer}>
                     <View style={styles.strengthBarTrack}>
@@ -146,7 +166,7 @@ export default function RegisterScreen({ navigation }) {
                   style={[styles.input, errors.confirmPassword && styles.inputError]}
                   placeholder="Re-enter your password"
                   placeholderTextColor={colors.textMuted}
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   value={confirmPassword}
                   onChangeText={(text) => { setConfirmPassword(text); clearFieldError('confirmPassword'); }}
                 />
@@ -182,7 +202,7 @@ export default function RegisterScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   flex: { flex: 1 },
   scroll: { flex: 1, justifyContent: 'center' },
 
@@ -199,6 +219,19 @@ const styles = StyleSheet.create({
     textAlign: 'center', letterSpacing: 3, lineHeight: 38, marginBottom: spacing.sm,
   },
   brandSubtitle: { color: colors.textMuted, fontSize: typography.caption.fontSize, textAlign: 'center' },
+
+  backBtn: {
+    position: 'absolute',
+    top: spacing.xl,
+    left: spacing.lg,
+    zIndex: 10,
+    padding: spacing.xs,
+  },
+  backBtnText: {
+    color: colors.textMuted,
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: '600',
+  },
 
   formCard: {
     backgroundColor: colors.surface, marginHorizontal: spacing.xl,
@@ -247,6 +280,22 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: colors.danger,
+  },
+  passwordWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    flex: 1,
+    paddingRight: spacing.xl + 4,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: spacing.md,
+    padding: spacing.xs,
+  },
+  passwordToggleText: {
+    fontSize: 16,
   },
   errorText: {
     color: colors.dangerLight,

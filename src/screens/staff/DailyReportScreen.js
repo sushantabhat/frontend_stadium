@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import ScreenHeader from '../../components/ScreenHeader';
+import { ScanLine, AlertTriangle, Clock } from 'lucide-react-native';
+import { AuthContext } from '../../context/AuthContext';
+import DashboardHeader from '../../components/DashboardHeader';
 import { colors, spacing, radii, typography } from '../../constants/theme';
 
 const REPORT_DATA = {
@@ -18,13 +20,22 @@ const REPORT_DATA = {
   ],
 };
 
-export default function DailyReportScreen() {
+export default function DailyReportScreen({ navigation }) {
+  const { userInfo } = useContext(AuthContext);
+  const initials = (userInfo?.name || 'S').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const successRate = ((REPORT_DATA.verified / REPORT_DATA.totalScans) * 100).toFixed(1);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScreenHeader title="Daily Report" subtitle="Today's entry statistics" />
+      <DashboardHeader
+          topLabel="STAFF PORTAL"
+        title="Daily Report"
+        avatarColors={['#00C853', '#00A844']}
+        avatarLabel={initials}
+        onAvatarPress={() => navigation.navigate('Account')}
+        onBack={() => navigation.goBack()}
+      />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Hero stat */}
         <View style={styles.heroStat}>
@@ -44,12 +55,12 @@ export default function DailyReportScreen() {
         {/* Quick stats */}
         <View style={styles.statRow}>
           {[
-            { label: 'Total Scans', value: String(REPORT_DATA.totalScans), icon: '📷', color: colors.primary },
-            { label: 'Flagged', value: String(REPORT_DATA.flagged), icon: '⚠️', color: colors.warning },
-            { label: 'Peak Hour', value: REPORT_DATA.peakHour.split('—')[0].trim(), icon: '⏰', color: colors.info },
+            { label: 'Total Scans', value: String(REPORT_DATA.totalScans), Icon: ScanLine, color: colors.primary },
+            { label: 'Flagged', value: String(REPORT_DATA.flagged), Icon: AlertTriangle, color: colors.warning },
+            { label: 'Peak Hour', value: REPORT_DATA.peakHour.split('—')[0].trim(), Icon: Clock, color: colors.info },
           ].map((s) => (
             <View key={s.label} style={styles.statCard}>
-              <Text style={styles.statIcon}>{s.icon}</Text>
+              <s.Icon size={20} color={s.color} strokeWidth={2} />
               <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
               <Text style={styles.statLabel}>{s.label}</Text>
             </View>
@@ -89,7 +100,7 @@ export default function DailyReportScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   scroll: { paddingTop: spacing.md },
 
   heroStat: { marginHorizontal: spacing.xl, marginBottom: spacing.xxl, borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },

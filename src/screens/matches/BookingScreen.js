@@ -1,37 +1,115 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import QRCode from 'react-native-qrcode-svg';
 import BookingProgress from '../../components/BookingProgress';
+import KhaltiPaymentModal from '../../components/KhaltiPaymentModal';
+import EsewaPaymentModal from '../../components/EsewaPaymentModal';
+import CardPaymentModal from '../../components/CardPaymentModal';
 import GradientButton from '../../components/GradientButton';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
+import { formatInNepal, formatTimeInNepal } from '../../utils/date';
+import { imageUri } from '../../utils/imageUri';
 import { fetchMatchById } from '../../services/matchService';
-import { confirmBooking, unlockSeats } from '../../services/bookingService';
-import { fetchDynamicPricingSuggestions } from '../../services/aiService';
+import { unlockSeats, initiateKhaltiPayment, verifyKhaltiPayment, initiateCardPayment, confirmCardBooking, initiateEsewaPayment, verifyEsewaPayment } from '../../services/bookingService';
+
 
 export default function BookingScreen({ route, navigation }) {
-  const { matchId, selectedSeats } = route.params;
+  const { matchId, selectedSeats = [], lockedUntil } = route.params || {};
   const [match, setMatch] = useState(null);
-  const [pricingSuggestions, setPricingSuggestions] = useState(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isPaying, setIsPaying] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
-  const [bookedTicket, setBookedTicket] = useState(null);
+  const [bookedTickets, setBookedTickets] = useState([]);
+  const [pendingPayment, setPendingPayment] = useState(null);
+  const [khaltiData, setKhaltiData] = useState(null);
+  const [khaltiVisible, setKhaltiVisible] = useState(false);
+  const [esewaData, setEsewaData] = useState(null);
+  const [esewaVisible, setEsewaVisible] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('esewa');
+  const [cardVisible, setCardVisible] = useState(false);
+  const releasedRef = useRef(false);
+  const isBookedRef = useRef(false);
+  isBookedRef.current = isBooked;
+
+  const lockDeadline = lockedUntil ? new Date(lockedUntil).getTime() : null;
+  const [timeLeftSec, setTimeLeftSec] = useState(
+    lockDeadline ? Math.max(0, Math.floor((lockDeadline - Date.now()) / 1000)) : null
+  );
+  const lockExpiredRef = useRef(false);
+
+  useEffect(() => {
+    if (!lockDeadline) return undefined;
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((lockDeadline - Date.now()) / 1000));
+      setTimeLeftSec(remaining);
+      if (remaining === 0 && !lockExpiredRef.current) {
+        lockExpiredRef.current = true;
+      }
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [lockDeadline]);
+
+  useEffect(() => {
+    if (timeLeftSec === 0 && lockExpiredRef.current && !isBookedRef.current) {
+      Alert.alert(
+        'Seat Hold Expired',
+        'Your 5-minute seat hold has expired. Please select your seats again.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+    }
+  }, [timeLeftSec, navigation]);
+
+  const formatTimeLeft = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const releaseSeats = useCallback(async () => {
+    if (releasedRef.current || isBookedRef.current) return;
+    releasedRef.current = true;
+    try {
+      await unlockSeats(matchId, selectedSeats.map(s => s.id || s._id));
+    } catch (err) {
+      releasedRef.current = false;
+      console.warn('Failed to release seats', err);
+    }
+  }, [matchId, selectedSeats]);
+
+  useEffect(() => {
+    return navigation.addListener('beforeRemove', () => {
+      if (isBookedRef.current) return;
+      releaseSeats();
+    });
+  }, [navigation, releaseSeats]);
+
+  useEffect(() => {
+    return () => {
+      if (!isBookedRef.current) releaseSeats();
+    };
+  }, [releaseSeats]);
 
   useEffect(() => {
     async function loadData() {
       try {
         const matchData = await fetchMatchById(matchId);
         setMatch(matchData);
-        try { setPricingSuggestions(await fetchDynamicPricingSuggestions(matchId)); } catch { setPricingSuggestions(null); }
+
       } catch { Alert.alert('Error', 'Failed to load checkout details'); }
       finally { setIsLoading(false); }
     }
@@ -42,57 +120,131 @@ export default function BookingScreen({ route, navigation }) {
     if (!match || !selectedSeats) return 0;
     return selectedSeats.reduce((sum, seat) => {
       const basePrice = match.pricing?.[seat.category] || 0;
-      return sum + basePrice * (pricingSuggestions?.multiplier || 1.0);
+      return sum + basePrice;
     }, 0);
-  }, [match, selectedSeats, pricingSuggestions]);
+  }, [match, selectedSeats]);
 
-  const handleCheckout = async () => {
+  const handleKhaltiPayment = async () => {
     setIsPaying(true);
     try {
-      const result = await confirmBooking(matchId, selectedSeats.map(s => s.id || s._id));
-      setIsBooked(true);
-      setBookedTicket(result.ticket || result);
-    } catch (err) { Alert.alert('Booking failed', err.response?.data?.message || err.message); }
+      const seatIds = selectedSeats.map(s => s.id || s._id);
+      const result = await initiateKhaltiPayment(matchId, seatIds, totalAmount);
+      setKhaltiData(result);
+      setPendingPayment({ matchId, seatIds });
+      setKhaltiVisible(true);
+    } catch (err) { Alert.alert('Payment Error', err.response?.data?.message || err.message); }
     finally { setIsPaying(false); }
   };
 
+  const handleKhaltiSuccess = async (pidx) => {
+    setKhaltiVisible(false);
+    setIsPaying(true);
+    try {
+      const result = await verifyKhaltiPayment(pidx, pendingPayment.matchId, pendingPayment.seatIds);
+      setIsBooked(true);
+      setBookedTickets(result.tickets || []);
+    } catch (err) { Alert.alert('Verification failed', err.response?.data?.message || err.message); }
+    finally { setIsPaying(false); }
+  };
+
+  const handleKhaltiError = (msg) => {
+    setKhaltiVisible(false);
+    Alert.alert('Payment Failed', msg);
+  };
+
+  const handleEsewaPayment = async () => {
+    setIsPaying(true);
+    try {
+      const seatIds = selectedSeats.map(s => s.id || s._id);
+      const result = await initiateEsewaPayment(matchId, seatIds, totalAmount);
+      setEsewaData(result);
+      setPendingPayment({ matchId, seatIds });
+      setEsewaVisible(true);
+    } catch (err) { Alert.alert('Payment Error', err.response?.data?.message || err.message); }
+    finally { setIsPaying(false); }
+  };
+
+  const handleEsewaSuccess = async (data) => {
+    setEsewaVisible(false);
+    setIsPaying(true);
+    try {
+      const result = await verifyEsewaPayment(data);
+      setIsBooked(true);
+      setBookedTickets(result.tickets || []);
+    } catch (err) { Alert.alert('Verification failed', err.response?.data?.message || err.message); }
+    finally { setIsPaying(false); }
+  };
+
+  const handleEsewaError = (msg) => {
+    setEsewaVisible(false);
+    Alert.alert('Payment Failed', msg);
+  };
+
+  const handleCardPayment = () => {
+    const seatIds = selectedSeats.map(s => s.id || s._id);
+    setPendingPayment({ matchId, seatIds });
+    setCardVisible(true);
+  };
+
+  const handleCardSuccess = (result) => {
+    setCardVisible(false);
+    setIsBooked(true);
+    setBookedTickets(result.tickets || []);
+  };
+
+  const handleCardError = (msg) => {
+    setCardVisible(false);
+    Alert.alert('Payment Failed', msg);
+  };
+
   const handleCancel = async () => {
-    try { await unlockSeats(matchId, selectedSeats.map(s => s.id || s._id)); } catch {} navigation.goBack();
+    try {
+      await releaseSeats();
+    } catch {
+      Alert.alert('Error', 'Failed to release seats. Please try again.');
+      return;
+    }
+    navigation.goBack();
   };
 
   const handleDone = () => { navigation.popToTop(); };
 
   if (isLoading) return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <BookingProgress currentStep="review" />
       <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
-    </View>
+    </SafeAreaView>
   );
 
   // Success State
   if (isBooked) {
-    const ticket = bookedTicket || {};
-    const qrUrl = ticket.ticketCode
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(ticket.ticketCode)}&color=FFFFFF&bgcolor=6C5CE7`
-      : null;
+    const firstTicket = bookedTickets[0] || {};
 
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
         <BookingProgress currentStep="done" />
         <ScrollView contentContainerStyle={styles.successScroll}>
-          {/* Success Hero */}
-          <View style={styles.successCard}>
-            <LinearGradient colors={[`${colors.primary}DD`, `${colors.primaryDark}EE`]} style={styles.successGradient}>
+          {/* Success Hero - shadow wrapper separate from overflow:hidden wrapper (Android fix) */}
+          <View style={styles.successCardShadow}>
+            <View style={styles.successCard}>
+              <LinearGradient colors={[colors.primary, colors.primaryDark || '#1a1a6e']} style={styles.successGradient}>
               <View style={styles.successIconWrap}>
                 <Text style={styles.successIcon}>✅</Text>
               </View>
               <Text style={styles.successTitle}>Booking Confirmed!</Text>
               <Text style={styles.successSubtitle}>Your tickets are ready</Text>
 
-              {qrUrl && (
+              {firstTicket.ticketCode ? (
                 <View style={styles.qrSection}>
                   <View style={styles.qrBox}>
-                    <Image source={{ uri: qrUrl }} style={styles.qrImage} />
+                    <QRCode
+                      value={firstTicket.ticketCode}
+                      size={140}
+                      backgroundColor="white"
+                      color="#000000"
+                    />
                     <View style={[styles.qrCorner, styles.qrCornerTL]} />
                     <View style={[styles.qrCorner, styles.qrCornerTR]} />
                     <View style={[styles.qrCorner, styles.qrCornerBL]} />
@@ -100,53 +252,108 @@ export default function BookingScreen({ route, navigation }) {
                   </View>
                   <Text style={styles.qrHint}>📱 Show this QR at the entry gate</Text>
                 </View>
-              )}
+              ) : null}
 
               <View style={styles.dividerDashed} />
 
-              <View style={styles.ticketDetails}>
-                <View style={styles.ticketDetailRow}>
-                  <View style={styles.ticketDetailCol}>
-                    <Text style={styles.detailLabel}>TICKET CODE</Text>
-                    <Text style={styles.detailValue}>{ticket.ticketCode || 'N/A'}</Text>
-                  </View>
-                  <View style={styles.ticketDetailCol}>
-                    <Text style={styles.detailLabel}>AMOUNT PAID</Text>
-                    <Text style={[styles.detailValue, { color: colors.accent }]}>₹{Math.round(totalAmount)}</Text>
+                <View style={styles.ticketDetails}>
+                  {bookedTickets.map((t, i) => (
+                    <View key={t._id || i} style={i < bookedTickets.length - 1 ? styles.ticketDetailBorder : undefined}>
+                      <View style={styles.ticketDetailRow}>
+                        <View style={styles.ticketDetailCol}>
+                          <Text style={styles.detailLabel}>TICKET {i + 1}</Text>
+                          <Text style={styles.detailValue}>{t.ticketCode || 'N/A'}</Text>
+                        </View>
+                        <View style={styles.ticketDetailCol}>
+                          <Text style={styles.detailLabel}>SEAT</Text>
+                          <Text style={styles.detailValue}>{selectedSeats[i]?.seatLabel || 'N/A'}</Text>
+                        </View>
+                      </View>
+                      {selectedSeats[i]?.gate ? (
+                        <View style={styles.ticketDetailRow}>
+                          <View style={styles.ticketDetailCol}>
+                            <Text style={styles.detailLabel}>GATE</Text>
+                            <Text style={styles.detailValue}>{selectedSeats[i].gate}</Text>
+                          </View>
+                          <View style={styles.ticketDetailCol} />
+                        </View>
+                      ) : null}
+                    </View>
+                  ))}
+                  <View style={{ marginTop: spacing.md, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.15)', paddingTop: spacing.md }}>
+                    <View style={styles.ticketDetailRow}>
+                      <View style={styles.ticketDetailCol}>
+                        <Text style={styles.detailLabel}>TICKETS</Text>
+                        <Text style={styles.detailValue}>{selectedSeats.length}</Text>
+                      </View>
+                      <View style={styles.ticketDetailCol}>
+                        <Text style={styles.detailLabel}>AMOUNT PAID</Text>
+                        <Text style={[styles.detailValue, { color: colors.accent }]}>Rs.{Math.round(totalAmount)}</Text>
+                      </View>
+                    </View>
                   </View>
                 </View>
-                <View style={{ marginTop: spacing.md }}>
-                  <Text style={styles.detailLabel}>SEATS</Text>
-                  <Text style={styles.detailValue}>{selectedSeats.map(s => s.seatLabel).join(', ')}</Text>
-                </View>
-              </View>
             </LinearGradient>
+            </View>
           </View>
+
 
           <GradientButton title="Done" onPress={handleDone} style={{ marginHorizontal: spacing.xl, marginTop: spacing.xl }} />
         </ScrollView>
-      </View>
+      </SafeAreaView>
     );
   }
 
-  const demandLevel = pricingSuggestions?.demandLevel || 'Normal';
-  const multiplier = pricingSuggestions?.multiplier || 1.0;
+  const demandLevel = 'Normal';
+  const multiplier = 1.0;
+
+  const lockUrgent = timeLeftSec !== null && timeLeftSec <= 60;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <BookingProgress currentStep="pay" />
+      {timeLeftSec !== null && (
+        <View style={[styles.lockBanner, lockUrgent && styles.lockBannerUrgent]}>
+          <Text style={[styles.lockBannerIcon, lockUrgent && styles.lockBannerIconUrgent]}>⏳</Text>
+          <View style={styles.lockBannerTextWrap}>
+            <Text style={styles.lockBannerText}>
+              Seats held for you
+            </Text>
+            <Text style={[styles.lockBannerSub, lockUrgent && styles.lockBannerSubUrgent]}>
+              {timeLeftSec === 0 ? 'Expiring now...' : 'Complete payment before the timer runs out'}
+            </Text>
+          </View>
+          <View style={[styles.lockTimer, lockUrgent && styles.lockTimerUrgent]}>
+            <Text style={[styles.lockTimerText, lockUrgent && styles.lockTimerTextUrgent]}>
+              {formatTimeLeft(timeLeftSec)}
+            </Text>
+          </View>
+        </View>
+      )}
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Event Card */}
         <View style={styles.card}>
           <LinearGradient colors={[`${colors.primary}15`, `${colors.primary}05`]} style={styles.cardGradient}>
+            {match?.imageUrl ? (
+              <Image source={{ uri: imageUri(match.imageUrl) }} style={styles.cardBanner} resizeMode="cover" />
+            ) : null}
             <Text style={styles.cardHeader}>EVENT DETAILS</Text>
-            <Text style={styles.matchTitle}>{match?.title}</Text>
+            <View style={styles.eventTeamsRow}>
+              {match?.teamALogo ? (
+                <Image source={{ uri: imageUri(match.teamALogo) }} style={styles.eventTeamLogo} resizeMode="contain" />
+              ) : null}
+              <Text style={styles.matchTitle}>{match?.title}</Text>
+              {match?.teamBLogo ? (
+                <Image source={{ uri: imageUri(match.teamBLogo) }} style={styles.eventTeamLogo} resizeMode="contain" />
+              ) : null}
+            </View>
             <View style={styles.metaRow}>
               <Text style={styles.metaText}>📍 {match?.venue}</Text>
             </View>
             {match?.matchDate && (
               <Text style={styles.metaText}>
-                📅 {new Date(match.matchDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {new Date(match.matchDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                📅 {formatInNepal(match.matchDate, { weekday: 'long', month: 'long', day: 'numeric' })} at {formatTimeInNepal(match.matchDate, { hour: '2-digit', minute: '2-digit', hour12: true })}
               </Text>
             )}
           </LinearGradient>
@@ -158,7 +365,7 @@ export default function BookingScreen({ route, navigation }) {
           {selectedSeats.map((seat, idx) => {
             const basePrice = match?.pricing?.[seat.category] || 0;
             const price = basePrice * multiplier;
-            const categoryColors = { vip: '#FFD700', premium: colors.primaryLight, general: colors.info };
+            const categoryColors = { platinum: '#E8E8E8', gold: '#FFD700', silver: '#A8A8A8', bronze: '#CD7F32', general: '#5B9BD5', category1: '#FFD700', category2: '#FF6B6B', category3: '#A29BFE', category4: '#EF5350', supporters: '#81C784', premium: colors.primaryLight };
             const catColor = categoryColors[seat.category] || colors.info;
             return (
               <View key={seat.id || seat._id} style={[styles.seatRow, idx < selectedSeats.length - 1 && styles.seatRowBorder]}>
@@ -169,7 +376,7 @@ export default function BookingScreen({ route, navigation }) {
                     <Text style={styles.seatCategory}>{(seat.category || 'general').toUpperCase()}</Text>
                   </View>
                 </View>
-                <Text style={styles.seatPrice}>₹{Math.round(price)}</Text>
+                <Text style={styles.seatPrice}>Rs.{Math.round(price)}</Text>
               </View>
             );
           })}
@@ -195,23 +402,77 @@ export default function BookingScreen({ route, navigation }) {
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal ({selectedSeats.length} seat{selectedSeats.length > 1 ? 's' : ''})</Text>
-            <Text style={styles.summaryValue}>₹{Math.round(totalAmount / multiplier)}</Text>
+            <Text style={styles.summaryValue}>Rs.{Math.round(totalAmount / multiplier)}</Text>
           </View>
-          {multiplier !== 1.0 && (
+        {Math.abs(multiplier - 1.0) > 0.001 && (
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Demand Surcharge</Text>
-              <Text style={[styles.summaryValue, { color: colors.warning }]}>+₹{Math.round(totalAmount - totalAmount / multiplier)}</Text>
+              <Text style={[styles.summaryValue, { color: colors.warning }]}>+Rs.{Math.round(totalAmount - totalAmount / multiplier)}</Text>
             </View>
           )}
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>₹{Math.round(totalAmount)}</Text>
+            <Text style={styles.totalValue}>Rs.{Math.round(totalAmount)}</Text>
+          </View>
+        </View>
+
+        {/* Payment Method */}
+        <View style={styles.paymentMethodCard}>
+          <Text style={styles.cardHeader}>PAYMENT METHOD</Text>
+          <View style={styles.paymentOptions}>
+            <TouchableOpacity
+              style={[styles.paymentOption, paymentMethod === 'khalti' && styles.paymentOptionActive]}
+              onPress={() => setPaymentMethod('khalti')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.paymentOptionText, paymentMethod === 'khalti' && styles.paymentOptionTextActive]}>Khalti</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.paymentOption, paymentMethod === 'esewa' && styles.paymentOptionActive, { borderColor: paymentMethod === 'esewa' ? '#62BA46' : colors.border, backgroundColor: paymentMethod === 'esewa' ? '#62BA4615' : 'transparent' }]}
+              onPress={() => setPaymentMethod('esewa')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.paymentOptionText, paymentMethod === 'esewa' && { color: '#62BA46' }]}>eSewa</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.paymentOption, paymentMethod === 'card' && styles.paymentOptionActive]}
+              onPress={() => setPaymentMethod('card')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.paymentOptionText, paymentMethod === 'card' && styles.paymentOptionTextActive]}>Credit Card</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         <View style={{ height: spacing.xxxl }} />
       </ScrollView>
+
+      <KhaltiPaymentModal
+        visible={khaltiVisible}
+        paymentUrl={khaltiData?.paymentUrl || ''}
+        onSuccess={handleKhaltiSuccess}
+        onError={handleKhaltiError}
+        onClose={() => setKhaltiVisible(false)}
+      />
+
+      <EsewaPaymentModal
+        visible={esewaVisible}
+        esewaData={esewaData}
+        onSuccess={handleEsewaSuccess}
+        onError={handleEsewaError}
+        onClose={() => setEsewaVisible(false)}
+      />
+
+      <CardPaymentModal
+        visible={cardVisible}
+        amount={totalAmount}
+        matchId={matchId}
+        seatIds={pendingPayment?.seatIds || []}
+        onSuccess={handleCardSuccess}
+        onError={handleCardError}
+        onClose={() => setCardVisible(false)}
+      />
 
       {/* Sticky CTA */}
       <View style={styles.stickyCta}>
@@ -219,24 +480,75 @@ export default function BookingScreen({ route, navigation }) {
           <Text style={styles.cancelBtnText}>Cancel</Text>
         </TouchableOpacity>
         <GradientButton
-          title={isPaying ? 'Processing...' : `Pay ₹${Math.round(totalAmount)}`}
-          onPress={handleCheckout}
+          title={isPaying ? 'Processing...' : `Pay via ${paymentMethod === 'khalti' ? 'Khalti' : paymentMethod === 'esewa' ? 'eSewa' : 'Card'} Rs.${Math.round(totalAmount)}`}
+          onPress={paymentMethod === 'khalti' ? handleKhaltiPayment : paymentMethod === 'esewa' ? handleEsewaPayment : handleCardPayment}
           disabled={isPaying}
           style={{ flex: 1 }}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: spacing.xl, paddingBottom: spacing.xxxl },
 
+  // Lock countdown banner
+  lockBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: `${colors.warning}40`,
+    backgroundColor: `${colors.warning}12`,
+  },
+  lockBannerUrgent: {
+    borderColor: colors.danger,
+    backgroundColor: `${colors.danger}15`,
+  },
+  lockBannerIcon: { fontSize: 18 },
+  lockBannerIconUrgent: {},
+  lockBannerTextWrap: { flex: 1 },
+  lockBannerText: {
+    color: colors.textPrimary,
+    fontSize: typography.captionMedium.fontSize,
+    fontWeight: '800',
+  },
+  lockBannerSub: {
+    color: colors.textMuted,
+    fontSize: typography.small.fontSize,
+    marginTop: 2,
+  },
+  lockBannerSubUrgent: { color: colors.danger },
+  lockTimer: {
+    minWidth: 56,
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: `${colors.warning}25`,
+  },
+  lockTimerUrgent: { backgroundColor: `${colors.danger}25` },
+  lockTimerText: {
+    color: colors.warning,
+    fontSize: typography.h3.fontSize,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+  },
+  lockTimerTextUrgent: { color: colors.danger },
+
   // Cards
   card: { backgroundColor: colors.surface, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg, overflow: 'hidden' },
-  cardGradient: { padding: spacing.xl },
+  cardGradient: { padding: spacing.xl, position: 'relative' },
+  cardBanner: { width: '100%', height: 120, borderRadius: radii.lg, marginBottom: spacing.md },
+  eventTeamsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  eventTeamLogo: { width: 28, height: 28 },
   cardHeader: { color: colors.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: 1.5, marginBottom: spacing.md },
   matchTitle: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '800', marginBottom: spacing.sm },
   metaRow: { marginBottom: spacing.xs },
@@ -269,6 +581,14 @@ const styles = StyleSheet.create({
   totalLabel: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
   totalValue: { color: colors.accent, fontSize: typography.h2.fontSize, fontWeight: '900' },
 
+  // Payment Method
+  paymentMethodCard: { backgroundColor: colors.surface, borderRadius: radii.xl, padding: spacing.xl, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg },
+  paymentOptions: { flexDirection: 'row', gap: spacing.md },
+  paymentOption: { flex: 1, paddingVertical: spacing.lg, borderRadius: radii.lg, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  paymentOptionActive: { borderColor: colors.primary, backgroundColor: `${colors.primary}15` },
+  paymentOptionText: { color: colors.textMuted, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
+  paymentOptionTextActive: { color: colors.primary },
+
   // Sticky CTA
   stickyCta: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -285,7 +605,9 @@ const styles = StyleSheet.create({
 
   // Success
   successScroll: { padding: spacing.xl, paddingTop: spacing.xxl },
-  successCard: { borderRadius: radii.xxl, overflow: 'hidden', ...shadows.lg },
+  // Android: shadow and overflow:hidden must be on SEPARATE views
+  successCardShadow: { ...shadows.lg, borderRadius: radii.xxl, marginBottom: spacing.lg },
+  successCard: { borderRadius: radii.xxl, overflow: 'hidden' },
   successGradient: { padding: spacing.xxl, alignItems: 'center' },
   successIconWrap: {
     width: 64, height: 64, borderRadius: 32,
@@ -298,7 +620,6 @@ const styles = StyleSheet.create({
   successSubtitle: { color: 'rgba(255,255,255,0.6)', fontSize: typography.caption.fontSize, marginBottom: spacing.xl },
   qrSection: { alignItems: 'center', marginBottom: spacing.xl },
   qrBox: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.sm, position: 'relative' },
-  qrImage: { width: 140, height: 140, borderRadius: radii.md },
   qrCorner: { position: 'absolute', width: 12, height: 12, borderColor: 'rgba(255,255,255,0.3)' },
   qrCornerTL: { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 4 },
   qrCornerTR: { top: -1, right: -1, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 4 },
@@ -311,4 +632,5 @@ const styles = StyleSheet.create({
   ticketDetailCol: { flex: 1 },
   detailLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.xs },
   detailValue: { color: '#FFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
+  ticketDetailBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)', marginBottom: spacing.sm, paddingBottom: spacing.sm },
 });

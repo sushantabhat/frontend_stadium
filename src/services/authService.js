@@ -21,3 +21,8 @@ export async function fetchCurrentUser() {
   const response = await api.get('/api/auth/me');
   return response.data.user;
 }
+
+export async function updateProfile({ name }) {
+  const response = await api.put('/api/auth/me', { name });
+  return response.data.user;
+}

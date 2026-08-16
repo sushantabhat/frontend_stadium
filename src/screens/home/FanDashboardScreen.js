@@ -1,44 +1,41 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
+import { Search, Ticket, Heart } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
-import { colors, spacing, radii, typography } from '../../constants/theme';
+import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchMatchRecommendations } from '../../services/aiService';
 import MatchCard from '../../components/MatchCard';
 import BannerCarousel from '../../components/BannerCarousel';
+import DashboardHeader from '../../components/DashboardHeader';
+import NotificationBell from '../../components/NotificationBell';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const GREETINGS = ['Good morning', 'Good afternoon', 'Good evening'];
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return GREETINGS[0];
-  if (h < 17) return GREETINGS[1];
-  return GREETINGS[2];
-}
 
 export default function FanDashboardScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
   const [recommendations, setRecommendations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
-  const loadData = async () => {
+  const loadData = useCallback(async (refreshing = false) => {
+    if (!refreshing) setIsLoading(true);
     try {
+      setLoadError('');
       const data = await fetchMatchRecommendations();
       setRecommendations(data);
-    } catch (e) {
-      console.log('Error:', e.message);
+    } catch {
+      setLoadError('Failed to load matches. Pull down to retry.');
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
-  };
+  }, []);
+  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  useEffect(() => { loadData(); }, []);
-  const onRefresh = () => { setIsRefreshing(true); loadData(); };
+  const { refreshing: isRefreshing, onRefresh } = useRefresh(() => loadData(true));
 
   const firstName = userInfo?.name?.split(' ')[0] || 'Fan';
   const initials = (userInfo?.name || 'F').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -48,29 +45,27 @@ export default function FanDashboardScreen({ navigation }) {
   const otherMatches = recommendations.filter(m => m.status !== 'upcoming' && m.status !== 'live');
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={isRefreshing} />
+      <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+      <View style={styles.headerRow}>
+        <DashboardHeader
+          topLabel="WELCOME BACK"
+          title={`${firstName} 👋`}
+          avatarColors={colors.gradientPurple}
+          avatarLabel={initials}
+          onAvatarPress={() => navigation.navigate('Account')}
+        />
+        <View style={styles.bellWrap}>
+          <NotificationBell onPress={() => navigation.navigate('Notifications')} />
+        </View>
+      </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
       >
-        {/* Top Bar — asymmetric */}
-        <View style={styles.topBar}>
-          <View style={styles.topLeft}>
-            <Text style={styles.greeting}>{getGreeting()},</Text>
-            <Text style={styles.name}>{firstName} 👋</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.avatar}
-            onPress={() => navigation.navigate('Account')}
-            activeOpacity={0.8}
-          >
-            <LinearGradient colors={colors.gradientPurple} style={styles.avatarGradient}>
-              <Text style={styles.avatarText}>{initials}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
 
         {/* Hero Banner Carousel */}
         <BannerCarousel
@@ -85,9 +80,9 @@ export default function FanDashboardScreen({ navigation }) {
         <View style={styles.section}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillsList}>
             {[
-              { icon: '🔍', label: 'Browse Matches', route: 'Browse' },
-              { icon: '🎫', label: 'My Tickets', route: 'My Tickets' },
-              { icon: '❤️', label: 'Wishlist', route: 'Wishlist' },
+              { Icon: Search, label: 'Browse Matches', route: 'Browse' },
+              { Icon: Ticket, label: 'My Tickets', route: 'My Tickets' },
+              { Icon: Heart, label: 'Wishlist', route: 'Wishlist' },
             ].map((item) => (
               <TouchableOpacity
                 key={item.label}
@@ -95,7 +90,7 @@ export default function FanDashboardScreen({ navigation }) {
                 onPress={() => navigation.navigate(item.route)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.pillIcon}>{item.icon}</Text>
+                <item.Icon size={16} color={colors.textPrimary} strokeWidth={2} />
                 <Text style={styles.pillLabel}>{item.label}</Text>
               </TouchableOpacity>
             ))}
@@ -198,59 +193,25 @@ export default function FanDashboardScreen({ navigation }) {
         {/* Empty state */}
         {recommendations.length === 0 && !isLoading && (
           <View style={styles.emptyWrap}>
-            <Text style={styles.emptyIcon}>🏟️</Text>
-            <Text style={styles.emptyTitle}>Nothing here yet</Text>
-            <Text style={styles.emptyText}>Matches will appear once the admin creates them</Text>
+            <Text style={styles.emptyIcon}>{loadError ? '⚠️' : '🏟️'}</Text>
+            <Text style={styles.emptyTitle}>{loadError ? 'Something went wrong' : 'Nothing here yet'}</Text>
+            <Text style={styles.emptyText}>{loadError || 'Matches will appear once the admin creates them'}</Text>
           </View>
         )}
 
-        <View style={{ height: spacing.xxxl + 20 }} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
+  headerRow: { position: 'relative' },
+  topBar: { flexDirection: 'row', alignItems: 'center', paddingRight: spacing.xl },
+  bellWrap: { position: 'absolute', top: 18, right: 68, zIndex: 10 },
   scroll: { paddingTop: spacing.lg },
-
-  // Top bar
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.lg,
-  },
-  topLeft: {},
-  greeting: {
-    color: colors.textMuted,
-    fontSize: typography.caption.fontSize,
-    fontWeight: '500',
-  },
-  name: {
-    color: colors.textPrimary,
-    fontSize: typography.h1.fontSize,
-    fontWeight: '900',
-    letterSpacing: -0.5,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  avatarGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: '#FFF',
-    fontSize: typography.bodyMedium.fontSize,
-    fontWeight: '800',
-  },
-
   loadingWrap: {
     paddingVertical: spacing.huge,
     alignItems: 'center',
@@ -305,7 +266,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: spacing.sm,
   },
-  pillIcon: { fontSize: 14 },
   pillLabel: {
     color: colors.textSecondary,
     fontSize: typography.small.fontSize,
@@ -342,5 +302,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.caption.fontSize,
     textAlign: 'center',
+  },
+  bottomSpacer: {
+    height: 52,
   },
 });

@@ -1,0 +1,1529 @@
+import React, { useCallback, useState, useEffect } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Image,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import ScreenHeader from '../../components/ScreenHeader';
+import PolygonEditor from '../../components/stadium/PolygonEditor';
+import ImagePickerField from '../../components/ImagePickerField';
+import api from '../../services/api';
+import { fetchMatchById, updateMatch } from '../../services/matchService';
+import { imageUri } from '../../utils/imageUri';
+import { colors, spacing, radii, typography, glass, CATEGORY_COLORS } from '../../constants/theme';
+
+const CATEGORY_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'general', 'supporters'];
+const DEFAULT_PRICES = {
+  platinum: '5000',
+  gold: '3000',
+  silver: '2000',
+  bronze: '1000',
+  general: '500',
+  supporters: '200',
+};
+const MATCH_STAGES = ['League Stage', 'Qualifier / Decider', 'Quarter-Finals', 'Semi-Finals', 'Finals'];
+const CRICKET_FORMATS = ['T20', 'ODI', 'T10'];
+const STAR_POWER_LEVELS = ['None', 'Local Stars', 'International', 'Global Icon'];
+
+const MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+const CURRENT_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: 10 }, (_, i) => CURRENT_YEAR + i);
+const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function formatDateISO(year, month, day, hour, minute) {
+  const m = String(month + 1).padStart(2, '0');
+  const d = String(day).padStart(2, '0');
+  const totalMinutes = hour * 60 + minute - (5 * 60 + 45);
+  const adjHour = Math.floor(((totalMinutes % 1440) + 1440) % 1440 / 60);
+  const adjMinute = ((totalMinutes % 60) + 60) % 60;
+  const h = String(adjHour).padStart(2, '0');
+  const min = String(adjMinute).padStart(2, '0');
+  return `${year}-${m}-${d}T${h}:${min}:00.000Z`;
+}
+
+function formatDisplayDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Kathmandu',
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function parseDateToComponents(dateStr) {
+  if (!dateStr) return { year: CURRENT_YEAR, month: new Date().getMonth(), day: new Date().getDate(), hour: 18, minute: 0 };
+  try {
+    const d = new Date(dateStr);
+    return {
+      year: d.getFullYear(),
+      month: d.getMonth(),
+      day: d.getDate(),
+      hour: d.getHours(),
+      minute: d.getMinutes(),
+    };
+  } catch {
+    return { year: CURRENT_YEAR, month: new Date().getMonth(), day: new Date().getDate(), hour: 18, minute: 0 };
+  }
+}
+
+export default function AdminEditMatchScreen({ route, navigation }) {
+  const { matchId } = route.params;
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [hasBookedSeats, setHasBookedSeats] = useState(false);
+
+  const [form, setForm] = useState({
+    title: '',
+    teamA: '',
+    teamB: '',
+    venue: '',
+    matchDate: '',
+    description: '',
+    imageUrl: '',
+    teamALogo: '',
+    teamBLogo: '',
+    match_stage: 'League Stage',
+    cricket_format: 'T20',
+  });
+
+  const [pricing, setPricing] = useState({
+    platinum: DEFAULT_PRICES.platinum,
+    gold: DEFAULT_PRICES.gold,
+    silver: DEFAULT_PRICES.silver,
+    bronze: DEFAULT_PRICES.bronze,
+    general: DEFAULT_PRICES.general,
+    supporters: DEFAULT_PRICES.supporters,
+  });
+
+  const [sections, setSections] = useState([]);
+  const [seatLayout, setSeatLayout] = useState(null);
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickerYear, setPickerYear] = useState(CURRENT_YEAR);
+  const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
+  const [pickerDay, setPickerDay] = useState(new Date().getDate());
+  const [pickerHour, setPickerHour] = useState(18);
+  const [pickerMinute, setPickerMinute] = useState(0);
+  const [polygonEditorIndex, setPolygonEditorIndex] = useState(null);
+  const [venueGates, setVenueGates] = useState([]);
+  const [errors, setErrors] = useState({});
+
+  const [teams, setTeams] = useState([]);
+  const [teamPickerVisible, setTeamPickerVisible] = useState(false);
+  const [activeTeamSelect, setActiveTeamSelect] = useState(null);
+
+  useEffect(() => {
+    fetchTeams();
+  }, []);
+
+  const fetchTeams = async () => {
+    try {
+      const res = await api.get('/api/teams');
+      setTeams(res.data);
+    } catch (e) {
+      console.log('Error fetching teams:', e);
+    }
+  };
+
+  const maxDays = getDaysInMonth(pickerYear, pickerMonth);
+  const clampedDay = Math.min(pickerDay, maxDays);
+
+  const loadMatch = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      setError('');
+      const match = await fetchMatchById(matchId);
+      const hasSeats = (match.seatStats?.booked || 0) + (match.seatStats?.locked || 0) > 0;
+      setHasBookedSeats(hasSeats);
+
+      const pricingObj = match.pricing || {};
+      setPricing({
+        platinum: pricingObj.platinum ? String(pricingObj.platinum) : DEFAULT_PRICES.platinum,
+        gold: pricingObj.gold ? String(pricingObj.gold) : DEFAULT_PRICES.gold,
+        silver: pricingObj.silver ? String(pricingObj.silver) : DEFAULT_PRICES.silver,
+        bronze: pricingObj.bronze ? String(pricingObj.bronze) : DEFAULT_PRICES.bronze,
+        general: pricingObj.general ? String(pricingObj.general) : DEFAULT_PRICES.general,
+        supporters: pricingObj.supporters ? String(pricingObj.supporters) : DEFAULT_PRICES.supporters,
+      });
+
+      setSections(
+        (match.stadiumSections || []).map((s) => ({
+          sectionId: s.sectionId || '',
+          category: s.category || 'platinum',
+          label: s.label || '',
+          color: s.color || '#888888',
+          pricePerTicket: String(s.pricePerTicket ?? ''),
+          totalSeats: String(s.totalSeats ?? ''),
+          rows: Array.isArray(s.rows) ? s.rows.join(',') : '',
+          polygon: s.polygon || '',
+          gate: s.gate || '',
+        }))
+      );
+      setSeatLayout(match.seatLayout || null);
+
+      setVenueGates(match.venueGates || []);
+
+      setForm({
+        title: match.title || '',
+        teamA: match.teamA || '',
+        teamB: match.teamB || '',
+        venue: match.venue || '',
+        matchDate: match.matchDate || '',
+        description: match.description || '',
+        imageUrl: match.imageUrl || '',
+        teamALogo: match.teamALogo || '',
+        teamBLogo: match.teamBLogo || '',
+        match_stage: match.match_stage || 'League Stage',
+        cricket_format: match.cricket_format || 'T20',
+      });
+
+      const comps = parseDateToComponents(match.matchDate);
+      setPickerYear(comps.year);
+      setPickerMonth(comps.month);
+      setPickerDay(comps.day);
+      setPickerHour(comps.hour);
+      setPickerMinute(comps.minute);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load match');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [matchId]);
+
+  useFocusEffect(useCallback(() => { loadMatch(); }, [loadMatch]));
+
+  const updateField = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => { const n = { ...prev }; delete n[field]; return n; });
+  };
+
+  const handleDateConfirm = () => {
+    const iso = formatDateISO(pickerYear, pickerMonth, clampedDay, pickerHour, pickerMinute);
+    if (new Date(iso) <= new Date()) {
+      setErrors((prev) => ({ ...prev, matchDate: 'Date & time must be in the future' }));
+      return;
+    }
+    updateField('matchDate', iso);
+    setShowDatePicker(false);
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!form.title.trim()) newErrors.title = 'Title is required';
+    if (!form.teamA.trim()) newErrors.teamA = 'Team A is required';
+    if (!form.teamB.trim()) newErrors.teamB = 'Team B is required';
+    if (form.teamA.trim() && form.teamB.trim() && form.teamA.trim() === form.teamB.trim()) {
+      newErrors.teamB = 'Team B cannot be the same as Team A';
+    }
+    if (!form.venue.trim()) newErrors.venue = 'Venue is required';
+    if (!form.matchDate) newErrors.matchDate = 'Date & time is required';
+    const usedCategories = [...new Set(sections.map((s) => s.category))];
+    const zeroPricing = usedCategories.filter((cat) => !pricing[cat] || Number(pricing[cat]) === 0);
+    if (zeroPricing.length > 0) {
+      newErrors.pricing = `Set price for: ${zeroPricing.join(', ')}`;
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+
+    setIsSubmitting(true);
+    try {
+      const pricingObj = {};
+      for (const [key, val] of Object.entries(pricing)) {
+        pricingObj[key] = Number(val) || 0;
+      }
+
+      const payload = {
+        title: form.title.trim(),
+        teamA: form.teamA.trim(),
+        teamB: form.teamB.trim(),
+        venue: form.venue.trim(),
+        matchDate: form.matchDate.trim(),
+        description: form.description.trim(),
+        imageUrl: form.imageUrl.trim(),
+        teamALogo: form.teamALogo.trim(),
+        teamBLogo: form.teamBLogo.trim(),
+        match_stage: form.match_stage,
+        cricket_format: form.cricket_format,
+        pricing: pricingObj,
+      };
+
+      if (!hasBookedSeats) {
+        const stadiumSections = sections
+          .filter((s) => s.sectionId.trim())
+          .map((s) => ({
+            sectionId: s.sectionId.trim(),
+            category: s.category,
+            label: s.label.trim() || s.sectionId.trim(),
+            color: s.color || CATEGORY_COLORS[s.category]?.accent || '#E8E8E8',
+            pricePerTicket: Number(s.pricePerTicket) || 0,
+            totalSeats: Number(s.totalSeats) || 0,
+            availableSeats: Number(s.totalSeats) || 0,
+            rows: s.rows
+              .split(',')
+              .map((r) => r.trim())
+              .filter(Boolean),
+            polygon: s.polygon || '',
+            gate: s.gate || '',
+          }));
+
+        if (stadiumSections.length > 0) {
+          payload.stadiumSections = stadiumSections;
+        } else if (seatLayout) {
+          payload.seatLayout = {
+            rows: Number(seatLayout.rows) || 10,
+            seatsPerRow: Number(seatLayout.seatsPerRow) || 20,
+            vipRows: Number(seatLayout.vipRows) || 0,
+            premiumRows: Number(seatLayout.premiumRows) || 0,
+          };
+        }
+      }
+
+      await updateMatch(matchId, payload);
+
+      const hadStructuralChange = !hasBookedSeats && payload.stadiumSections?.length > 0;
+      const msg = hadStructuralChange
+        ? 'Match updated and seats regenerated.'
+        : 'Match updated successfully.';
+
+      Alert.alert('Success', msg, [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.message || 'Failed to update match');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <ScreenHeader title="Edit Match" onBack={() => navigation.goBack()} />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={glass.brandPurple} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <ScreenHeader title="Edit Match" onBack={() => navigation.goBack()} />
+        <View style={styles.center}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={loadMatch} style={styles.retryBtn}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <ScreenHeader
+        title="Edit Match"
+        subtitle="Update event details and pricing"
+        onBack={() => navigation.goBack()}
+      />
+
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.content}>
+          {/* ═══ EVENT INFO ═══ */}
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionDot, { backgroundColor: glass.brandPurple }]} />
+              <Text style={styles.sectionTitle}>Event Info</Text>
+            </View>
+
+            <Text style={styles.inputLabel}>Match Title</Text>
+            <TextInput
+              style={[styles.inputField, errors.title && styles.inputError]}
+              placeholder="T20 Final - Season Opener"
+              placeholderTextColor={glass.textMuted}
+              value={form.title}
+              onChangeText={(v) => updateField('title', v)}
+            />
+            {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+
+            <View style={styles.row}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Team A</Text>
+                <TouchableOpacity 
+                  style={[styles.inputField, errors.teamA && styles.inputError, { justifyContent: 'center' }]}
+                  onPress={() => { setActiveTeamSelect('teamA'); setTeamPickerVisible(true); }}
+                >
+                  <Text style={{ color: form.teamA ? colors.textPrimary : glass.textMuted }}>
+                    {form.teamA || 'Select Team A'}
+                  </Text>
+                </TouchableOpacity>
+                {errors.teamA && <Text style={styles.errorText}>{errors.teamA}</Text>}
+              </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Team B</Text>
+                <TouchableOpacity 
+                  style={[styles.inputField, errors.teamB && styles.inputError, { justifyContent: 'center' }]}
+                  onPress={() => { setActiveTeamSelect('teamB'); setTeamPickerVisible(true); }}
+                >
+                  <Text style={{ color: form.teamB ? colors.textPrimary : glass.textMuted }}>
+                    {form.teamB || 'Select Team B'}
+                  </Text>
+                </TouchableOpacity>
+                {errors.teamB && <Text style={styles.errorText}>{errors.teamB}</Text>}
+              </View>
+            </View>
+
+            <Text style={styles.inputLabel}>Venue</Text>
+            <TextInput
+              style={[styles.inputField, errors.venue && styles.inputError]}
+              placeholder="Smart Stadium Arena"
+              placeholderTextColor={glass.textMuted}
+              value={form.venue}
+              onChangeText={(v) => updateField('venue', v)}
+            />
+            {errors.venue && <Text style={styles.errorText}>{errors.venue}</Text>}
+
+            <Text style={styles.inputLabel}>Match Stage</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.lg, paddingBottom: 4 }}>
+              {MATCH_STAGES.map(stage => (
+                <TouchableOpacity
+                  key={stage}
+                  style={[styles.pill, form.match_stage === stage && styles.pillActive]}
+                  onPress={() => updateField('match_stage', stage)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.pillText, form.match_stage === stage && styles.pillTextActive]}>{stage}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <Text style={styles.inputLabel}>Match Date & Time</Text>
+            <TouchableOpacity
+              style={[styles.datePickerTrigger, errors.matchDate && styles.inputError]}
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.datePickerIcon}>📅</Text>
+              <View style={styles.datePickerTextWrap}>
+                {form.matchDate ? (
+                  <>
+                    <Text style={styles.datePickerValue}>
+                      {formatDisplayDate(form.matchDate)}
+                    </Text>
+                    <Text style={styles.datePickerHint}>Tap to change</Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.datePickerPlaceholder}>Select date & time</Text>
+                    <Text style={styles.datePickerHint}>Tap to open picker</Text>
+                  </>
+                )}
+              </View>
+              <Text style={styles.datePickerChevron}>›</Text>
+            </TouchableOpacity>
+            {errors.matchDate && <Text style={styles.errorText}>{errors.matchDate}</Text>}
+
+            <Text style={styles.inputLabel}>Description</Text>
+            <TextInput
+              style={[styles.inputField, styles.textArea]}
+              placeholder="Optional match description"
+              placeholderTextColor={glass.textMuted}
+              multiline
+              value={form.description}
+              onChangeText={(v) => updateField('description', v)}
+            />
+          </View>
+
+          {/* ═══ MATCH IMAGES ═══ */}
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionDot, { backgroundColor: '#00E5FF' }]} />
+              <Text style={styles.sectionTitle}>Match Images</Text>
+            </View>
+
+            <ImagePickerField
+              label="Match Banner"
+              value={form.imageUrl}
+              onUpload={(url) => updateField('imageUrl', url)}
+            />
+
+            <View style={styles.row}>
+              <ImagePickerField
+                label="Team A Logo"
+                value={form.teamALogo}
+                onUpload={(url) => updateField('teamALogo', url)}
+                style={{ flex: 1 }}
+              />
+              <ImagePickerField
+                label="Team B Logo"
+                value={form.teamBLogo}
+                onUpload={(url) => updateField('teamBLogo', url)}
+                style={{ flex: 1 }}
+              />
+            </View>
+          </View>
+
+          {/* ═══ PRICING ═══ */}
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionDot, { backgroundColor: glass.statusSuccessText }]} />
+              <Text style={styles.sectionTitle}>Category Pricing</Text>
+            </View>
+
+            {errors.pricing && <Text style={styles.errorText}>{errors.pricing}</Text>}
+
+            {CATEGORY_OPTIONS.map((cat) => (
+              <View key={cat} style={styles.priceRow}>
+                <View style={[styles.priceDot, { backgroundColor: CATEGORY_COLORS[cat].accent }]} />
+                <Text style={styles.priceLabel}>{CATEGORY_COLORS[cat].label}</Text>
+                <TextInput
+                  style={styles.priceInput}
+                  keyboardType="numeric"
+                  value={pricing[cat]}
+                  onChangeText={(v) => setPricing((prev) => ({ ...prev, [cat]: v }))}
+                  editable={!hasBookedSeats}
+                />
+              </View>
+            ))}
+          </View>
+
+          {/* ═══ STADIUM SECTIONS OR SEAT LAYOUT ═══ */}
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionDot, { backgroundColor: glass.statusWarningText }]} />
+              <Text style={styles.sectionTitle}>Stadium Structure</Text>
+            </View>
+
+            {hasBookedSeats ? (
+              <View style={styles.lockedCard}>
+                <Text style={styles.lockedIcon}>🔒</Text>
+                <Text style={styles.lockedText}>
+                  Sections are locked because some seats are booked or locked. Complete or cancel those bookings first.
+                </Text>
+              </View>
+            ) : null}
+
+            {sections.map((section, index) => (
+              <View key={index} style={styles.sectionItem}>
+                <View style={styles.sectionItemHeader}>
+                  <Text style={styles.sectionItemTitle}>Section {index + 1}</Text>
+                  <TouchableOpacity
+                    onPress={() => setSections((prev) => prev.filter((_, i) => i !== index))}
+                    style={styles.removeBtn}
+                  >
+                    <Text style={styles.removeBtnText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.row}>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Section ID</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      placeholder="318"
+                      placeholderTextColor={glass.textMuted}
+                      value={section.sectionId}
+                      onChangeText={(v) => {
+                        setSections((prev) => {
+                          const next = [...prev];
+                          next[index] = { ...next[index], sectionId: v };
+                          return next;
+                        });
+                      }}
+                    />
+                  </View>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Category</Text>
+                    <View style={styles.categoryPicker}>
+                      {CATEGORY_OPTIONS.map((cat) => (
+                        <TouchableOpacity
+                          key={cat}
+                          style={[
+                            styles.categoryChip,
+                            section.category === cat && {
+                              borderColor: CATEGORY_COLORS[cat].accent,
+                              backgroundColor: CATEGORY_COLORS[cat].bg,
+                            },
+                          ]}
+                          onPress={() => {
+                            setSections((prev) => {
+                              const next = [...prev];
+                              next[index] = { ...next[index], category: cat, color: CATEGORY_COLORS[cat].accent };
+                              return next;
+                            });
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <View style={[styles.categoryDot, { backgroundColor: CATEGORY_COLORS[cat].accent }]} />
+                          <Text
+                            style={[
+                              styles.categoryChipText,
+                              section.category === cat && { color: CATEGORY_COLORS[cat].accent },
+                            ]}
+                          >
+                            {CATEGORY_COLORS[cat].label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.row}>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Price / Ticket</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      keyboardType="numeric"
+                      value={section.pricePerTicket}
+                      onChangeText={(v) => {
+                        setSections((prev) => {
+                          const next = [...prev];
+                          next[index] = { ...next[index], pricePerTicket: v };
+                          return next;
+                        });
+                      }}
+                    />
+                  </View>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Total Seats</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      keyboardType="numeric"
+                      value={section.totalSeats}
+                      onChangeText={(v) => {
+                        setSections((prev) => {
+                          const next = [...prev];
+                          next[index] = { ...next[index], totalSeats: v };
+                          return next;
+                        });
+                      }}
+                    />
+                  </View>
+                </View>
+
+                <Text style={styles.inputLabel}>Row Labels (comma separated)</Text>
+                <TextInput
+                  style={styles.inputField}
+                  placeholder="A,B,C,D"
+                  placeholderTextColor={glass.textMuted}
+                  value={section.rows}
+                  onChangeText={(v) => {
+                    setSections((prev) => {
+                      const next = [...prev];
+                      next[index] = { ...next[index], rows: v };
+                      return next;
+                    });
+                  }}
+                />
+
+                <Text style={styles.inputLabel}>Gate</Text>
+                {venueGates.length > 0 ? (
+                  <View>
+                    <View style={styles.gateOptionRow}>
+                      {venueGates.map((g) => {
+                        const selected = section.gate === g;
+                        return (
+                          <TouchableOpacity
+                            key={g}
+                            style={[styles.gateOptionChip, selected && styles.gateOptionChipActive]}
+                            onPress={() => {
+                              setSections((prev) => {
+                                const next = [...prev];
+                                next[index] = { ...next[index], gate: selected ? '' : g };
+                                return next;
+                              });
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={[styles.gateOptionChipText, selected && styles.gateOptionChipTextActive]}>
+                              {g}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                    <TextInput
+                      style={[styles.inputField, { marginTop: spacing.xs }]}
+                      placeholder="Or type a custom gate..."
+                      placeholderTextColor={glass.textMuted}
+                      value={section.gate}
+                      onChangeText={(v) => {
+                        setSections((prev) => {
+                          const next = [...prev];
+                          next[index] = { ...next[index], gate: v };
+                          return next;
+                        });
+                      }}
+                    />
+                  </View>
+                ) : (
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="e.g. North Gate"
+                    placeholderTextColor={glass.textMuted}
+                    value={section.gate}
+                    onChangeText={(v) => {
+                      setSections((prev) => {
+                        const next = [...prev];
+                        next[index] = { ...next[index], gate: v };
+                        return next;
+                      });
+                    }}
+                  />
+                )}
+
+                <Text style={styles.inputLabel}>Stadium Map Shape</Text>
+                {section.polygon ? (
+                  <View style={styles.polygonBtns}>
+                    <TouchableOpacity
+                      style={styles.polygonEditBtn}
+                      onPress={() => setPolygonEditorIndex(index)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.polygonEditText}>Edit Shape</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.polygonClearBtn}
+                      onPress={() => {
+                        setSections((prev) => {
+                          const next = [...prev];
+                          next[index] = { ...next[index], polygon: '' };
+                          return next;
+                        });
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.polygonClearText}>Clear</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.polygonDrawBtn}
+                    onPress={() => setPolygonEditorIndex(index)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.polygonDrawText}>Draw on Stadium Map</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+
+            {sections.length === 0 && seatLayout && (
+              <View style={styles.sectionItem}>
+                <Text style={styles.sectionItemTitle}>Seat Layout Grid</Text>
+                <Text style={styles.hint}>This venue uses a simple row/column grid instead of custom polygons.</Text>
+                
+                <View style={styles.row}>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Total Rows</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      keyboardType="numeric"
+                      value={String(seatLayout.rows)}
+                      onChangeText={(v) => setSeatLayout(prev => ({ ...prev, rows: v }))}
+                      editable={!hasBookedSeats}
+                    />
+                  </View>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Seats Per Row</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      keyboardType="numeric"
+                      value={String(seatLayout.seatsPerRow)}
+                      onChangeText={(v) => setSeatLayout(prev => ({ ...prev, seatsPerRow: v }))}
+                      editable={!hasBookedSeats}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.row}>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>VIP Rows</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      keyboardType="numeric"
+                      value={String(seatLayout.vipRows)}
+                      onChangeText={(v) => setSeatLayout(prev => ({ ...prev, vipRows: v }))}
+                      editable={!hasBookedSeats}
+                    />
+                  </View>
+                  <View style={styles.halfField}>
+                    <Text style={styles.inputLabel}>Premium Rows</Text>
+                    <TextInput
+                      style={styles.inputField}
+                      keyboardType="numeric"
+                      value={String(seatLayout.premiumRows)}
+                      onChangeText={(v) => setSeatLayout(prev => ({ ...prev, premiumRows: v }))}
+                      editable={!hasBookedSeats}
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {sections.length === 0 && !seatLayout && (
+              <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                <Text style={styles.hint}>No stadium structure defined.</Text>
+              </View>
+            )}
+
+            {!hasBookedSeats && sections.length > 0 && (
+              <TouchableOpacity
+                style={styles.addSectionBtn}
+                onPress={() => setSections((prev) => [...prev, { sectionId: `S${prev.length + 1}`, category: 'platinum', label: '', color: '#E8E8E8', pricePerTicket: '3500', totalSeats: '20', rows: 'A,B,C', polygon: '', gate: '' }])}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.addSectionBtnText}>+ Add Section</Text>
+              </TouchableOpacity>
+            )}
+
+            {sections.length > 0 && (
+              <View style={styles.hintCard}>
+                <Text style={styles.hint}>
+                  {sections.length} section{sections.length > 1 ? 's' : ''} ·{' '}
+                  {sections.reduce((sum, s) => sum + (Number(s.totalSeats) || 0), 0)} total seats
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={[glass.brandPurple, glass.neonPurple]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.submitGradient}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.submitButtonText}>Save Changes</Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <Modal visible={teamPickerVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select {activeTeamSelect === 'teamA' ? 'Team A' : 'Team B'}</Text>
+              <TouchableOpacity onPress={() => setTeamPickerVisible(false)}>
+                <Text style={styles.closeBtn}>Close</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ marginTop: spacing.md }} showsVerticalScrollIndicator={false}>
+              {teams.map((t) => (
+                <TouchableOpacity 
+                  key={t._id} 
+                  style={styles.teamOption}
+                  onPress={() => {
+                    if (activeTeamSelect === 'teamA') {
+                      updateField('teamA', t.name);
+                      updateField('teamALogo', t.logoUrl);
+                    } else {
+                      updateField('teamB', t.name);
+                      updateField('teamBLogo', t.logoUrl);
+                    }
+                    setTeamPickerVisible(false);
+                  }}
+                >
+                  {t.logoUrl && !t.logoUrl.includes('wikipedia') ? (
+                    <Image source={{ uri: imageUri(t.logoUrl) }} style={styles.teamOptionLogo} resizeMode="cover" />
+                  ) : (
+                    <View style={[styles.teamOptionLogo, { backgroundColor: 'rgba(123,97,255,0.15)', borderWidth: 1, borderColor: glass.brandPurple, justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={{ color: glass.brandPurple, fontSize: 12, fontWeight: '800' }}>{t.shortName || t.name.substring(0, 3).toUpperCase()}</Text>
+                    </View>
+                  )}
+                  <Text style={styles.teamOptionText}>{t.name} <Text style={{ color: glass.textMuted }}>({t.shortName || t.name.substring(0, 3).toUpperCase()})</Text></Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity 
+                style={styles.teamOption} 
+                onPress={() => {
+                  Alert.alert("Manage Teams", "To add a new team, go to the Teams Database in your dashboard.");
+                }}
+              >
+                <View style={[styles.teamOptionLogo, { backgroundColor: 'transparent', borderWidth: 1, borderColor: glass.brandPurple, justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={{color: glass.brandPurple}}>+</Text>
+                </View>
+                <Text style={[styles.teamOptionText, { color: glass.brandPurple }]}>Add New Team</Text>
+              </TouchableOpacity>
+              <View style={{ height: 40 }} />
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showDatePicker} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            onPress={() => setShowDatePicker(false)}
+            activeOpacity={1}
+          />
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Select Date & Time</Text>
+
+            <View style={styles.datePreview}>
+              <Text style={styles.datePreviewIcon}>📅</Text>
+              <Text style={styles.datePreviewText}>
+                {formatDisplayDate(formatDateISO(pickerYear, pickerMonth, clampedDay, pickerHour, pickerMinute))}
+              </Text>
+            </View>
+
+            <View style={styles.pickerRow}>
+              <View style={styles.pickerCol}>
+                <Text style={styles.pickerLabel}>YEAR</Text>
+                <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+                  {YEARS.map((y) => (
+                    <TouchableOpacity
+                      key={y}
+                      style={[styles.pickerItem, pickerYear === y && styles.pickerItemActive]}
+                      onPress={() => setPickerYear(y)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.pickerItemText, pickerYear === y && styles.pickerItemTextActive]}>
+                        {y}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <View style={styles.pickerCol}>
+                <Text style={styles.pickerLabel}>MONTH</Text>
+                <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+                  {MONTHS.map((m, i) => (
+                    <TouchableOpacity
+                      key={m}
+                      style={[styles.pickerItem, pickerMonth === i && styles.pickerItemActive]}
+                      onPress={() => setPickerMonth(i)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.pickerItemText, pickerMonth === i && styles.pickerItemTextActive]}>
+                        {m}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <View style={styles.pickerCol}>
+                <Text style={styles.pickerLabel}>DAY</Text>
+                <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+                  {DAYS.filter((d) => d <= maxDays).map((d) => (
+                    <TouchableOpacity
+                      key={d}
+                      style={[styles.pickerItem, clampedDay === d && styles.pickerItemActive]}
+                      onPress={() => setPickerDay(d)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.pickerItemText, clampedDay === d && styles.pickerItemTextActive]}>
+                        {d}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+
+            <View style={[styles.pickerRow, { marginTop: spacing.md }]}>
+              <View style={styles.pickerCol}>
+                <Text style={styles.pickerLabel}>HOUR (NPT)</Text>
+                <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+                  {HOURS.map((h) => (
+                    <TouchableOpacity
+                      key={h}
+                      style={[styles.pickerItem, pickerHour === h && styles.pickerItemActive]}
+                      onPress={() => setPickerHour(h)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.pickerItemText, pickerHour === h && styles.pickerItemTextActive]}>
+                        {String(h).padStart(2, '0')}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <View style={styles.pickerCol}>
+                <Text style={styles.pickerLabel}>MINUTE (NPT)</Text>
+                <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+                  {MINUTES.map((m) => (
+                    <TouchableOpacity
+                      key={m}
+                      style={[styles.pickerItem, pickerMinute === m && styles.pickerItemActive]}
+                      onPress={() => setPickerMinute(m)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.pickerItemText, pickerMinute === m && styles.pickerItemTextActive]}>
+                        {String(m).padStart(2, '0')}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+
+            <View style={styles.sheetActions}>
+              <TouchableOpacity
+                style={styles.sheetCancelBtn}
+                onPress={() => setShowDatePicker(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.sheetCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.sheetConfirmBtn}
+                onPress={handleDateConfirm}
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={[glass.brandPurple, glass.neonPurple]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.sheetConfirmGradient}
+                >
+                  <Text style={styles.sheetConfirmText}>Confirm</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* POLYGON EDITOR MODAL */}
+      <Modal visible={polygonEditorIndex !== null} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalBackdrop} onPress={() => setPolygonEditorIndex(null)} activeOpacity={1} />
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetActions}>
+              <Text style={styles.sheetTitle}>Draw Section Polygon</Text>
+              <TouchableOpacity onPress={() => setPolygonEditorIndex(null)} activeOpacity={0.7}>
+                <Text style={styles.sheetCancelText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+            {polygonEditorIndex !== null && sections[polygonEditorIndex] && (
+              <PolygonEditor
+                existingSections={sections.filter((_, i) => i !== polygonEditorIndex)}
+                initialPolygon={sections[polygonEditorIndex].polygon || ''}
+                sectionColor={sections[polygonEditorIndex].color || '#FFD700'}
+                sectionLabel={`Section ${polygonEditorIndex + 1} — ${sections[polygonEditorIndex].sectionId || 'New'}`}
+                onPolygonChange={(path) => {
+                  setSections((prev) => {
+                    const next = [...prev];
+                    next[polygonEditorIndex] = { ...next[polygonEditorIndex], polygon: path };
+                    return next;
+                  });
+                }}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: glass.canvasStart,
+  },
+  flex: {
+    flex: 1,
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xxl,
+  },
+  errorText: {
+    color: glass.statusDangerText,
+    fontSize: typography.body.fontSize,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  retryBtn: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: glass.brandPurpleSurface,
+    borderWidth: 1,
+    borderColor: glass.brandPurple,
+  },
+  retryText: {
+    color: glass.brandPurple,
+    fontWeight: '700',
+    fontSize: typography.bodyMedium.fontSize,
+  },
+  content: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl * 2,
+  },
+
+  sectionCard: {
+    backgroundColor: glass.card,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: glass.border,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  sectionDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  sectionTitle: {
+    color: colors.textPrimary,
+    fontSize: typography.h3.fontSize,
+    fontWeight: '800',
+  },
+
+  inputLabel: {
+    color: glass.textMuted,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: spacing.sm,
+    textTransform: 'uppercase',
+  },
+  inputField: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: glass.border,
+    padding: spacing.md,
+    color: colors.textPrimary,
+    fontSize: typography.body.fontSize,
+    marginBottom: spacing.md,
+    minHeight: 48,
+  },
+  inputDisabled: {
+    opacity: 0.4,
+  },
+  inputError: { borderColor: '#FF4757' },
+
+  priceRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm,
+  },
+  priceDot: { width: 12, height: 12, borderRadius: 6 },
+  priceLabel: { color: colors.textSecondary, fontSize: typography.body.fontSize, fontWeight: '600', flex: 1 },
+  priceInput: {
+    backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: radii.md,
+    borderWidth: 1, borderColor: glass.border, padding: spacing.sm,
+    color: colors.textPrimary, fontSize: typography.body.fontSize,
+    width: 80, textAlign: 'right', fontFamily: glass.monoFont,
+  },
+
+  sectionItem: {
+    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: radii.lg,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.lg, marginBottom: spacing.md,
+  },
+  sectionItemHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md,
+  },
+  sectionItemTitle: { color: colors.textPrimary, fontWeight: '700', fontSize: typography.bodyMedium.fontSize },
+  removeBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(255,59,48,0.15)', alignItems: 'center', justifyContent: 'center' },
+  removeBtnText: { color: colors.danger, fontSize: 12, fontWeight: '800' },
+
+  categoryPicker: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.md },
+  categoryChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
+    borderRadius: radii.sm, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  categoryDot: { width: 6, height: 6, borderRadius: 3 },
+  categoryChipText: { color: glass.textMuted, fontSize: 9, fontWeight: '700' },
+
+  addSectionBtn: {
+    paddingVertical: spacing.md, borderRadius: radii.md,
+    borderWidth: 1.5, borderColor: glass.brandPurple, borderStyle: 'dashed',
+    alignItems: 'center', marginBottom: spacing.md,
+  },
+  addSectionBtnText: { color: glass.brandPurple, fontWeight: '700', fontSize: typography.captionMedium.fontSize },
+
+  gateOptionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm },
+  gateOptionChip: {
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    borderRadius: radii.sm, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  gateOptionChipActive: { borderColor: '#00E5FF', backgroundColor: 'rgba(0,229,255,0.12)' },
+  gateOptionChipText: { color: glass.textMuted, fontSize: typography.small.fontSize, fontWeight: '600' },
+  gateOptionChipTextActive: { color: '#00E5FF', fontWeight: '800' },
+  gateCustomRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
+  gateCustomLabel: { color: '#FFA502', fontSize: 10, fontWeight: '700' },
+
+  row: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  inputGroup: { flex: 1 },
+  halfField: { flex: 1 },
+  textArea: { minHeight: 80, textAlignVertical: 'top' },
+
+  pill: {
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2,
+    borderRadius: radii.full, backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1, borderColor: glass.border, marginRight: spacing.sm,
+  },
+  pillActive: { backgroundColor: glass.brandPurpleSurface, borderColor: glass.brandPurple },
+  pillText: { color: glass.textSecondary, fontSize: typography.captionMedium.fontSize, fontWeight: '600' },
+  pillTextActive: { color: glass.brandPurple, fontWeight: '800' },
+
+  datePickerTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: glass.border,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  datePickerIcon: {
+    fontSize: 20,
+  },
+  datePickerTextWrap: {
+    flex: 1,
+  },
+  datePickerValue: {
+    color: colors.textPrimary,
+    fontSize: typography.body.fontSize,
+    fontWeight: '600',
+    fontFamily: glass.monoFont,
+  },
+  datePickerPlaceholder: {
+    color: glass.textMuted,
+    fontSize: typography.body.fontSize,
+  },
+  datePickerHint: {
+    color: glass.textMuted,
+    fontSize: 9,
+    marginTop: 2,
+  },
+  datePickerChevron: {
+    color: glass.textMuted,
+    fontSize: 20,
+    fontWeight: '600',
+  },
+
+  lockedCard: {
+    backgroundColor: 'rgba(255,179,0,0.08)',
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  lockedIcon: {
+    fontSize: 16,
+  },
+  lockedText: {
+    color: glass.statusWarningText,
+    fontSize: typography.small.fontSize,
+    lineHeight: 18,
+    flex: 1,
+  },
+
+  hintCard: {
+    backgroundColor: 'rgba(0,229,255,0.06)',
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+  },
+  hint: {
+    color: glass.textSecondary,
+    fontSize: typography.small.fontSize,
+    lineHeight: 18,
+  },
+
+  submitButton: {
+    borderRadius: radii.lg,
+    overflow: 'hidden',
+  },
+  submitGradient: {
+    paddingVertical: spacing.lg,
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: typography.body.fontSize,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#0D0F18',
+    borderTopLeftRadius: radii.xxl,
+    borderTopRightRadius: radii.xxl,
+    padding: spacing.xxl,
+    paddingBottom: spacing.huge,
+    maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: glass.border,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalTitle: {
+    color: colors.textPrimary,
+    fontSize: typography.h3.fontSize,
+    fontWeight: '800',
+  },
+  closeBtn: {
+    color: glass.brandPurple,
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: '700',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  sheet: {
+    backgroundColor: '#0D0F18',
+    borderTopLeftRadius: radii.xxl,
+    borderTopRightRadius: radii.xxl,
+    padding: spacing.xxl,
+    paddingBottom: spacing.huge,
+    borderWidth: 1,
+    borderColor: glass.border,
+    borderBottomWidth: 0,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: glass.textMuted,
+    alignSelf: 'center',
+    marginBottom: spacing.xl,
+  },
+  sheetTitle: {
+    color: colors.textPrimary,
+    fontSize: typography.h3.fontSize,
+    fontWeight: '800',
+    marginBottom: spacing.lg,
+  },
+
+  datePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: glass.border,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  datePreviewIcon: {
+    fontSize: 18,
+  },
+  datePreviewText: {
+    color: glass.brandPurple,
+    fontSize: typography.captionMedium.fontSize,
+    fontWeight: '700',
+    fontFamily: glass.monoFont,
+    flex: 1,
+  },
+
+  pickerRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  pickerCol: {
+    flex: 1,
+  },
+  pickerLabel: {
+    color: glass.textMuted,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  pickerScroll: {
+    maxHeight: 150,
+  },
+  pickerItem: {
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  pickerItemActive: {
+    backgroundColor: glass.brandPurpleSurface,
+    borderWidth: 1,
+    borderColor: glass.brandPurple,
+  },
+  pickerItemText: {
+    color: glass.textMuted,
+    fontSize: typography.captionMedium.fontSize,
+    fontWeight: '600',
+  },
+  pickerItemTextActive: {
+    color: glass.brandPurple,
+    fontWeight: '800',
+  },
+
+  sheetActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.xl,
+  },
+  sheetCancelBtn: {
+    flex: 1,
+    paddingVertical: spacing.lg,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: glass.border,
+  },
+  sheetCancelText: {
+    color: colors.textPrimary,
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: '700',
+  },
+  sheetConfirmBtn: {
+    flex: 1,
+    borderRadius: radii.md,
+    overflow: 'hidden',
+  },
+  sheetConfirmGradient: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+  },
+  sheetConfirmText: {
+    color: '#FFFFFF',
+    fontSize: typography.bodyMedium.fontSize,
+    fontWeight: '800',
+  },
+
+  polygonBtns: { flexDirection: 'row', gap: spacing.sm },
+  polygonEditBtn: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.sm,
+    alignItems: 'center',
+    backgroundColor: 'rgba(108,92,231,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(108,92,231,0.4)',
+  },
+  polygonEditText: { color: glass.brandPurple, fontSize: 10, fontWeight: '700' },
+  polygonClearBtn: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.sm,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,59,48,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,59,48,0.3)',
+  },
+  polygonClearText: { color: '#FF3B30', fontSize: 10, fontWeight: '700' },
+  polygonDrawBtn: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: glass.border,
+    borderStyle: 'dashed',
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  polygonDrawText: { color: glass.brandPurple, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
+  
+  teamOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  teamOptionLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: spacing.md,
+  },
+  teamOptionText: {
+    color: '#FFF',
+    fontSize: typography.body.fontSize,
+    fontWeight: '600',
+  },
+});

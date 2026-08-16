@@ -2,14 +2,23 @@ import React from 'react';
 import { StyleSheet, Text, View, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography } from '../constants/theme';
+import { formatInNepal, formatTimeInNepal } from '../utils/date';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - spacing.xl * 2;
 
 const CATEGORY_THEMES = {
-  VIP: { gradient: ['#FFD700', '#E6C200'], accent: '#FFD700', label: 'VIP' },
+  PLATINUM: { gradient: ['#E8E8E8', '#D0D0D0'], accent: '#E8E8E8', label: 'PLATINUM' },
+  GOLD: { gradient: ['#FFD700', '#E6C200'], accent: '#FFD700', label: 'GOLD' },
+  SILVER: { gradient: ['#A8A8A8', '#888888'], accent: '#A8A8A8', label: 'SILVER' },
+  BRONZE: { gradient: ['#CD7F32', '#A0652A'], accent: '#CD7F32', label: 'BRONZE' },
+  GENERAL: { gradient: ['#5B9BD5', '#4A7FBA'], accent: '#5B9BD5', label: 'GENERAL' },
+  SUPPORTERS: { gradient: ['#2E7D32', '#1B5E20'], accent: '#81C784', label: 'SUPPORTERS' },
   PREMIUM: { gradient: ['#6C5CE7', '#4834D4'], accent: '#A29BFE', label: 'PREMIUM' },
-  GENERAL: { gradient: ['#374151', '#1F2937'], accent: '#9CA3AF', label: 'GENERAL' },
+  CATEGORY1: { gradient: ['#FFD700', '#E6C200'], accent: '#FFD700', label: 'CATEGORY 1' },
+  CATEGORY2: { gradient: ['#FF6B6B', '#E53935'], accent: '#FF6B6B', label: 'CATEGORY 2' },
+  CATEGORY3: { gradient: ['#6C5CE7', '#4834D4'], accent: '#A29BFE', label: 'CATEGORY 3' },
+  CATEGORY4: { gradient: ['#EF5350', '#C62828'], accent: '#EF5350', label: 'CATEGORY 4' },
 };
 
 function PerforatedEdge() {
@@ -41,7 +50,8 @@ export default function TicketCard({ ticket, showQR = true }) {
   const matchTitle = ticket.match?.title || ticket.matchTitle || 'Match';
   const teamA = ticket.match?.teamA || ticket.teamA || '';
   const teamB = ticket.match?.teamB || ticket.teamB || '';
-  const venue = ticket.match?.venue || ticket.venue || '';
+  const venueObj = ticket.match?.venue || ticket.venue;
+  const venue = venueObj?.name || venueObj || '';
   const seatLabel = ticket.seat?.seatLabel || ticket.seatLabel || 'N/A';
   const category = (ticket.seat?.category || ticket.category || 'general').toUpperCase();
   const ticketCode = ticket.ticketCode || 'N/A';
@@ -55,8 +65,8 @@ export default function TicketCard({ ticket, showQR = true }) {
   let timeStr = '';
   if (matchDate) {
     const d = new Date(matchDate);
-    dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    dateStr = formatInNepal(matchDate, { weekday: 'short', month: 'short', day: 'numeric' });
+    timeStr = formatTimeInNepal(matchDate, { hour: '2-digit', minute: '2-digit', hour12: true });
   }
 
   return (

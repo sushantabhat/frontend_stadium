@@ -1,21 +1,79 @@
-import React, { useContext } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { User, Mail, Shield, CalendarDays, Palette, Bell, MapPin, Globe, CircleHelp, MessageCircle, FileText, Lock, LogOut, Ticket, CreditCard, Users, Pencil, Check, X } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { getRoleDisplayName } from '../../constants/roleNavigation';
 import { ROLES } from '../../constants/config';
+import { fetchMyBookings } from '../../services/bookingService';
+import { fetchMyTickets } from '../../services/ticketService';
 
 export default function ProfileScreen({ navigation }) {
-  const { userInfo, logout } = useContext(AuthContext);
+  const { userInfo, logout, updateUserInfo } = useContext(AuthContext);
+  const [fanStats, setFanStats] = useState(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [isSavingName, setIsSavingName] = useState(false);
   const initials = (userInfo?.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const isAdmin = userInfo?.role === ROLES.ADMIN;
   const isStaff = userInfo?.role === ROLES.STAFF;
   const isSupervisor = userInfo?.role === ROLES.SUPERVISOR;
+  const isFan = userInfo?.role === ROLES.USER;
+
+  const startEditingName = () => {
+    setNameDraft(userInfo?.name || '');
+    setIsEditingName(true);
+  };
+
+  const cancelEditingName = () => {
+    setIsEditingName(false);
+    setNameDraft('');
+  };
+
+  const saveName = async () => {
+    const trimmed = nameDraft.trim();
+    if (trimmed.length < 3) {
+      Alert.alert('Invalid Name', 'Name must be at least 3 characters.');
+      return;
+    }
+    if (trimmed === (userInfo?.name || '').trim()) {
+      cancelEditingName();
+      return;
+    }
+    setIsSavingName(true);
+    try {
+      await updateUserInfo({ name: trimmed });
+      cancelEditingName();
+    } catch (err) {
+      Alert.alert('Update Failed', err.response?.data?.message || 'Could not update your name.');
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
+  const loadFanStats = useCallback(async () => {
+    if (!isFan) return;
+    try {
+      const [bookings, tickets] = await Promise.all([fetchMyBookings(), fetchMyTickets()]);
+      const confirmed = (bookings || []).filter((b) => b.status === 'confirmed');
+      setFanStats({
+        bookings: confirmed.length,
+        spent: confirmed.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0),
+        tickets: (tickets || []).length,
+      });
+    } catch (_err) {
+      setFanStats(null);
+    }
+  }, [isFan]);
+
+  useFocusEffect(useCallback(() => { loadFanStats(); }, [loadFanStats]));
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Hero Header */}
         <LinearGradient colors={[`${colors.primaryDark}EE`, `${colors.primary}BB`, `${colors.primaryDark}66`]} style={styles.hero}>
@@ -26,7 +84,33 @@ export default function ProfileScreen({ navigation }) {
               </View>
             </LinearGradient>
           </View>
-          <Text style={styles.name}>{userInfo?.name || 'User'}</Text>
+          {isEditingName ? (
+            <View style={styles.nameEditRow}>
+              <TextInput
+                style={styles.nameInput}
+                value={nameDraft}
+                onChangeText={setNameDraft}
+                placeholder="Your full name"
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                autoCapitalize="words"
+                maxLength={100}
+                editable={!isSavingName}
+                onSubmitEditing={saveName}
+                returnKeyType="done"
+              />
+              <TouchableOpacity style={styles.nameActionBtn} onPress={saveName} disabled={isSavingName} activeOpacity={0.7}>
+                {isSavingName ? <ActivityIndicator color="#FFF" size="small" /> : <Check size={20} color="#FFF" strokeWidth={2.5} />}
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.nameActionBtn, styles.nameActionBtnMuted]} onPress={cancelEditingName} disabled={isSavingName} activeOpacity={0.7}>
+                <X size={20} color="rgba(255,255,255,0.8)" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.nameRow} onPress={startEditingName} activeOpacity={0.7}>
+              <Text style={styles.name}>{userInfo?.name || 'User'}</Text>
+              <Pencil size={16} color="rgba(255,255,255,0.7)" strokeWidth={2} />
+            </TouchableOpacity>
+          )}
           <Text style={styles.email}>{userInfo?.email || 'Not available'}</Text>
           <View style={styles.roleBadge}>
             <LinearGradient colors={[`${colors.primary}30`, `${colors.primary}15`]} style={styles.roleBadgeInner}>
@@ -40,13 +124,13 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.section}>
           <View style={styles.statsRow}>
             {[
-              { value: isAdmin ? '12' : isSupervisor ? '8' : isStaff ? '48' : '3', label: isAdmin ? 'Matches' : isSupervisor ? 'Incidents' : isStaff ? 'Scans' : 'Bookings', icon: isAdmin ? '🏟️' : isSupervisor ? '🚨' : isStaff ? '📋' : '🎫' },
-              { value: isAdmin ? '₹2.4L' : isSupervisor ? '94%' : isStaff ? '99%' : '₹4,800', label: isAdmin ? 'Revenue' : isSupervisor ? 'Resolved' : isStaff ? 'Accuracy' : 'Spent', icon: isAdmin ? '💰' : isSupervisor ? '✅' : isStaff ? '✅' : '💳' },
-              { value: isAdmin ? '186' : isSupervisor ? '4' : isStaff ? '6' : '12', label: isAdmin ? 'Users' : isSupervisor ? 'Gates' : isStaff ? 'Gates' : 'Tickets', icon: isAdmin ? '👥' : isSupervisor ? '🚪' : isStaff ? '🚪' : '🎟️' },
+              { value: isAdmin ? '12' : isSupervisor ? '8' : isStaff ? '48' : fanStats ? String(fanStats.bookings) : '—', label: isAdmin ? 'Matches' : isSupervisor ? 'Incidents' : isStaff ? 'Scans' : 'Bookings', Icon: Ticket, color: colors.primary },
+              { value: isAdmin ? 'Rs.2.4L' : isSupervisor ? '94%' : isStaff ? '99%' : fanStats ? `Rs.${fanStats.spent.toLocaleString()}` : '—', label: isAdmin ? 'Revenue' : isSupervisor ? 'Resolved' : isStaff ? 'Accuracy' : 'Spent', Icon: CreditCard, color: colors.warning },
+              { value: isAdmin ? '186' : isSupervisor ? '4' : isStaff ? '6' : fanStats ? String(fanStats.tickets) : '—', label: isAdmin ? 'Users' : isSupervisor ? 'Gates' : isStaff ? 'Gates' : 'Tickets', Icon: Users, color: colors.info },
             ].map((stat) => (
               <View key={stat.label} style={styles.statCard}>
-                <Text style={styles.statIcon}>{stat.icon}</Text>
-                <Text style={styles.statValue}>{stat.value}</Text>
+                <stat.Icon size={20} color={stat.color} strokeWidth={2} />
+                <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{stat.value}</Text>
                 <Text style={styles.statLabel}>{stat.label}</Text>
               </View>
             ))}
@@ -58,14 +142,14 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.card}>
             {[
-              { icon: '👤', label: 'Full Name', value: userInfo?.name || 'User' },
-              { icon: '📧', label: 'Email', value: userInfo?.email || 'Not available' },
-              { icon: '🛡️', label: 'Role', value: getRoleDisplayName(userInfo?.role) },
-              { icon: '📅', label: 'Member Since', value: '2025' },
+              { Icon: User, label: 'Full Name', value: userInfo?.name || 'User' },
+              { Icon: Mail, label: 'Email', value: userInfo?.email || 'Not available' },
+              { Icon: Shield, label: 'Role', value: getRoleDisplayName(userInfo?.role) },
+              { Icon: CalendarDays, label: 'Member Since', value: '2025' },
             ].map((item, idx) => (
               <View key={item.label} style={[styles.cardItem, idx < 3 && styles.cardItemBorder]}>
                 <View style={styles.cardItemLeft}>
-                  <Text style={styles.cardItemIcon}>{item.icon}</Text>
+                  <item.Icon size={18} color={colors.textSecondary} strokeWidth={2} />
                   <View>
                     <Text style={styles.cardItemLabel}>{item.label}</Text>
                     <Text style={styles.cardItemValue}>{item.value}</Text>
@@ -82,14 +166,14 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Preferences</Text>
           <View style={styles.card}>
             {[
-              { icon: '🔔', label: 'Notifications', value: 'On' },
-              { icon: '🌙', label: 'Dark Mode', value: 'Always' },
-              { icon: '📍', label: 'Location', value: 'Mumbai' },
-              { icon: '🌐', label: 'Language', value: 'English' },
+              { Icon: Palette, label: 'Background Theme', route: 'Settings' },
+              { Icon: Bell, label: 'Notifications', value: 'On' },
+              { Icon: MapPin, label: 'Location', value: 'Nepal' },
+              { Icon: Globe, label: 'Language', value: 'English' },
             ].map((item, idx) => (
-              <TouchableOpacity key={item.label} style={[styles.cardItem, idx < 3 && styles.cardItemBorder]} activeOpacity={0.6}>
+              <TouchableOpacity key={item.label} style={[styles.cardItem, idx < 3 && styles.cardItemBorder]} activeOpacity={0.6} onPress={item.route ? () => navigation.navigate(item.route) : undefined}>
                 <View style={styles.cardItemLeft}>
-                  <Text style={styles.cardItemIcon}>{item.icon}</Text>
+                  <item.Icon size={18} color={colors.textSecondary} strokeWidth={2} />
                   <View>
                     <Text style={styles.cardItemLabel}>{item.label}</Text>
                     <Text style={styles.cardItemValue}>{item.value}</Text>
@@ -106,14 +190,14 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Support</Text>
           <View style={styles.card}>
             {[
-              { icon: '❓', label: 'Help Center' },
-              { icon: '💬', label: 'Contact Support' },
-              { icon: '📜', label: 'Terms of Service' },
-              { icon: '🔒', label: 'Privacy Policy' },
+              { Icon: CircleHelp, label: 'Help Center' },
+              { Icon: MessageCircle, label: 'Contact Support' },
+              { Icon: FileText, label: 'Terms of Service' },
+              { Icon: Lock, label: 'Privacy Policy' },
             ].map((item, idx) => (
               <TouchableOpacity key={item.label} style={[styles.cardItem, idx < 3 && styles.cardItemBorder]} activeOpacity={0.6}>
                 <View style={styles.cardItemLeft}>
-                  <Text style={styles.cardItemIcon}>{item.icon}</Text>
+                  <item.Icon size={18} color={colors.textSecondary} strokeWidth={2} />
                   <Text style={styles.cardItemLabel}>{item.label}</Text>
                 </View>
                 <Text style={styles.cardItemArrow}>›</Text>
@@ -126,7 +210,7 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.section}>
           <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.7}>
             <LinearGradient colors={[`${colors.danger}20`, `${colors.danger}08`]} style={styles.logoutInner}>
-              <Text style={styles.logoutIcon}>🚪</Text>
+              <LogOut size={18} color={colors.danger} strokeWidth={2} />
               <Text style={styles.logoutText}>Sign Out</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -141,7 +225,7 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   scroll: {},
 
   // Hero
@@ -169,6 +253,41 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: '#FFF', fontSize: 32, fontWeight: '900' },
   name: { color: '#FFF', fontSize: typography.h2.fontSize, fontWeight: '900', marginBottom: spacing.xs },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  nameEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  nameInput: {
+    color: '#FFF',
+    fontSize: typography.h2.fontSize,
+    fontWeight: '900',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    minWidth: 180,
+  },
+  nameActionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.success,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nameActionBtnMuted: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
   email: { color: 'rgba(255,255,255,0.6)', fontSize: typography.caption.fontSize, marginBottom: spacing.lg },
   roleBadge: { borderRadius: radii.full, overflow: 'hidden' },
   roleBadgeInner: {
@@ -198,7 +317,7 @@ const styles = StyleSheet.create({
   },
   statIcon: { fontSize: 20, marginBottom: spacing.sm },
   statValue: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '900', marginBottom: spacing.xxs },
-  statLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '600' },
+  statLabel: { color: colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 0.5 },
 
   // Sections
   sectionTitle: {
@@ -227,9 +346,9 @@ const styles = StyleSheet.create({
   cardItemBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderSubtle },
   cardItemLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
   cardItemIcon: { fontSize: 18 },
-  cardItemLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '700', letterSpacing: 0.5, marginBottom: 1 },
+  cardItemLabel: { color: colors.textSecondary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 1 },
   cardItemValue: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '600' },
-  cardItemArrow: { color: colors.textMuted, fontSize: 20, fontWeight: '300' },
+  cardItemArrow: { color: colors.textSecondary, fontSize: 20, fontWeight: '300' },
 
   // Logout
   logoutBtn: { borderRadius: radii.xl, overflow: 'hidden', borderWidth: 1, borderColor: `${colors.danger}25` },
@@ -244,8 +363,8 @@ const styles = StyleSheet.create({
   logoutText: { color: colors.danger, fontSize: typography.bodyMedium.fontSize, fontWeight: '700' },
 
   version: {
-    color: colors.textMuted,
-    fontSize: 9,
+    color: colors.textSecondary,
+    fontSize: 10,
     textAlign: 'center',
     opacity: 0.5,
   },

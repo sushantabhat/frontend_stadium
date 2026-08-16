@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ThemeContext } from '../context/ThemeContext';
 import { colors, spacing, typography } from '../constants/theme';
 
 export default function LoadingScreen({ message = 'Loading...' }) {
+  const theme = useContext(ThemeContext);
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme?.backgroundColor || colors.background }]}>
       <View style={styles.loaderWrap}>
         <ActivityIndicator size="large" color={colors.primaryLight} />
       </View>

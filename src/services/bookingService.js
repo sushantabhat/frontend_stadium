@@ -19,3 +19,33 @@ export async function fetchMyBookings() {
   const response = await api.get('/api/bookings/my-bookings');
   return response.data.bookings;
 }
+
+export async function initiateKhaltiPayment(matchId, seatIds, amount) {
+  const response = await api.post('/api/payments/khalti/init', { matchId, seatIds, amount });
+  return response.data;
+}
+
+export async function verifyKhaltiPayment(pidx, matchId, seatIds) {
+  const response = await api.post('/api/payments/khalti/verify', { pidx, matchId, seatIds });
+  return response.data;
+}
+
+export async function initiateCardPayment(cardDetails) {
+  const response = await api.post('/api/payments/card/init', cardDetails);
+  return response.data;
+}
+
+export async function confirmCardBooking(transactionId, matchId, seatIds) {
+  const response = await api.post('/api/payments/card/confirm', { transactionId, matchId, seatIds });
+  return response.data;
+}
+
+export async function initiateEsewaPayment(matchId, seatIds, amount) {
+  const response = await api.post('/api/payments/esewa/initiate', { matchId, seatIds, amount });
+  return response.data;
+}
+
+export async function verifyEsewaPayment(data) {
+  const response = await api.post('/api/payments/esewa/verify', { data });
+  return response.data;
+}

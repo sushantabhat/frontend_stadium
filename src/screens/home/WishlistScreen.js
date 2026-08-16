@@ -1,15 +1,17 @@
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar, StyleSheet, Text, View } from 'react-native';
+import ScreenHeader from '../../components/ScreenHeader';
 import { colors, spacing, typography } from '../../constants/theme';
 
-export default function WishlistScreen() {
+export default function WishlistScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+      <ScreenHeader title="My Wishlist" onBack={() => navigation.goBack()} />
       <View style={styles.content}>
         <Text style={styles.icon}>❤️</Text>
-        <Text style={styles.title}>My Wishlist</Text>
+        <Text style={styles.title}>No Saved Matches</Text>
         <Text style={styles.text}>Save matches you&apos;re interested in for quick access later.</Text>
       </View>
     </SafeAreaView>
@@ -17,7 +19,7 @@ export default function WishlistScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   content: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: spacing.xxl,

@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Alert, Modal, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import api from '../../services/api';
 import { LinearGradient } from 'expo-linear-gradient';
 import ScreenHeader from '../../components/ScreenHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
+import { AlertTriangle, TriangleAlert, Wifi, MonitorOff, UserX } from 'lucide-react-native';
 
 /* ─── Issue types for escalation ─── */
 const ISSUE_TYPES = [
-  { key: 'fraud_duplicate', label: 'Fraud — Duplicate Scan', severity: 'high', icon: '⚠️' },
-  { key: 'fraud_fake', label: 'Fraud — Fake Ticket', severity: 'critical', icon: '🚨' },
-  { key: 'tech_api', label: 'Technical — API Timeout', severity: 'medium', icon: '📡' },
-  { key: 'tech_system', label: 'Technical — System Down', severity: 'critical', icon: '💻' },
-  { key: 'ops_complaint', label: 'Operational — Customer Complaint', severity: 'low', icon: '👤' },
+  { key: 'fraud_duplicate', label: 'Fraud — Duplicate Scan', severity: 'high', Icon: AlertTriangle },
+  { key: 'fraud_fake', label: 'Fraud — Fake Ticket', severity: 'critical', Icon: TriangleAlert },
+  { key: 'tech_api', label: 'Technical — API Timeout', severity: 'medium', Icon: Wifi },
+  { key: 'tech_system', label: 'Technical — System Down', severity: 'critical', Icon: MonitorOff },
+  { key: 'ops_complaint', label: 'Operational — Customer Complaint', severity: 'low', Icon: UserX },
 ];
 
 export default function TicketVerifyScreen({ route, navigation }) {
@@ -19,6 +21,7 @@ export default function TicketVerifyScreen({ route, navigation }) {
   const [showEscalate, setShowEscalate] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [issueNote, setIssueNote] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isSuccess = status === 'success';
   const isDuplicate = status === 'duplicate';
@@ -48,18 +51,33 @@ export default function TicketVerifyScreen({ route, navigation }) {
 
   const handleNext = () => { navigation.goBack(); };
 
-  /* ── Escalation submit (mock — would POST to /api/incidents) ── */
-  const handleSubmitIssue = () => {
+  /* ── Escalation submit (POST to /api/incidents) ── */
+  const handleSubmitIssue = async () => {
     if (!selectedIssue) {
       Alert.alert('Required', 'Select an issue type.');
       return;
     }
     const issue = ISSUE_TYPES.find(i => i.key === selectedIssue);
-    Alert.alert(
-      'Issue Reported',
-      `"${issue.label}" has been reported to the supervisor on duty.\n\nThey will investigate and respond shortly.`,
-      [{ text: 'OK', onPress: () => { setShowEscalate(false); setSelectedIssue(null); setIssueNote(''); } }]
-    );
+    
+    setIsSubmitting(true);
+    try {
+      await api.post('/incidents', {
+        type: issue.key,
+        severity: issue.severity,
+        ticketCode: ticketCode || null,
+        notes: issueNote
+      });
+      
+      Alert.alert(
+        'Issue Reported',
+        `"${issue.label}" has been reported to the supervisor on duty.\n\nThey will investigate and respond shortly.`,
+        [{ text: 'OK', onPress: () => { setShowEscalate(false); setSelectedIssue(null); setIssueNote(''); } }]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to submit incident report. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -175,7 +193,7 @@ export default function TicketVerifyScreen({ route, navigation }) {
                   onPress={() => setSelectedIssue(issue.key)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.issueIcon}>{issue.icon}</Text>
+                  <issue.Icon size={18} color={selectedIssue === issue.key ? glass.brandPurple : glass.textMuted} strokeWidth={2} />
                   <Text style={[styles.issueLabel, selectedIssue === issue.key && styles.issueLabelActive]}>{issue.label}</Text>
                   {selectedIssue === issue.key && <Text style={styles.issueCheck}>✓</Text>}
                 </TouchableOpacity>
@@ -192,9 +210,9 @@ export default function TicketVerifyScreen({ route, navigation }) {
               />
             </ScrollView>
 
-            <TouchableOpacity style={styles.modalSubmitBtn} onPress={handleSubmitIssue} activeOpacity={0.85}>
+            <TouchableOpacity style={styles.modalSubmitBtn} onPress={handleSubmitIssue} activeOpacity={0.85} disabled={isSubmitting}>
               <LinearGradient colors={[glass.neonMagenta, glass.neonPurple]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalSubmitGradient}>
-                <Text style={styles.modalSubmitText}>Submit Report</Text>
+                {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalSubmitText}>Submit Report</Text>}
               </LinearGradient>
             </TouchableOpacity>
           </View>

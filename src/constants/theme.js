@@ -1,7 +1,7 @@
 import { Platform, StyleSheet } from 'react-native';
 
 const palette = {
-  background: '#0F111A',
+  background: '#07080B',
   backgroundDeep: '#080A12',
   surface: '#1A1D2A',
   surfaceElevated: '#222638',
@@ -42,12 +42,29 @@ const palette = {
   infoLight: '#40C4FF',
   infoSurface: 'rgba(0, 176, 255, 0.12)',
 
-  vip: '#FFD700',
-  vipSurface: 'rgba(255, 215, 0, 0.12)',
+  platinum: '#E8E8E8',
+  platinumSurface: 'rgba(232, 232, 232, 0.12)',
   premium: '#6C5CE7',
   premiumSurface: 'rgba(108, 92, 231, 0.12)',
-  general: '#78909C',
-  generalSurface: 'rgba(120, 144, 156, 0.12)',
+  general: '#5B9BD5',
+  generalSurface: 'rgba(91, 155, 213, 0.12)',
+
+  category1: '#FFD700',
+  category1Surface: 'rgba(255, 215, 0, 0.12)',
+  category2: '#FF6B6B',
+  category2Surface: 'rgba(255, 107, 107, 0.12)',
+  category3: '#A29BFE',
+  category3Surface: 'rgba(162, 155, 254, 0.12)',
+  category4: '#EF5350',
+  category4Surface: 'rgba(239, 83, 80, 0.12)',
+  gold: '#FFD700',
+  goldSurface: 'rgba(255, 215, 0, 0.12)',
+  silver: '#A8A8A8',
+  silverSurface: 'rgba(168, 168, 168, 0.12)',
+  bronze: '#CD7F32',
+  bronzeSurface: 'rgba(205, 127, 50, 0.12)',
+  supporters: '#81C784',
+  supportersSurface: 'rgba(129, 199, 132, 0.12)',
 
   gradientStart: '#6C5CE7',
   gradientEnd: '#4834D4',
@@ -70,6 +87,7 @@ export const glass = {
   /* Component surfaces: semi-transparent dark cards */
   surface: 'rgba(18, 21, 34, 0.65)',
   surfaceElevated: 'rgba(18, 21, 34, 0.75)',
+  card: '#161B22',
 
   /* Borders: super-fine translucent high-contrast paths */
   border: 'rgba(255, 255, 255, 0.08)',
@@ -84,6 +102,13 @@ export const glass = {
   neonMagenta: '#FF2E93',
   neonPurple: '#8A2BE2',
   neonAmber: '#FFEE55',
+
+  /* TICKETPRO admin palette */
+  brandPurple: '#7B61FF',
+  brandPurpleGlow: 'rgba(123, 97, 255, 0.35)',
+  brandPurpleSurface: 'rgba(123, 97, 255, 0.15)',
+  occupancyTeal: '#00D4AA',
+  occupancyTealGlow: 'rgba(0, 212, 170, 0.25)',
 
   /* Neon glow colors (for shadows) */
   neonCyanGlow: 'rgba(0, 229, 255, 0.35)',
@@ -281,6 +306,19 @@ export const shadows = {
     shadowRadius: 24,
     elevation: 8,
   },
+};
+
+export const CATEGORY_COLORS = {
+  platinum: { accent: palette.platinum, bg: palette.platinumSurface, label: 'Platinum' },
+  gold: { accent: palette.gold, bg: palette.goldSurface, label: 'Gold' },
+  silver: { accent: palette.silver, bg: palette.silverSurface, label: 'Silver' },
+  bronze: { accent: palette.bronze, bg: palette.bronzeSurface, label: 'Bronze' },
+  general: { accent: palette.general, bg: palette.generalSurface, label: 'General' },
+  supporters: { accent: palette.supporters, bg: palette.supportersSurface, label: 'Supporters' },
+  category1: { accent: palette.category1, bg: palette.category1Surface, label: 'Category 1' },
+  category2: { accent: palette.category2, bg: palette.category2Surface, label: 'Category 2' },
+  category3: { accent: palette.category3, bg: palette.category3Surface, label: 'Category 3' },
+  category4: { accent: palette.category4, bg: palette.category4Surface, label: 'Category 4' },
 };
 
 export const commonStyles = StyleSheet.create({

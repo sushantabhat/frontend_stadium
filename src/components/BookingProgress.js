@@ -9,8 +9,34 @@ const steps = [
   { key: 'done', label: 'Done' },
 ];
 
-export default function BookingProgress({ currentStep = 'select' }) {
+export default function BookingProgress({ currentStep = 'select', compact = false }) {
   const currentIdx = steps.findIndex(s => s.key === currentStep);
+
+  if (compact) {
+    return (
+      <View style={styles.compactContainer}>
+        {steps.map((step, idx) => {
+          const isActive = idx === currentIdx;
+          const isCompleted = idx < currentIdx;
+          return (
+            <React.Fragment key={step.key}>
+              <View style={[
+                styles.compactDot,
+                isCompleted && styles.compactDotCompleted,
+                isActive && styles.compactDotActive,
+              ]} />
+              {idx < steps.length - 1 && (
+                <View style={[
+                  styles.compactLine,
+                  idx < currentIdx && styles.compactLineCompleted,
+                ]} />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -86,4 +112,24 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xs, marginBottom: spacing.lg + spacing.xs,
   },
   lineCompleted: { backgroundColor: colors.success },
+
+  compactContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  compactDot: {
+    width: 8, height: 8, borderRadius: 4,
+    backgroundColor: colors.border,
+  },
+  compactDotCompleted: { backgroundColor: colors.success },
+  compactDotActive: { backgroundColor: colors.primary },
+  compactLine: {
+    flex: 1, height: 2, backgroundColor: colors.border,
+    marginHorizontal: spacing.xs,
+  },
+  compactLineCompleted: { backgroundColor: colors.success },
 });

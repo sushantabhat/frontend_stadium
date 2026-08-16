@@ -7,23 +7,25 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography } from '../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH - spacing.xl * 2;
+const CARD_WIDTH = SCREEN_WIDTH;
 const CARD_HEIGHT = 180;
 const AUTO_SCROLL_INTERVAL = 4000;
 
 const BANNERS = [
   {
     id: '1',
-    title: 'IPL 2026\nis Here!',
+    title: 'NPL 2026\nis Here!',
     subtitle: 'Book your seats before they sell out',
     cta: 'Book Now',
-    gradient: ['#6C5CE7', '#4834D4'],
-    emoji: '🏏',
+    gradient: ['#1A2980', '#26D0CE'],
+    emoji: '',
+    image: require('../../assets/images/npl_banner.jpg'),
     tag: 'SEASON OPENER',
   },
   {
@@ -32,7 +34,8 @@ const BANNERS = [
     subtitle: 'The biggest rivalry of the season',
     cta: 'Get Tickets',
     gradient: ['#0B1C3D', '#1A3A5C'],
-    emoji: '⚽',
+    emoji: '',
+    image: require('../../assets/images/derby_banner.jpg'),
     tag: 'SOLD OUT SOON',
   },
   {
@@ -41,9 +44,9 @@ const BANNERS = [
     subtitle: 'Premium seats, unlimited food & drinks',
     cta: 'Upgrade',
     gradient: ['#FFD700', '#E6C200'],
-    emoji: '🥂',
+    emoji: '',
+    image: require('../../assets/images/vip_banner.jpg'),
     tag: 'EXCLUSIVE',
-    dark: true,
   },
   {
     id: '4',
@@ -51,7 +54,8 @@ const BANNERS = [
     subtitle: 'Invite friends, get 20% off next booking',
     cta: 'Invite Now',
     gradient: ['#00C853', '#00A844'],
-    emoji: '🎁',
+    emoji: '',
+    image: require('../../assets/images/refer_banner.jpg'),
     tag: 'LIMITED TIME',
   },
 ];
@@ -101,14 +105,19 @@ export default function BannerCarousel({ onBannerPress }) {
         onPress={() => onBannerPress?.(item)}
         style={styles.cardWrap}
       >
+        {/* Full-bleed Banner Image — absolute at wrapper level */}
+        {item.image && (
+          <Image source={item.image} style={styles.fullBannerImage} resizeMode="cover" />
+        )}
+
         <LinearGradient
-          colors={item.gradient}
+          colors={item.image ? ['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.1)', 'rgba(0,0,0,0.8)'] : item.gradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.card}
+          style={styles.gradientOverlay}
         >
           {/* Background emoji — large, faded */}
-          <Text style={styles.bgEmoji}>{item.emoji}</Text>
+          {item.emoji ? <Text style={styles.bgEmoji}>{item.emoji}</Text> : null}
 
           {/* Tag */}
           <View style={[styles.tag, isDark && styles.tagDark]}>
@@ -196,7 +205,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
   },
   listContent: {
-    paddingHorizontal: spacing.xl,
     gap: spacing.md,
   },
   cardWrap: {
@@ -204,24 +212,26 @@ const styles = StyleSheet.create({
     height: CARD_HEIGHT,
     borderRadius: radii.xl,
     overflow: 'hidden',
-  },
-  card: {
-    flex: 1,
-    borderRadius: radii.xl,
-    padding: spacing.xxl,
-    justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
-    overflow: 'hidden',
   },
 
   bgEmoji: {
     position: 'absolute',
-    right: -8,
-    bottom: -12,
-    fontSize: 100,
-    opacity: 0.12,
-    transform: [{ rotate: '-12deg' }],
+    right: -20,
+    bottom: -20,
+    fontSize: 140,
+    opacity: 0.15,
+  },
+  fullBannerImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  gradientOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    padding: spacing.xxl,
+    justifyContent: 'space-between',
   },
 
   tag: {

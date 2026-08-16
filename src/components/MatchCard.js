@@ -1,9 +1,18 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography, shadows } from '../constants/theme';
+import { formatInNepal, formatTimeInNepal } from '../utils/date';
+import { imageUri } from '../utils/imageUri';
 
-const TEAM_EMOJIS = { India: '🇮🇳', Australia: '🇦🇺', England: '🏴', Pakistan: '🇵🇰', SouthAfrica: '🇿🇦', NewZealand: '🇳🇿', SriLanka: '🇱🇰', Bangladesh: '🇧🇩', WestIndies: '🌴', Afghanistan: '🇦🇫' };
+function getInitials(name) {
+  if (!name) return '??';
+  return name.split(/\s+/).map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function isValidLogo(uri) {
+  return typeof uri === 'string' && uri.trim().length > 0;
+}
 
 const TINT_THEMES = [
   ['#1a0533', '#0d1b3e', '#162040'],
@@ -23,10 +32,11 @@ function getStatusConfig(status) {
 }
 
 export default function MatchCard({ match, onPress, variant = 'horizontal', tintIndex = 0 }) {
-  const date = new Date(match.matchDate);
+  if (!match) return null;
+  const date = match.matchDate ? new Date(match.matchDate) : new Date();
   const day = date.getDate();
-  const month = date.toLocaleString('default', { month: 'short' }).toUpperCase();
-  const time = date.toLocaleTimeString('default', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const month = formatInNepal(date, { month: 'short' }).toUpperCase();
+  const time = formatTimeInNepal(date, { hour: '2-digit', minute: '2-digit', hour12: true });
   const statusConfig = getStatusConfig(match.status);
   const available = match.seatStats?.available ?? match.totalSeats ?? 0;
   const total = match.seatStats?.total ?? match.totalSeats ?? 0;
@@ -36,8 +46,14 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
   if (variant === 'hero') {
     return (
       <TouchableOpacity style={styles.heroCard} onPress={onPress} activeOpacity={0.92}>
-        <LinearGradient colors={tint} style={styles.heroInner}>
-          {/* Overlapping live badge */}
+        {match.imageUrl ? (
+          <Image source={{ uri: imageUri(match.imageUrl) }} style={styles.heroCardBg} resizeMode="cover" />
+        ) : null}
+        <LinearGradient
+          colors={match.imageUrl ? ['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.85)'] : tint}
+          style={styles.heroContent}
+        >
+          {/* Top: date + status */}
           <View style={styles.heroTop}>
             <View style={styles.heroDateBlock}>
               <Text style={styles.heroDay}>{day}</Text>
@@ -49,89 +65,145 @@ export default function MatchCard({ match, onPress, variant = 'horizontal', tint
             </View>
           </View>
 
-          {/* Teams — asymmetric layout */}
+          {/* Teams — with logos if available */}
           <View style={styles.heroTeamsRow}>
             <View style={styles.heroTeam}>
-              <Text style={styles.heroTeamEmoji}>{TEAM_EMOJIS[match.teamA] || '🏏'}</Text>
-              <Text style={styles.heroTeamName}>{match.teamA}</Text>
+              {isValidLogo(match.teamALogo) ? (
+                <Image source={{ uri: imageUri(match.teamALogo) }} style={styles.heroTeamLogo} resizeMode="contain" />
+              ) : (
+                <View style={styles.teamCircleLarge}>
+                  <Text style={styles.teamCircleLargeText}>{getInitials(match.teamA)}</Text>
+                </View>
+              )}
+              <Text style={styles.heroTeamName} numberOfLines={2}>{match.teamA || 'TBA'}</Text>
             </View>
-            <View style={styles.heroVsBadge}>
-              <Text style={styles.heroVs}>VS</Text>
+            <View style={styles.heroVsCircle}>
+              <Text style={styles.heroVsText}>VS</Text>
             </View>
             <View style={styles.heroTeam}>
-              <Text style={styles.heroTeamEmoji}>{TEAM_EMOJIS[match.teamB] || '🏏'}</Text>
-              <Text style={styles.heroTeamName}>{match.teamB}</Text>
+              {isValidLogo(match.teamBLogo) ? (
+                <Image source={{ uri: imageUri(match.teamBLogo) }} style={styles.heroTeamLogo} resizeMode="contain" />
+              ) : (
+                <View style={styles.teamCircleLarge}>
+                  <Text style={styles.teamCircleLargeText}>{getInitials(match.teamB)}</Text>
+                </View>
+              )}
+              <Text style={styles.heroTeamName} numberOfLines={2}>{match.teamB || 'TBA'}</Text>
             </View>
           </View>
 
           <Text style={styles.heroTitle}>{match.title}</Text>
-          <Text style={styles.heroVenue}>📍 {match.venue}</Text>
+          <Text style={styles.heroVenue}>📍 {match.venue?.name || match.venue}</Text>
 
-          {/* Bottom bar with progress */}
+          {/* Bottom: time + sold bar */}
           <View style={styles.heroBottom}>
             <Text style={styles.heroTime}>⏰ {time}</Text>
-            {total > 0 && (
-              <View style={styles.heroSoldWrap}>
-                <View style={styles.heroSoldBar}>
-                  <View style={[styles.heroSoldFill, { width: `${soldPct}%` }]} />
+            <View style={styles.heroBottomRight}>
+              {total > 0 && (
+                <View style={styles.heroSoldWrap}>
+                  <View style={styles.heroSoldBar}>
+                    <View style={[styles.heroSoldFill, { width: `${soldPct}%` }]} />
+                  </View>
+                  <Text style={styles.heroSoldText}>{soldPct}% sold</Text>
                 </View>
-                <Text style={styles.heroSoldText}>{soldPct}% sold</Text>
-              </View>
-            )}
+              )}
+              {available > 0 && available <= 20 && (
+                <View style={styles.fewSeatsBadge}>
+                  <Text style={styles.fewSeatsText}>🔥 {available} left!</Text>
+                </View>
+              )}
+            </View>
           </View>
         </LinearGradient>
-
-        {/* Overlapping badge — breaks the card edge */}
-        {available > 0 && available <= 20 && (
-          <View style={styles.fewSeatsBadge}>
-            <Text style={styles.fewSeatsText}>🔥 Only {available} left!</Text>
-          </View>
-        )}
       </TouchableOpacity>
     );
   }
 
-  // Horizontal variant
+  // Horizontal variant — full-bleed image card (admin-aligned)
+  const hasThumb = Boolean(match.imageUrl);
+  const pricing = match.pricing || {};
+  const prices = Object.values(pricing).filter((p) => typeof p === 'number' && p > 0);
+  const lowestPrice = prices.length > 0 ? Math.min(...prices) : 0;
+
   return (
     <TouchableOpacity style={styles.hCard} onPress={onPress} activeOpacity={0.92}>
-      <LinearGradient colors={tint} style={styles.hCardInner}>
-        {/* Date block — large, prominent */}
-        <View style={styles.hDateBlock}>
-          <Text style={styles.hDay}>{day}</Text>
-          <Text style={styles.hMonth}>{month}</Text>
-          <Text style={styles.hTime}>{time}</Text>
-        </View>
-
-        {/* Content */}
-        <View style={styles.hContent}>
-          <View style={styles.hTop}>
-            <View style={[styles.hStatusDot, { backgroundColor: statusConfig.bg }]} />
-            <Text style={[styles.hStatus, { color: statusConfig.color }]}>{statusConfig.label}</Text>
+      <View style={styles.hCardInner}>
+        {/* Full background image or gradient fallback */}
+        {hasThumb ? (
+          <Image source={{ uri: imageUri(match.imageUrl) }} style={styles.hBgImage} resizeMode="cover" />
+        ) : (
+          <LinearGradient colors={tint} style={styles.hBgImage} />
+        )}
+        <LinearGradient
+          colors={hasThumb
+            ? ['rgba(7,8,11,0.3)', 'rgba(7,8,11,0.92)']
+            : ['rgba(0,0,0,0)', 'rgba(0,0,0,0.6)']}
+          style={styles.hOverlay}
+          locations={hasThumb ? [0, 0.6] : undefined}
+        >
+          {/* Top row: status + availability */}
+          <View style={styles.hTopRow}>
+            <View style={styles.hTopLeft}>
+              <View style={[styles.hStatusBadge, { backgroundColor: `${statusConfig.color}22` }]}>
+                <View style={[styles.hStatusDot, { backgroundColor: statusConfig.color }]} />
+                <Text style={[styles.hStatus, { color: statusConfig.color }]}>{statusConfig.label}</Text>
+              </View>
+            </View>
+            {available === 0 && total > 0 ? (
+              <View style={[styles.hAvailBadge, { backgroundColor: 'rgba(255,23,68,0.25)' }]}>
+                <Text style={[styles.hAvailText, { color: '#FF5252' }]}>SOLD OUT</Text>
+              </View>
+            ) : available > 0 && available <= 50 ? (
+              <View style={[styles.hAvailBadge, { backgroundColor: 'rgba(255,179,0,0.2)' }]}>
+                <Text style={[styles.hAvailText, { color: '#FFB300' }]}>Only {available} left</Text>
+              </View>
+            ) : available > 0 ? (
+              <View style={[styles.hAvailBadge, { backgroundColor: 'rgba(0,212,170,0.2)' }]}>
+                <Text style={[styles.hAvailText, { color: '#00D4AA' }]}>Seats Available</Text>
+              </View>
+            ) : null}
           </View>
-          <Text style={styles.hTeams}>{match.teamA} vs {match.teamB}</Text>
-          <Text style={styles.hTitle} numberOfLines={1}>{match.title}</Text>
-          <Text style={styles.hVenue} numberOfLines={1}>📍 {match.venue}</Text>
-        </View>
 
-        {/* Availability pill — right aligned */}
-        <View style={styles.hAvailWrap}>
-          {available > 0 ? (
-            <>
-              <Text style={styles.hAvailCount}>{available}</Text>
-              <Text style={styles.hAvailLabel}>seats{'\n'}left</Text>
-            </>
-          ) : (
-            <Text style={styles.hSoldOut}>SOLD{'\n'}OUT</Text>
-          )}
-        </View>
-      </LinearGradient>
+          {/* Middle: centered teams with large logos */}
+          <View style={styles.hMiddle}>
+            <View style={styles.hTeamsRowCentered}>
+              {isValidLogo(match.teamALogo) ? (
+                <Image source={{ uri: imageUri(match.teamALogo) }} style={styles.hTeamLogoLarge} resizeMode="cover" />
+              ) : (
+                <View style={styles.hTeamCircleLarge}>
+                  <Text style={styles.hTeamCircleLargeText}>{getInitials(match.teamA)}</Text>
+                </View>
+              )}
+              <Text style={styles.hVsText}>vs</Text>
+              {isValidLogo(match.teamBLogo) ? (
+                <Image source={{ uri: imageUri(match.teamBLogo) }} style={styles.hTeamLogoLarge} resizeMode="cover" />
+              ) : (
+                <View style={styles.hTeamCircleLarge}>
+                  <Text style={styles.hTeamCircleLargeText}>{getInitials(match.teamB)}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.hTitleCentered} numberOfLines={2}>{match.title || `${match.teamA} vs ${match.teamB}`}</Text>
+          </View>
 
-      {/* Overlapping few-seats badge */}
-      {available > 0 && available <= 15 && (
-        <View style={styles.hFewBadge}>
-          <Text style={styles.hFewText}>🔥</Text>
-        </View>
-      )}
+          {/* Bottom row: venue + date + price */}
+          <View style={styles.hBottomRow}>
+            <Text style={styles.hVenue} numberOfLines={1}>📍 {match.venue?.name || match.venue}</Text>
+            <View style={styles.hBottomRight}>
+              {match.matchDate && (
+                <Text style={styles.hDate}>
+                  {formatInNepal(match.matchDate, { month: 'short', day: 'numeric' })}
+                </Text>
+              )}
+              {lowestPrice !== Infinity && lowestPrice > 0 && (
+                <View style={styles.hPricePill}>
+                  <Text style={styles.hPriceText}>Rs.{lowestPrice.toLocaleString()}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -140,14 +212,17 @@ const styles = StyleSheet.create({
   // ========= HERO =========
   heroCard: {
     borderRadius: radii.xxl,
-    overflow: 'visible',
+    overflow: 'hidden',
     ...shadows.lg,
   },
-  heroInner: {
-    borderRadius: radii.xxl,
+  heroCardBg: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  heroContent: {
     padding: spacing.xxl,
     paddingBottom: spacing.xl,
-    overflow: 'hidden',
   },
   heroTop: {
     flexDirection: 'row',
@@ -213,8 +288,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  heroTeamEmoji: {
-    fontSize: 42,
+  heroTeamLogo: {
+    width: 56,
+    height: 56,
     marginBottom: spacing.sm,
   },
   heroTeamName: {
@@ -223,19 +299,51 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
-  heroVsBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  heroVsCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroVs: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 2,
+  heroVsText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
+  teamCircleLarge: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  teamCircleLargeText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  teamCircleSmall: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  teamCircleSmallText: {
+    color: '#FFF',
+    fontSize: 7,
+    fontWeight: '800',
   },
 
   heroTitle: {
@@ -254,7 +362,12 @@ const styles = StyleSheet.create({
   heroBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+  },
+  heroBottomRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   heroTime: {
     color: 'rgba(255,255,255,0.8)',
@@ -285,14 +398,10 @@ const styles = StyleSheet.create({
 
   // Overlapping badge
   fewSeatsBadge: {
-    position: 'absolute',
-    top: -8,
-    right: spacing.xl,
     backgroundColor: colors.accent,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radii.full,
-    ...shadows.accent,
   },
   fewSeatsText: {
     color: '#000',
@@ -300,52 +409,48 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  // ========= HORIZONTAL =========
+  // ========= HORIZONTAL (full-bleed image) =========
   hCard: {
     borderRadius: radii.xl,
-    overflow: 'visible',
+    overflow: 'hidden',
     ...shadows.md,
   },
   hCardInner: {
-    flexDirection: 'row',
     borderRadius: radii.xl,
     overflow: 'hidden',
   },
-  hDateBlock: {
-    width: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    paddingVertical: spacing.lg,
+  hBgImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: radii.xl,
   },
-  hDay: {
-    color: '#FFF',
-    fontSize: 24,
-    fontWeight: '900',
-    lineHeight: 28,
-  },
-  hMonth: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-  },
-  hTime: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 8,
-    fontWeight: '600',
-    marginTop: spacing.xs,
-  },
-  hContent: {
-    flex: 1,
+  hOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'space-between',
     padding: spacing.lg,
-    justifyContent: 'center',
+    borderRadius: radii.xl,
   },
-  hTop: {
+  hTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  hTopLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginBottom: spacing.xs,
+  },
+  hStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+    borderRadius: radii.full,
   },
   hStatusDot: {
     width: 6,
@@ -353,68 +458,92 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   hStatus: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  hAvailBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
+  },
+  hAvailText: {
     fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  hMiddle: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  hTeamsRowCentered: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  hTeamLogoLarge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  hTeamCircleLarge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hTeamCircleLargeText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  hVsText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: typography.tiny.fontSize,
     fontWeight: '800',
     letterSpacing: 1,
   },
-  hTeams: {
+  hTitleCentered: {
     color: '#FFF',
-    fontSize: typography.captionMedium.fontSize,
+    fontSize: typography.bodyMedium.fontSize,
     fontWeight: '800',
-    marginBottom: 2,
+    textAlign: 'center',
   },
-  hTitle: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: typography.small.fontSize,
-    marginBottom: 2,
+  hBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   hVenue: {
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.6)',
     fontSize: typography.tiny.fontSize,
+    flex: 1,
   },
-
-  hAvailWrap: {
-    width: 72,
+  hBottomRight: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,200,83,0.15)',
+    gap: spacing.sm,
   },
-  hAvailCount: {
-    color: colors.successLight,
-    fontSize: 22,
-    fontWeight: '900',
-    lineHeight: 24,
-  },
-  hAvailLabel: {
-    color: colors.success,
-    fontSize: 8,
+  hDate: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: typography.tiny.fontSize,
     fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 12,
   },
-  hSoldOut: {
-    color: colors.dangerLight,
+  hPricePill: {
+    backgroundColor: 'rgba(255,215,0,0.2)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+  },
+  hPriceText: {
+    color: '#FFD700',
     fontSize: 10,
-    fontWeight: '900',
-    textAlign: 'center',
-    letterSpacing: 0.5,
-    lineHeight: 14,
-  },
-
-  // Overlapping fire badge
-  hFewBadge: {
-    position: 'absolute',
-    top: -6,
-    right: spacing.md,
-    backgroundColor: colors.accent,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.accent,
-  },
-  hFewText: {
-    fontSize: 12,
+    fontWeight: '800',
   },
 });

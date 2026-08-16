@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Eye, EyeOff } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
 import { validateLoginForm } from '../../utils/validation';
@@ -9,7 +10,7 @@ import { validateLoginForm } from '../../utils/validation';
 const DEMO_ACCOUNTS = [
   { label: 'Admin', email: 'admin@stadium.com', password: 'admin123', icon: '👑', color: colors.accent },
   { label: 'Staff', email: 'staff@stadium.com', password: 'staff123', icon: '🛡️', color: colors.info },
-  { label: 'Supervisor', email: 'supervisor@gmail.com', password: 'supervisor123', icon: '🔧', color: colors.magenta },
+  { label: 'Supervisor', email: 'supervisor@gmail.com', password: 'supervisor123', icon: '🔧', color: colors.primaryLight },
   { label: 'Fan', email: 'fan@stadium.com', password: 'fan12345', icon: '🎟️', color: colors.primary },
 ];
 
@@ -17,6 +18,7 @@ export default function LoginScreen({ navigation }) {
   const { login, isLoading } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ email: null, password: null });
   const [serverError, setServerError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -56,14 +58,24 @@ export default function LoginScreen({ navigation }) {
           style={styles.flex}
         >
           <View style={styles.scroll}>
-            {/* Brand — left aligned, asymmetric */}
+            {/* Brand — integrated logo + text */}
             <View style={styles.brandSection}>
-              <View style={styles.brandMark}>
-                <LinearGradient colors={colors.gradientPurple} style={styles.brandMarkInner}>
-                  <Text style={styles.brandEmoji}>🏟️</Text>
-                </LinearGradient>
+              <View style={styles.brandRow}>
+                  <View style={styles.logoWrap}>
+                    <View style={styles.logoGlow} />
+                    <View style={styles.stumpL} />
+                    <View style={styles.stumpM} />
+                    <View style={styles.stumpR} />
+                    <View style={styles.bailL} />
+                    <View style={styles.bailR} />
+                  </View>
+                <View style={styles.brandTextWrap}>
+                  <Text style={styles.brandTitle}>
+                    <Text style={styles.brandWordBold}>SMART </Text>
+                    <Text style={styles.brandWordLight}>Stadium</Text>
+                  </Text>
+                </View>
               </View>
-              <Text style={styles.brandTitle}>SMART{'\n'}STADIUM</Text>
               <Text style={styles.brandTagline}>
                 Your seat is waiting.
               </Text>
@@ -108,14 +120,24 @@ export default function LoginScreen({ navigation }) {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>PASSWORD</Text>
-                <TextInput
-                  style={[styles.input, errors.password && styles.inputError]}
-                  placeholder="Enter your password"
-                  placeholderTextColor={colors.textMuted}
-                  secureTextEntry
-                  value={password}
-                  onChangeText={(text) => { setPassword(text); clearFieldError('password'); }}
-                />
+                <View style={styles.passwordWrap}>
+                  <TextInput
+                    style={[styles.input, styles.passwordInput, errors.password && styles.inputError]}
+                    placeholder="Enter your password"
+                    placeholderTextColor={colors.textMuted}
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={(text) => { setPassword(text); clearFieldError('password'); }}
+                  />
+                  <TouchableOpacity
+                    style={styles.passwordToggle}
+                    onPress={() => setShowPassword((prev) => !prev)}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.passwordToggleText}>{showPassword ? <EyeOff size={18} color={colors.textSecondary} strokeWidth={2} /> : <Eye size={18} color={colors.textSecondary} strokeWidth={2} />}</Text>
+                  </TouchableOpacity>
+                </View>
                 {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
               </View>
 
@@ -156,9 +178,22 @@ export default function LoginScreen({ navigation }) {
 
             {/* Demo accounts — horizontal pills */}
             <View style={styles.demoSection}>
-              <Text style={styles.demoLabel}>TRY A DEMO</Text>
+              <Text style={styles.demoLabel}>DEMO MATRA</Text>
               <View style={styles.demoRow}>
-                {DEMO_ACCOUNTS.map((a) => (
+                {DEMO_ACCOUNTS.slice(0, 3).map((a) => (
+                  <TouchableOpacity
+                    key={a.label}
+                    style={styles.demoPill}
+                    onPress={() => { setEmail(a.email); setPassword(a.password); setErrors({ email: null, password: null }); setServerError(null); setSuccessMessage(null); }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.demoIcon}>{a.icon}</Text>
+                    <Text style={styles.demoText}>{a.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={styles.demoRow}>
+                {DEMO_ACCOUNTS.slice(3).map((a) => (
                   <TouchableOpacity
                     key={a.label}
                     style={styles.demoPill}
@@ -179,40 +214,97 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   flex: { flex: 1 },
   scroll: { flex: 1, justifyContent: 'center' },
 
-  // Brand — left aligned, not centered
+  // Brand — integrated side-by-side
   brandSection: {
-    paddingHorizontal: spacing.xxl,
-    marginBottom: spacing.xxxl,
+    marginBottom: spacing.xxl,
+    alignItems: 'center',
   },
-  brandMark: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    marginBottom: spacing.xl,
-    overflow: 'hidden',
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xl,
+    marginBottom: spacing.sm,
   },
-  brandMarkInner: {
-    flex: 1,
+  logoWrap: {
+    width: 56,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brandEmoji: { fontSize: 32 },
+  logoGlow: {
+    position: 'absolute',
+    top: 6, left: 6,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: `${colors.primary}18`,
+  },
+  stumpL: {
+    position: 'absolute',
+    top: 18, left: 14,
+    width: 4,
+    height: 26,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    backgroundColor: '#D4A050',
+  },
+  stumpM: {
+    position: 'absolute',
+    top: 18, left: 26,
+    width: 4,
+    height: 26,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    backgroundColor: '#C4953A',
+  },
+  stumpR: {
+    position: 'absolute',
+    top: 18, left: 38,
+    width: 4,
+    height: 26,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    backgroundColor: '#D4A050',
+  },
+  bailL: {
+    position: 'absolute',
+    top: 14, left: 14,
+    width: 16,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#E8C880',
+  },
+  bailR: {
+    position: 'absolute',
+    top: 14, left: 26,
+    width: 16,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#E8C880',
+  },
+  brandTextWrap: {},
   brandTitle: {
     color: colors.textPrimary,
-    fontSize: 36,
+    fontSize: 28,
+    lineHeight: 34,
+  },
+  brandWordBold: {
     fontWeight: '900',
-    letterSpacing: -1,
-    lineHeight: 40,
-    marginBottom: spacing.sm,
+    letterSpacing: 1,
+  },
+  brandWordLight: {
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   brandTagline: {
     color: colors.textMuted,
     fontSize: typography.body.fontSize,
     fontWeight: '400',
+    textAlign: 'center',
   },
 
   // Form
@@ -302,6 +394,22 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: colors.danger,
+  },
+  passwordWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    flex: 1,
+    paddingRight: spacing.xl + 4,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: spacing.md,
+    padding: spacing.xs,
+  },
+  passwordToggleText: {
+    fontSize: 16,
   },
   errorText: {
     color: colors.dangerLight,

@@ -1,310 +1,275 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, FlatList, RefreshControl, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import ScreenHeader from '../../components/ScreenHeader';
+import { AuthContext } from '../../context/AuthContext';
+import DashboardHeader from '../../components/DashboardHeader';
+import { AdminCard, AdminFilterPills, AdminSearchBar } from '../../components/admin/TicketProHeader';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
-import { fetchScanHistory } from '../../services/ticketService';
-import { fetchFraudLogs } from '../../services/adminService';
+import { fetchAllTickets } from '../../services/adminService';
+import RefreshBar from '../../components/RefreshBar';
+import useRefresh from '../../hooks/useRefresh';
 
-/* ─── Segmented tab options ─── */
-const TABS = [
-  { key: 'all', label: 'All Scan Logs' },
-  { key: 'gates', label: 'Gate Entries' },
-  { key: 'flagged', label: 'Flagged Exceptions' },
+const STATUS_FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'valid', label: 'Valid' },
+  { key: 'used', label: 'Used' },
+  { key: 'cancelled', label: 'Cancelled' },
 ];
 
-/* ─── Status pill style mapping ─── */
-const SCAN_STATUS = {
-  verified:  { bg: glass.statusSuccessFill, text: glass.statusSuccessText, label: 'VERIFIED' },
-  duplicate: { bg: glass.statusDangerFill,  text: glass.statusDangerText,  label: 'FRAUD — DUPLICATE' },
-  invalid:   { bg: glass.statusDangerFill,  text: glass.statusDangerText,  label: 'INVALID' },
-  pending:   { bg: glass.statusWarningFill, text: glass.statusWarningText, label: 'PENDING' },
+const STATUS_MAP = {
+  valid: { label: 'Valid', color: glass.statusSuccessText, bg: glass.statusSuccessFill },
+  used: { label: 'Used', color: '#FFA726', bg: 'rgba(255,167,38,0.12)' },
+  cancelled: { label: 'Cancelled', color: '#FF4757', bg: 'rgba(255,71,87,0.12)' },
 };
 
-export default function TicketValidationScreen({ navigation }) {
-  /* ── State: scan history + fraud logs ── */
-  const [scanLogs, setScanLogs] = useState([]);
-  const [fraudLogs, setFraudLogs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
+const TIER_COLORS = { platinum: '#E8E8E8', gold: '#FFD700', silver: '#A8A8A8', bronze: '#CD7F32', general: '#5B9BD5', category1: '#FFD700', category2: '#FF6B6B', category3: '#A29BFE', category4: '#EF5350', supporters: '#81C784', premium: glass.brandPurple };
 
-  /* ── Data loading: parallel fetch of scan history + fraud logs ── */
+function normalizeTicket(ticket) {
+  const category = ticket.seat?.category || 'general';
+  const isScanned = ticket.status === 'used' && ticket.scannedBy;
+
+  let statusKey;
+  if (ticket.status === 'cancelled') statusKey = 'cancelled';
+  else if (isScanned) statusKey = 'used';
+  else if (ticket.status === 'used') statusKey = 'cancelled';
+  else if (ticket.match?.status === 'cancelled') statusKey = 'cancelled';
+  else statusKey = 'valid';
+
+  return {
+    id: ticket._id,
+    code: ticket.ticketCode,
+    statusKey,
+    price: ticket.seat?.price || 0,
+    title: ticket.match?.title || 'Event',
+    seat: ticket.seat?.seatLabel || '—',
+    category,
+    gate: ticket.seat?.gate || '',
+    userName: ticket.user?.name || 'Unknown',
+    userEmail: ticket.user?.email || '',
+    userInitials: (ticket.user?.name || 'U').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2),
+    usedAt: ticket.usedAt,
+    scannedByName: ticket.scannedBy?.name || '',
+    createdAt: ticket.createdAt,
+  };
+}
+
+export default function TicketValidationScreen({ navigation }) {
+  const { userInfo } = useContext(AuthContext);
+  const initials = (userInfo?.name || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const [allTickets, setAllTickets] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedId, setExpandedId] = useState(null);
+
   const loadData = useCallback(async (refreshing = false) => {
-    if (refreshing) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
+    if (!refreshing) setIsLoading(true);
     try {
-      const [scans, frauds] = await Promise.all([
-        fetchScanHistory(),
-        fetchFraudLogs(),
-      ]);
-      setScanLogs(scans || []);
-      setFraudLogs(frauds || []);
+      const tickets = await fetchAllTickets();
+      setAllTickets(tickets || []);
     } catch (err) {
-      console.log('Ticket validation data error:', err.message);
+      console.log('Ticket data error:', err.message);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   }, []);
 
-  /* ── Focus-based refresh ── */
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  /* ── Derived: compute filtered list based on active tab ── */
-  const getFilteredData = () => {
-    if (activeTab === 'flagged') {
-      /* Combine fraud logs with scan logs that have fraud status */
-      return fraudLogs.map(log => ({
-        id: log._id,
-        ticketCode: log.ticketCode || '—',
-        reason: log.reason,
-        details: log.details,
-        staff: log.scannedBy?.name || 'Gate staff',
-        timestamp: log.timestamp || log.createdAt,
-        status: 'duplicate',
-        isGate: false,
-      }));
+  const { refreshing: isRefreshing, onRefresh } = useRefresh(() => loadData(true));
+
+  const filteredTickets = useMemo(() => {
+    let result = allTickets.map((t) => normalizeTicket(t));
+
+    if (activeFilter !== 'all') {
+      result = result.filter((t) => t.statusKey === activeFilter);
     }
-    if (activeTab === 'gates') {
-      return scanLogs.filter(log => log.gate || log.ticketCode?.startsWith('GATE'));
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((t) =>
+        t.code?.toLowerCase() === q ||
+        t.userName?.toLowerCase().includes(q) ||
+        t.userEmail?.toLowerCase().includes(q) ||
+        t.title?.toLowerCase().includes(q) ||
+        t.seat?.toLowerCase().includes(q)
+      );
     }
-    return scanLogs;
-  };
 
-  const filteredData = getFilteredData();
+    return result;
+  }, [allTickets, activeFilter, searchQuery]);
 
-  /* ── Stats for top metrics ── */
-  const totalScans = scanLogs.length;
-  const flaggedCount = fraudLogs.length;
+  const toggleExpand = useCallback((id) => {
+    setExpandedId(prev => prev === id ? null : id);
+  }, []);
 
-  /* ── Helper: format relative time ── */
-  const timeAgo = (dateStr) => {
-    if (!dateStr) return '—';
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const secs = Math.floor(diff / 1000);
-    if (secs < 60) return `${secs}s ago`;
-    const mins = Math.floor(secs / 60);
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
-  };
+  const renderTicket = useCallback(({ item }) => {
+    const status = STATUS_MAP[item.statusKey] || STATUS_MAP.valid;
+    const tierColor = TIER_COLORS[item.category] || TIER_COLORS.general;
+    const isExpanded = expandedId === item.id;
 
-  /* ── Helper: get scan status or default ── */
-  const getScanStatus = (log) => {
-    if (log.status) return SCAN_STATUS[log.status] || SCAN_STATUS.pending;
-    if (log.reason === 'duplicate_scan') return SCAN_STATUS.duplicate;
-    if (log.reason === 'fake_signature') return SCAN_STATUS.invalid;
-    return SCAN_STATUS.verified;
-  };
-
-  /* ── Render: individual audit entry ── */
-  const renderLogEntry = ({ item, index }) => {
-    const scanStatus = getScanStatus(item);
     return (
-      <View style={styles.logCard}>
-        <LinearGradient
-          colors={[glass.surface, 'rgba(18,21,34,0.4)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.logCardInner}
-        >
-          {/* Left: Alphanumeric ticket key (monospaced) */}
-          <View style={styles.logLeft}>
-            <Text style={styles.logTicketCode}>
-              {item.ticketCode || item.gate || `LOG-${String(index + 1).padStart(4, '0')}`}
-            </Text>
-            <Text style={styles.logTimestamp}>
-              {timeAgo(item.timestamp || item.createdAt)}
-            </Text>
+      <AdminCard style={styles.ticketCard}>
+        <TouchableOpacity onPress={() => toggleExpand(item.id)} activeOpacity={0.7}>
+          <View style={styles.ticketHeader}>
+            <View style={styles.ticketCodeRow}>
+              <Text style={styles.ticketCode} numberOfLines={1}>{item.code}</Text>
+            </View>
+            <Text style={styles.ticketPrice}>Rs.{item.price.toLocaleString()}</Text>
           </View>
 
-          {/* Center: Customer/agent ID + details */}
-          <View style={styles.logCenter}>
-            <Text style={styles.logAgent} numberOfLines={1}>
-              {item.staff || item.agent || item.userId || 'System'}
-            </Text>
-            <Text style={styles.logDetails} numberOfLines={1}>
-              {item.details || item.reason || 'Scan event logged'}
-            </Text>
+          <View style={styles.ticketMeta}>
+            <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+              <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+            </View>
+            <Text style={styles.expandIcon}>{isExpanded ? '▾' : '▸'}</Text>
           </View>
 
-          {/* Right: Status pill */}
-          <View style={[styles.logStatusPill, { backgroundColor: scanStatus.bg }]}>
-            <Text style={[styles.logStatusText, { color: scanStatus.text }]} numberOfLines={1}>
-              {scanStatus.label}
-            </Text>
+          <Text style={styles.eventTitle} numberOfLines={1}>{item.title}</Text>
+          <Text style={styles.seatLine}>
+            § {item.category?.toUpperCase()} · Seat {item.seat}
+            {item.gate ? ` · ${item.gate}` : ''}
+          </Text>
+        </TouchableOpacity>
+
+        {isExpanded && (
+          <View style={styles.detailSection}>
+            <View style={styles.detailDivider} />
+            <View style={styles.detailGrid}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>BOOKED BY</Text>
+                <View style={styles.userRow}>
+                  <View style={styles.userAvatar}>
+                    <Text style={styles.userInitials}>{item.userInitials}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.userName}>{item.userName}</Text>
+                    <Text style={styles.userEmail}>{item.userEmail}</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>BOOKED ON</Text>
+                <Text style={styles.detailValue}>
+                  {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                </Text>
+              </View>
+              {item.usedAt && item.statusKey === 'used' && (
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>SCANNED AT</Text>
+                  <Text style={styles.detailValue}>
+                    {new Date(item.usedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
+                  </Text>
+                  {item.scannedByName ? <Text style={styles.detailSubtext}>by {item.scannedByName}</Text> : null}
+                </View>
+              )}
+            </View>
           </View>
-        </LinearGradient>
-      </View>
+        )}
+      </AdminCard>
     );
-  };
+  }, [expandedId, toggleExpand]);
+
+  const listHeader = useMemo(() => (
+    <View>
+      <AdminSearchBar
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search by name, match, or seat..."
+        onClear={() => setSearchQuery('')}
+      />
+      <AdminFilterPills options={STATUS_FILTERS} value={activeFilter} onChange={setActiveFilter} />
+    </View>
+  ), [searchQuery, activeFilter]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <ScreenHeader
-        title="Ticket Validation"
-        subtitle="Live gate scan monitoring & audit ledger"
-        onBack={() => navigation.goBack()}
-      />
-
-      {/* ═══ SEGMENTED TAB BAR ═══ */}
-      <View style={styles.tabBar}>
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.key;
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              style={[styles.tabItem, isActive && styles.tabItemActive]}
-              onPress={() => setActiveTab(tab.key)}
-              activeOpacity={0.7}
-            >
-              {isActive ? (
-                <LinearGradient
-                  colors={[glass.neonCyan, glass.neonPurple]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.tabGradient}
-                >
-                  <Text style={styles.tabTextActive}>{tab.label}</Text>
-                </LinearGradient>
-              ) : (
-                <Text style={styles.tabText}>{tab.label}</Text>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* ═══ METRIC STRIP ═══ */}
-      <View style={styles.metricStrip}>
-        <View style={styles.metricItem}>
-          <Text style={styles.metricValue}>{totalScans}</Text>
-          <Text style={styles.metricLabel}>Total Scans</Text>
-        </View>
-        <View style={styles.metricDivider} />
-        <View style={styles.metricItem}>
-          <Text style={[styles.metricValue, { color: glass.statusDangerText }]}>{flaggedCount}</Text>
-          <Text style={styles.metricLabel}>Flagged</Text>
-        </View>
-      </View>
-
-      {/* ═══ AUDIT LEDGER ═══ */}
-      {isLoading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={glass.neonCyan} />
-        </View>
-      ) : (
+    <View style={{ flex: 1 }}>
+      <RefreshBar refreshing={isRefreshing} />
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <DashboardHeader
+          topLabel="MANAGEMENT"
+          title="Tickets"
+          avatarColors={['#FFD700', '#FFA000']}
+          avatarLabel={initials}
+          onAvatarPress={() => {
+            if (userInfo?.role === 'supervisor') {
+              navigation.navigate('Account', { screen: 'SupervisorProfile' });
+            } else {
+              navigation.navigate('Home', { screen: 'AdminProfile' });
+            }
+          }}
+        />
         <FlatList
-          data={filteredData}
-          keyExtractor={(item, index) => item.id || item._id || String(index)}
+          data={filteredTickets}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          removeClippedSubviews
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          ListHeaderComponent={listHeader}
           refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={() => loadData(true)}
-              tintColor={glass.neonCyan}
-            />
+            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />
           }
           ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <Text style={styles.emptyIcon}>🔍</Text>
-              <Text style={styles.emptyTitle}>No scan logs found</Text>
-              <Text style={styles.emptyDesc}>
-                {activeTab === 'flagged'
-                  ? 'No flagged exceptions in the audit trail.'
-                  : 'Gate scan events will appear here in real-time.'}
-              </Text>
-            </View>
+            isLoading ? (
+              <View style={styles.center}><ActivityIndicator color={glass.brandPurple} /></View>
+            ) : (
+              <View style={styles.empty}>
+                <Text style={styles.emptyTitle}>No tickets found</Text>
+                <Text style={styles.emptyDesc}>Try a different search or filter.</Text>
+              </View>
+            )
           }
-          renderItem={renderLogEntry}
+          renderItem={renderTicket}
         />
-      )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  /* ── Canvas ── */
   container: { flex: 1, backgroundColor: glass.canvasStart },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxl * 2 },
 
-  /* ── Segmented Tab Bar ── */
-  tabBar: {
-    flexDirection: 'row', gap: spacing.sm,
-    paddingHorizontal: spacing.xl, marginBottom: spacing.md,
-  },
-  tabItem: {
-    flex: 1, paddingVertical: spacing.sm + 2, borderRadius: radii.full,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: glass.surface, borderWidth: 1, borderColor: glass.border,
-  },
-  tabItemActive: { borderWidth: 0, padding: 0 },
-  tabGradient: {
-    flex: 1, width: '100%', paddingVertical: spacing.sm + 2,
-    borderRadius: radii.full, alignItems: 'center', justifyContent: 'center',
-  },
-  tabText: { color: glass.textMuted, fontSize: typography.small.fontSize, fontWeight: '600' },
-  tabTextActive: { color: '#FFFFFF', fontSize: typography.small.fontSize, fontWeight: '800' },
+  ticketCard: { padding: spacing.xl, marginBottom: spacing.md },
+  ticketHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.xs },
+  ticketCodeRow: { flex: 1, marginRight: spacing.md },
+  ticketCode: { color: glass.brandPurple, fontSize: typography.small.fontSize, fontWeight: '800', fontFamily: 'Courier' },
+  ticketMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+  statusBadge: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radii.full },
+  statusText: { fontSize: 10, fontWeight: '800' },
+  expandIcon: { color: glass.textMuted, fontSize: 12 },
+  ticketPrice: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '900' },
+  eventTitle: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '800', marginBottom: spacing.xs },
+  seatLine: { color: glass.textMuted, fontSize: typography.small.fontSize },
 
-  /* ── Metric Strip ── */
-  metricStrip: {
-    flexDirection: 'row', alignItems: 'center',
-    marginHorizontal: spacing.xl, marginBottom: spacing.lg,
-    backgroundColor: glass.surface, borderRadius: radii.xl,
-    padding: spacing.xl, borderWidth: 1, borderColor: glass.border,
-  },
-  metricItem: { flex: 1, alignItems: 'center' },
-  metricValue: { color: glass.neonCyan, fontSize: typography.h2.fontSize, fontWeight: '900', fontFamily: glass.monoFont },
-  metricLabel: { color: glass.textMuted, fontSize: typography.tiny.fontSize, marginTop: spacing.xs },
-  metricDivider: { width: 1, height: 32, backgroundColor: glass.border },
+  detailSection: { marginTop: spacing.md },
+  detailDivider: { height: 1, backgroundColor: glass.border, marginBottom: spacing.md },
+  detailGrid: { gap: spacing.md },
+  detailItem: { gap: spacing.xs },
+  detailLabel: { color: glass.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
+  detailValue: { color: colors.textPrimary, fontSize: typography.caption.fontSize, fontWeight: '600' },
+  detailSubtext: { color: glass.textMuted, fontSize: typography.small.fontSize },
+  userRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  userAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: glass.brandPurpleSurface, alignItems: 'center', justifyContent: 'center' },
+  userInitials: { color: glass.brandPurple, fontSize: 10, fontWeight: '800' },
+  userName: { color: colors.textPrimary, fontSize: typography.caption.fontSize, fontWeight: '600' },
+  userEmail: { color: glass.textMuted, fontSize: typography.small.fontSize },
 
-  /* ── List ── */
-  list: { padding: spacing.xl, paddingBottom: spacing.xxl * 1.5 },
-
-  /* ── Log Entry Card ── */
-  logCard: {
-    marginBottom: spacing.md, borderRadius: radii.xl,
-    overflow: 'hidden', borderWidth: 1, borderColor: glass.border,
-  },
-  logCardInner: {
-    flexDirection: 'row', alignItems: 'center',
-    padding: spacing.xl, gap: spacing.md,
-  },
-
-  /* Left: ticket key (monospaced) */
-  logLeft: { minWidth: 90 },
-  logTicketCode: {
-    color: glass.neonCyan, fontSize: 12, fontWeight: '800',
-    fontFamily: glass.monoFont, marginBottom: spacing.xs,
-  },
-  logTimestamp: {
-    color: glass.textMuted, fontSize: 9,
-    fontFamily: glass.monoFont,
-  },
-
-  /* Center: agent + details */
-  logCenter: { flex: 1 },
-  logAgent: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '600', marginBottom: 2 },
-  logDetails: { color: glass.textMuted, fontSize: typography.small.fontSize },
-
-  /* Right: status pill */
-  logStatusPill: {
-    paddingHorizontal: spacing.md, paddingVertical: 4,
-    borderRadius: radii.full, maxWidth: 130,
-  },
-  logStatusText: { fontSize: 8, fontWeight: '800', letterSpacing: 0.6 },
-
-  /* ── Empty State ── */
-  emptyWrap: { alignItems: 'center', paddingVertical: spacing.huge },
-  emptyIcon: { fontSize: 40, marginBottom: spacing.md },
+  center: { paddingVertical: spacing.xxl, alignItems: 'center' },
+  empty: { alignItems: 'center', paddingVertical: spacing.xxl },
   emptyTitle: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '700', marginBottom: spacing.xs },
-  emptyDesc: { color: glass.textMuted, fontSize: typography.small.fontSize, textAlign: 'center', maxWidth: 260 },
+  emptyDesc: { color: glass.textMuted, fontSize: typography.caption.fontSize },
 });

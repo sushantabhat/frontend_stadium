@@ -100,17 +100,29 @@ export function AuthProvider({ children }) {
     }
   }, [clearAuthState]);
 
+  const updateUserInfo = useCallback(
+    async (updates) => {
+      const updatedUser = await authService.updateProfile(updates);
+      const normalizedUser = normalizeUser(updatedUser, userInfo?.role);
+      setUserInfo(normalizedUser);
+      await saveSession(userToken, normalizedUser);
+      return normalizedUser;
+    },
+    [normalizeUser, userToken, userInfo]
+  );
+
   const value = useMemo(
     () => ({
       login,
       register,
       logout,
+      updateUserInfo,
       isLoading,
       isBootstrapping,
       userToken,
       userInfo,
     }),
-    [login, register, logout, isLoading, isBootstrapping, userToken, userInfo]
+    [login, register, logout, updateUserInfo, isLoading, isBootstrapping, userToken, userInfo]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
