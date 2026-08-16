@@ -17,7 +17,7 @@ const ISSUE_TYPES = [
 ];
 
 export default function TicketVerifyScreen({ route, navigation }) {
-  const { status, message, ticket, ticketCode } = route.params || {};
+  const { status, message, ticket, ticketCode, mode } = route.params || {};
   const [showEscalate, setShowEscalate] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [issueNote, setIssueNote] = useState('');
@@ -32,7 +32,12 @@ export default function TicketVerifyScreen({ route, navigation }) {
   let statusText = 'TICKET APPROVED';
   let badgeEmoji = '\u2705';
 
-  if (isDuplicate) {
+  if (mode === 'lookup' && isSuccess) {
+    alertColor = colors.primaryLight;
+    alertSurface = `${colors.primary}20`;
+    statusText = 'TICKET LOOKUP';
+    badgeEmoji = '\uD83D\uDD0D';
+  } else if (isDuplicate) {
     alertColor = glass.statusDangerText;
     alertSurface = glass.statusDangerFill;
     statusText = 'ALREADY USED';
@@ -117,7 +122,14 @@ export default function TicketVerifyScreen({ route, navigation }) {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.label}>Status</Text>
-              <Text style={[styles.value, { color: glass.statusSuccessText, fontWeight: '800' }]}>VERIFIED</Text>
+              <Text style={[styles.value, { 
+                color: mode === 'lookup' 
+                  ? (ticket.status === 'active' ? glass.statusSuccessText : glass.statusDangerText) 
+                  : glass.statusSuccessText, 
+                fontWeight: '800' 
+              }]}>
+                {mode === 'lookup' ? (ticket.status || 'UNKNOWN').toUpperCase() : 'VERIFIED'}
+              </Text>
             </View>
           </View>
         ) : (
@@ -144,8 +156,42 @@ export default function TicketVerifyScreen({ route, navigation }) {
           </View>
         )}
 
+        {/* ═══ LOOKUP OVERRIDE BUTTONS (shown only in lookup mode for active tickets) ═══ */}
+        {mode === 'lookup' && isSuccess && ticket && ticket.status === 'active' && (
+          <View style={styles.escalationSection}>
+            <Text style={styles.escalationTitle}>Manual Overrides</Text>
+            <View style={styles.escalationRow}>
+              <TouchableOpacity style={styles.escalationBtn} onPress={async () => {
+                try {
+                  const { verifyTicketCode } = require('../../services/ticketService');
+                  await verifyTicketCode(ticket.ticketCode);
+                  Alert.alert('Success', 'Ticket marked as used and entry granted.', [{text: 'OK', onPress: () => navigation.goBack()}]);
+                } catch(e) { Alert.alert('Error', e.response?.data?.message || e.message); }
+              }} activeOpacity={0.7}>
+                <LinearGradient colors={[glass.statusSuccessFill, 'rgba(0,255,0,0.04)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.escalationBtnInner}>
+                  <Text style={styles.escalationIcon}>✅</Text>
+                  <Text style={[styles.escalationLabel, { color: glass.statusSuccessText }]}>Force Entry</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.escalationBtn} onPress={async () => {
+                try {
+                  const { denyTicketCode } = require('../../services/ticketService');
+                  await denyTicketCode(ticket.ticketCode);
+                  Alert.alert('Denied', 'Ticket has been cancelled and entry denied.', [{text: 'OK', onPress: () => navigation.goBack()}]);
+                } catch(e) { Alert.alert('Error', e.response?.data?.message || e.message); }
+              }} activeOpacity={0.7}>
+                <LinearGradient colors={[glass.statusDangerFill, 'rgba(255,0,0,0.04)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.escalationBtnInner}>
+                  <Text style={styles.escalationIcon}>🚫</Text>
+                  <Text style={[styles.escalationLabel, { color: glass.statusDangerText }]}>Deny Entry</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* ═══ ESCALATION BUTTONS (shown on failure states) ═══ */}
-        {!isSuccess && (
+        {!isSuccess && mode !== 'lookup' && (
           <View style={styles.escalationSection}>
             <Text style={styles.escalationTitle}>Need help? Report to supervisor</Text>
             <View style={styles.escalationRow}>

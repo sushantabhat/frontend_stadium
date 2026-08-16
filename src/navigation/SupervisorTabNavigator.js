@@ -5,6 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import SupervisorDashboardScreen from '../screens/supervisor/SupervisorDashboardScreen';
 import GateAnalyticsScreen from '../screens/supervisor/GateAnalyticsScreen';
 import IncidentDetailScreen from '../screens/supervisor/IncidentDetailScreen';
+import IncidentHistoryScreen from '../screens/supervisor/IncidentHistoryScreen';
 import OverridePanelScreen from '../screens/supervisor/OverridePanelScreen';
 import GateScannerScreen from '../screens/staff/GateScannerScreen';
 import TicketVerifyScreen from '../screens/staff/TicketVerifyScreen';
@@ -30,6 +31,7 @@ function IncidentsNavigator() {
       <IncidentsStack.Screen name="SupervisorDashboard" component={SupervisorDashboardScreen} />
       <IncidentsStack.Screen name="GateAnalytics" component={GateAnalyticsScreen} />
       <IncidentsStack.Screen name="SupervisorIncidentDetail" component={IncidentDetailScreen} />
+      <IncidentsStack.Screen name="IncidentHistory" component={IncidentHistoryScreen} />
     </IncidentsStack.Navigator>
   );
 }

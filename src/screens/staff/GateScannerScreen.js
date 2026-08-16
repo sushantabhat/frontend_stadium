@@ -9,7 +9,7 @@ import { formatTimeInNepal } from '../../utils/date';
 import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
 import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
-import { fetchScanHistory, verifyTicketCode, fetchMyActiveShift } from '../../services/ticketService';
+import { fetchScanHistory, verifyTicketCode, lookupTicketCode, fetchMyActiveShift } from '../../services/ticketService';
 
 const isSecureContext = Platform.OS !== 'web'
   || typeof window === 'undefined'
@@ -18,6 +18,9 @@ const isSecureContext = Platform.OS !== 'web'
 
 export default function GateScannerScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
+  const isSupervisor = userInfo?.role === 'supervisor' || userInfo?.role === 'admin';
+  
+  const [scanMode, setScanMode] = useState(isSupervisor ? 'lookup' : 'verify');
   const [ticketCode, setTicketCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [scanHistory, setScanHistory] = useState([]);
@@ -75,16 +78,21 @@ export default function GateScannerScreen({ navigation }) {
     setScannerActive(false);
     setIsVerifying(true);
     try {
-      const response = await verifyTicketCode(trimmedCode);
-      console.log(`[GateScanner] VERIFY SUCCESS code="${trimmedCode}" user=${response.ticket?.userName}`);
-
-      // Refresh scan history from server (single source of truth)
-      await loadHistory();
+      let response;
+      if (scanMode === 'lookup') {
+        response = await lookupTicketCode(trimmedCode);
+      } else {
+        response = await verifyTicketCode(trimmedCode);
+        // Refresh scan history from server (single source of truth)
+        await loadHistory();
+      }
 
       navigation.navigate('TicketVerify', {
         status: 'success',
         message: response.message,
         ticket: response.ticket,
+        ticketCode: trimmedCode,
+        mode: scanMode,
       });
       setTicketCode('');
     } catch (error) {
@@ -94,6 +102,7 @@ export default function GateScannerScreen({ navigation }) {
           status: 'network_error',
           message: 'Cannot reach the server. Please check your network connection and try again.',
           ticketCode: trimmedCode,
+          mode: scanMode,
         });
       } else {
         const statusCode = error.response.status;
@@ -109,6 +118,7 @@ export default function GateScannerScreen({ navigation }) {
           status: screenStatus,
           message: errMsg,
           ticketCode: trimmedCode,
+          mode: scanMode,
         });
       }
     } finally {
@@ -232,6 +242,24 @@ export default function GateScannerScreen({ navigation }) {
               <Text style={styles.shiftBannerMatch}>{activeShift.match?.title || 'Today\'s Match'}</Text>
             </View>
           )}
+          
+          {isSupervisor && (
+            <View style={{ flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: radii.md, padding: 4, marginBottom: spacing.xl }}>
+              <TouchableOpacity
+                style={{ flex: 1, paddingVertical: spacing.md, alignItems: 'center', backgroundColor: scanMode === 'verify' ? colors.primary : 'transparent', borderRadius: radii.sm }}
+                onPress={() => setScanMode('verify')}
+              >
+                <Text style={{ color: scanMode === 'verify' ? '#fff' : colors.textMuted, fontWeight: '700', fontSize: typography.captionMedium.fontSize }}>Verify Entry</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 1, paddingVertical: spacing.md, alignItems: 'center', backgroundColor: scanMode === 'lookup' ? colors.primary : 'transparent', borderRadius: radii.sm }}
+                onPress={() => setScanMode('lookup')}
+              >
+                <Text style={{ color: scanMode === 'lookup' ? '#fff' : colors.textMuted, fontWeight: '700', fontSize: typography.captionMedium.fontSize }}>Lookup Info</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {scannerActive ? (
             renderCamera()
           ) : (

@@ -10,6 +10,16 @@ export async function verifyTicketCode(ticketCode) {
   return response.data;
 }
 
+export async function lookupTicketCode(ticketCode) {
+  const response = await api.get(`/api/tickets/lookup/${ticketCode}`);
+  return response.data;
+}
+
+export async function denyTicketCode(ticketCode) {
+  const response = await api.post('/api/tickets/deny', { ticketCode });
+  return response.data;
+}
+
 export async function fetchScanHistory() {
   const response = await api.get('/api/tickets/scan-history');
   return response.data.history;
