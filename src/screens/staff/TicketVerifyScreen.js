@@ -66,7 +66,7 @@ export default function TicketVerifyScreen({ route, navigation }) {
     
     setIsSubmitting(true);
     try {
-      await api.post('/incidents', {
+      await api.post('/api/incidents', {
         type: issue.key,
         severity: issue.severity,
         ticketCode: ticketCode || null,
@@ -199,12 +199,6 @@ export default function TicketVerifyScreen({ route, navigation }) {
                 <LinearGradient colors={[glass.statusDangerFill, 'rgba(255,23,68,0.04)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.escalationBtnInner}>
                   <Text style={styles.escalationIcon}>🚨</Text>
                   <Text style={[styles.escalationLabel, { color: glass.statusDangerText }]}>Report Issue</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.escalationBtn} onPress={() => Alert.alert('Supervisor Notified', 'The on-duty supervisor has been notified and will arrive shortly.')} activeOpacity={0.7}>
-                <LinearGradient colors={[glass.statusWarningFill, 'rgba(255,179,0,0.04)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.escalationBtnInner}>
-                  <Text style={styles.escalationIcon}>📞</Text>
-                  <Text style={[styles.escalationLabel, { color: glass.statusWarningText }]}>Call Supervisor</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
