@@ -27,7 +27,6 @@ export default function IncidentDetailScreen({ route, navigation }) {
     try {
       const inc = await fetchIncidentById(incidentId);
       setIncident(inc);
-      setAttendanceLogs([]); // The new system doesn't attach attendance to incidents directly
     } catch (err) {
       console.log('Incident load error:', err.message);
       Alert.alert('Error', 'Failed to load incident details');
@@ -166,15 +165,10 @@ export default function IncidentDetailScreen({ route, navigation }) {
           <View style={styles.card}>
             <View style={styles.cardInner}>
               <Text style={styles.cardHeader}>TICKET FORENSICS</Text>
-              {[
-                { label: 'Ticket Code', value: incident.ticketCode || '—', mono: true },
-                { label: 'Data Unavailable', value: 'Requires backend integration' },
-              ].map((item, idx, arr) => (
-                <View key={item.label} style={[styles.detailRow, idx === arr.length - 1 && { borderBottomWidth: 0 }]}>
-                  <Text style={styles.label}>{item.label}</Text>
-                  <Text style={styles.value} numberOfLines={1}>{item.value}</Text>
-                </View>
-              ))}
+              <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
+                <Text style={styles.label}>Ticket Code</Text>
+                <Text style={[styles.value, { fontFamily: 'monospace' }]}>{incident.ticketCode || '—'}</Text>
+              </View>
             </View>
           </View>
         )}
@@ -225,14 +219,27 @@ export default function IncidentDetailScreen({ route, navigation }) {
           <View style={styles.card}>
             <View style={styles.cardInner}>
               <Text style={styles.cardHeader}>CUSTOMER PROFILE</Text>
-              {[
-                { label: 'Data Unavailable', value: '—' },
-              ].map((item, idx, arr) => (
-                <View key={item.label} style={[styles.detailRow, idx === arr.length - 1 && { borderBottomWidth: 0 }]}>
-                  <Text style={styles.label}>{item.label}</Text>
-                  <Text style={styles.value}>{item.value}</Text>
+              {incident.ticket?.user ? (
+                <>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.label}>Name</Text>
+                    <Text style={styles.value}>{incident.ticket.user.name || '—'}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.label}>Email</Text>
+                    <Text style={styles.value}>{incident.ticket.user.email || '—'}</Text>
+                  </View>
+                  <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
+                    <Text style={styles.label}>Ticket Code</Text>
+                    <Text style={[styles.value, { fontFamily: 'monospace' }]}>{incident.ticket.ticketCode || incident.ticketCode || '—'}</Text>
+                  </View>
+                </>
+              ) : (
+                <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
+                  <Text style={styles.label}>Ticket Code</Text>
+                  <Text style={styles.value}>{incident.ticketCode || '—'}</Text>
                 </View>
-              ))}
+              )}
             </View>
           </View>
         )}

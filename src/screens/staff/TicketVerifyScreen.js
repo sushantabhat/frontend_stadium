@@ -61,7 +61,7 @@ export default function TicketVerifyScreen({ route, navigation }) {
     
     setIsSubmitting(true);
     try {
-      await api.post('/incidents', {
+      await api.post('/api/incidents', {
         type: issue.key,
         severity: issue.severity,
         ticketCode: ticketCode || null,

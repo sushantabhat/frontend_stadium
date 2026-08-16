@@ -66,7 +66,10 @@ export function AuthProvider({ children }) {
         const data = await authService.loginUser({ email, password });
         await applySession(data.token, data.user);
       } catch (error) {
-        const message = error.response?.data?.message || 'Login failed';
+        const message =
+          error.response?.data?.message ||
+          (error.request ? 'Unable to connect to server. Please check your network or ensure backend is running.' : error.message) ||
+          'Login failed';
         throw new Error(message);
       } finally {
         setIsLoading(false);
@@ -82,7 +85,10 @@ export function AuthProvider({ children }) {
         const data = await authService.registerUser({ name, email, password });
         await applySession(data.token, data.user);
       } catch (error) {
-        const message = error.response?.data?.message || 'Registration failed';
+        const message =
+          error.response?.data?.message ||
+          (error.request ? 'Unable to connect to server. Please check your network or ensure backend is running.' : error.message) ||
+          'Registration failed';
         throw new Error(message);
       } finally {
         setIsLoading(false);
