@@ -8,6 +8,7 @@ import MatchDetailScreen from '../screens/matches/MatchDetailScreen';
 import SeatSelectionScreen from '../screens/matches/SeatSelectionScreen';
 import BookingScreen from '../screens/matches/BookingScreen';
 import MyTicketsScreen from '../screens/home/MyTicketsScreen';
+import MatchTicketsScreen from '../screens/home/MatchTicketsScreen';
 import TicketDetailScreen from '../screens/home/TicketDetailScreen';
 import WishlistScreen from '../screens/home/WishlistScreen';
 import NotificationsScreen from '../screens/home/NotificationsScreen';
@@ -55,6 +56,7 @@ function TicketsNavigator() {
   return (
     <TicketsStack.Navigator screenOptions={{ ...screenOptions, cardStyle: { backgroundColor: bgColor } }}>
       <TicketsStack.Screen name="MyTickets" component={MyTicketsScreen} />
+      <TicketsStack.Screen name="MatchTickets" component={MatchTicketsScreen} />
       <TicketsStack.Screen name="TicketDetail" component={TicketDetailScreen} />
       <TicketsStack.Screen name="MatchDetail" component={MatchDetailScreen} />
       <TicketsStack.Screen name="SeatSelection" component={SeatSelectionScreen} />
