@@ -14,8 +14,8 @@ import WishlistScreen from '../screens/home/WishlistScreen';
 import NotificationsScreen from '../screens/home/NotificationsScreen';
 import ProfileScreen from '../screens/common/ProfileScreen';
 import SettingsScreen from '../screens/common/SettingsScreen';
-import { useBackgroundColor } from '../context/ThemeContext';
-import TabBar, { tabBarStyle } from '../components/TabBar';
+import { useBackgroundColor, useTheme } from '../context/ThemeContext';
+import TabBar from '../components/TabBar';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createStackNavigator();
@@ -75,13 +75,24 @@ function ProfileNavigator() {
   );
 }
 
-export default function FanTabNavigator() {
+function FanTabContent() {
+  const { isLight } = useTheme();
+  const tabStyle = {
+    backgroundColor: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 15, 20, 0.95)',
+    borderTopWidth: 1,
+    borderTopColor: isLight ? '#E5E7EB' : 'rgba(255, 255, 255, 0.08)',
+    height: 65,
+    paddingBottom: 5,
+    elevation: 0,
+    shadowOpacity: 0,
+  };
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused }) => <TabBar routeName={route.name} focused={focused} />,
-        tabBarStyle,
+        tabBarStyle: tabStyle,
         tabBarLabel: () => null,
       })}
     >
@@ -91,4 +102,8 @@ export default function FanTabNavigator() {
       <Tab.Screen name="Account" component={ProfileNavigator} />
     </Tab.Navigator>
   );
+}
+
+export default function FanTabNavigator() {
+  return <FanTabContent />;
 }
