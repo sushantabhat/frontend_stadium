@@ -217,9 +217,9 @@ export default function StaffDashboardScreen({ navigation }) {
                 </TouchableOpacity>
               </View>
               {[
-                { key: 'fraud', label: 'Fraud — Fake or duplicate ticket' },
-                { key: 'technical', label: 'Technical — System or API failure' },
-                { key: 'operational', label: 'Operational — Customer dispute' },
+                { key: 'fraud_fake', label: 'Fraud — Fake or duplicate ticket' },
+                { key: 'tech_system', label: 'Technical — System or API failure' },
+                { key: 'ops_complaint', label: 'Operational — Customer dispute' },
               ].map((item) => (
                 <TouchableOpacity
                   key={item.key}

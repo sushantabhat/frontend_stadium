@@ -69,7 +69,10 @@ export default function GateScannerScreen({ navigation }) {
       return;
     }
 
-    const trimmedCode = code.trim();
+    let trimmedCode = code.trim().toUpperCase();
+    if (trimmedCode && !trimmedCode.startsWith('TKT-')) {
+      trimmedCode = `TKT-${trimmedCode}`;
+    }
     console.log(`[GateScanner] VERIFY START code="${trimmedCode}"`);
 
     // CRITICAL: Close camera and freeze scan state BEFORE making the API call.
