@@ -421,13 +421,7 @@ export default function BookingScreen({ route, navigation }) {
         <View style={styles.paymentMethodCard}>
           <Text style={styles.cardHeader}>PAYMENT METHOD</Text>
           <View style={styles.paymentOptions}>
-            <TouchableOpacity
-              style={[styles.paymentOption, paymentMethod === 'khalti' && styles.paymentOptionActive]}
-              onPress={() => setPaymentMethod('khalti')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.paymentOptionText, paymentMethod === 'khalti' && styles.paymentOptionTextActive]}>Khalti</Text>
-            </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.paymentOption, paymentMethod === 'esewa' && styles.paymentOptionActive, { borderColor: paymentMethod === 'esewa' ? '#62BA46' : colors.border, backgroundColor: paymentMethod === 'esewa' ? '#62BA4615' : 'transparent' }]}
               onPress={() => setPaymentMethod('esewa')}
@@ -480,8 +474,8 @@ export default function BookingScreen({ route, navigation }) {
           <Text style={styles.cancelBtnText}>Cancel</Text>
         </TouchableOpacity>
         <GradientButton
-          title={isPaying ? 'Processing...' : `Pay via ${paymentMethod === 'khalti' ? 'Khalti' : paymentMethod === 'esewa' ? 'eSewa' : 'Card'} Rs.${Math.round(totalAmount)}`}
-          onPress={paymentMethod === 'khalti' ? handleKhaltiPayment : paymentMethod === 'esewa' ? handleEsewaPayment : handleCardPayment}
+          title={isPaying ? 'Processing...' : `Pay via ${paymentMethod === 'esewa' ? 'eSewa' : 'Card'} Rs.${Math.round(totalAmount)}`}
+          onPress={paymentMethod === 'esewa' ? handleEsewaPayment : handleCardPayment}
           disabled={isPaying}
           style={{ flex: 1 }}
         />
