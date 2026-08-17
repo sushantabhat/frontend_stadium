@@ -6,6 +6,7 @@ import { QrCode, CalendarDays, FileText, AlertTriangle, ShieldCheck, ScanLine, T
 import { AuthContext } from '../../context/AuthContext';
 import { colors, spacing, radii, typography, glass } from '../../constants/theme';
 import { fetchScanHistory } from '../../services/ticketService';
+import api from '../../services/api';
 import DashboardHeader from '../../components/DashboardHeader';
 import { AdminCard } from '../../components/admin/TicketProHeader';
 import RefreshBar from '../../components/RefreshBar';
@@ -216,9 +217,9 @@ export default function StaffDashboardScreen({ navigation }) {
                 </TouchableOpacity>
               </View>
               {[
-                { key: 'fraud', label: 'Fraud — Fake or duplicate ticket' },
-                { key: 'technical', label: 'Technical — System or API failure' },
-                { key: 'operational', label: 'Operational — Customer dispute' },
+                { key: 'fraud_fake', label: 'Fraud — Fake or duplicate ticket' },
+                { key: 'tech_system', label: 'Technical — System or API failure' },
+                { key: 'ops_complaint', label: 'Operational — Customer dispute' },
               ].map((item) => (
                 <TouchableOpacity
                   key={item.key}
@@ -240,11 +241,20 @@ export default function StaffDashboardScreen({ navigation }) {
               />
               <TouchableOpacity
                 style={styles.reportSubmitBtn}
-                onPress={() => {
+                onPress={async () => {
                   if (!reportType) { Alert.alert('Required', 'Select an issue type.'); return; }
-                  Alert.alert('Reported', 'Your issue has been sent to the supervisor on duty.', [
-                    { text: 'OK', onPress: () => { setShowReportModal(false); setReportType(''); setReportNote(''); } },
-                  ]);
+                  try {
+                    await api.post('/api/incidents', {
+                      type: reportType,
+                      severity: 'medium',
+                      notes: reportNote
+                    });
+                    Alert.alert('Reported', 'Your issue has been sent to the supervisor on duty.', [
+                      { text: 'OK', onPress: () => { setShowReportModal(false); setReportType(''); setReportNote(''); } },
+                    ]);
+                  } catch (err) {
+                    Alert.alert('Error', err.response?.data?.message || err.message || 'Failed to submit report.');
+                  }
                 }}
                 activeOpacity={0.85}
               >

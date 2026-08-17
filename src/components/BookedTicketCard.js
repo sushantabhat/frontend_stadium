@@ -1,0 +1,238 @@
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import QRCode from 'react-native-qrcode-svg';
+import { colors, spacing, radii, typography, shadows } from '../constants/theme';
+import { formatInNepal, formatTimeInNepal } from '../utils/date';
+
+const CATEGORY_THEMES = {
+  platinum: { gradient: ['#E8E8E8', '#D0D0D0'], label: 'PLATINUM' },
+  gold: { gradient: ['#FFD700', '#E6A800'], label: 'GOLD' },
+  silver: { gradient: ['#A8A8A8', '#888888'], label: 'SILVER' },
+  bronze: { gradient: ['#CD7F32', '#A0652A'], label: 'BRONZE' },
+  general: { gradient: ['#5B9BD5', '#4A7FBA'], label: 'GENERAL' },
+  supporters: { gradient: ['#2E7D32', '#1B5E20'], label: 'SUPPORTERS' },
+  premium: { gradient: [colors.primary, '#5A4BD1'], label: 'PREMIUM' },
+  category1: { gradient: ['#FFD700', '#E6A800'], label: 'CATEGORY 1' },
+  category2: { gradient: ['#FF6B6B', '#E53935'], label: 'CATEGORY 2' },
+  category3: { gradient: ['#6C5CE7', '#4834D4'], label: 'CATEGORY 3' },
+  category4: { gradient: ['#EF5350', '#C62828'], label: 'CATEGORY 4' },
+};
+
+function getTicketDisplayStatus(ticket) {
+  if (ticket.status === 'cancelled') return 'cancelled';
+  if (ticket.status === 'used') return 'used';
+  const matchStatus = ticket.match?.status;
+  if (matchStatus === 'cancelled') return 'cancelled';
+  const matchDate = ticket.match?.matchDate ? new Date(ticket.match.matchDate) : null;
+  if (matchStatus === 'completed' || (matchDate && matchDate < new Date())) return 'invalid';
+  return 'active';
+}
+
+const STATUS_CONFIG = {
+  active: { label: 'VALID TICKET', bg: 'rgba(0,200,83,0.15)', color: '#69F0AE' },
+  used: { label: 'ALREADY USED', bg: 'rgba(255,59,48,0.15)', color: '#FF6B6B' },
+  cancelled: { label: 'CANCELLED', bg: 'rgba(255,59,48,0.15)', color: '#FF4757' },
+  invalid: { label: 'EXPIRED', bg: 'rgba(108,92,231,0.15)', color: '#A29BFE' },
+};
+
+function getRefundDisplay(refund) {
+  if (!refund) return null;
+  if (refund.status === 'processing') return { label: 'REFUNDING', bg: 'rgba(255,193,7,0.15)', color: '#FFD93D' };
+  return { label: 'REFUNDED', bg: 'rgba(108,92,231,0.15)', color: '#A29BFE' };
+}
+
+export default function BookedTicketCard({ ticket, onPress }) {
+  const category = (ticket.seat?.category || 'general').toLowerCase();
+  const theme = CATEGORY_THEMES[category] || CATEGORY_THEMES.general;
+  const matchDate = ticket.match?.matchDate ? new Date(ticket.match.matchDate) : null;
+  const displayStatus = getTicketDisplayStatus(ticket);
+  const refundCfg = ticket.refund ? getRefundDisplay(ticket.refund) : null;
+  const statusCfg = refundCfg || STATUS_CONFIG[displayStatus];
+  const isActive = displayStatus === 'active';
+
+  return (
+    <TouchableOpacity
+      style={[styles.ticketWrapper, !isActive && styles.ticketDimmed]}
+      onPress={() => {
+        if (isActive && onPress) onPress();
+      }}
+      activeOpacity={isActive ? 0.88 : 1}
+      disabled={!isActive}
+    >
+      <LinearGradient colors={theme.gradient} style={styles.accentStripe} />
+
+      <LinearGradient
+        colors={[`${colors.gradientStart}F0`, `${colors.gradientEnd}F0`]}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={styles.ticketCard}
+      >
+        {/* Top Section */}
+        <View style={styles.ticketTop}>
+          <View style={styles.ticketBrandRow}>
+            <Text style={styles.ticketBrandText}>SMART STADIUM</Text>
+            <View style={[styles.catBadge, { backgroundColor: `${theme.gradient[0]}30` }]}>
+              <Text style={[styles.catText, { color: theme.gradient[0] }]}>{theme.label}</Text>
+            </View>
+          </View>
+        </View>
+
+        <Text style={styles.matchTitle} numberOfLines={1}>{ticket.match?.title}</Text>
+
+        <View style={styles.teamsRow}>
+          <Text style={styles.teamText}>{ticket.match?.teamA || 'TBA'}</Text>
+          <View style={styles.vsBadge}>
+            <Text style={styles.vsText}>VS</Text>
+          </View>
+          <Text style={styles.teamText}>{ticket.match?.teamB || 'TBA'}</Text>
+        </View>
+
+        {matchDate && (
+          <View style={styles.dateTimeRow}>
+            <Text style={styles.dateTimeText}>
+              {formatInNepal(matchDate, { weekday: 'short', month: 'short', day: 'numeric' })}
+            </Text>
+            <Text style={styles.dateTimeText}>
+              {formatTimeInNepal(matchDate, { hour: '2-digit', minute: '2-digit', hour12: true })}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.perforatedContainer}>
+          <View style={styles.perforatedLine} />
+        </View>
+
+        <View style={styles.detailsGrid}>
+          {[
+            { label: 'SEAT', value: ticket.seat?.seatLabel || 'N/A' },
+            ticket.seat?.gate ? { label: 'GATE', value: ticket.seat.gate } : null,
+            { label: 'PRICE', value: `Rs.${ticket.seat?.price || '—'}` },
+            { label: 'VENUE', value: ticket.match?.venue || '\u2014', flex: true },
+          ].filter(Boolean).map((d) => (
+            <View key={d.label} style={[styles.detailCell, d.flex && { flex: 1.5 }]}>
+              <Text style={styles.detailLabel}>{d.label}</Text>
+              <Text style={styles.detailValue} numberOfLines={1}>{d.value}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.perforatedContainer}>
+          <View style={styles.perforatedLine} />
+        </View>
+
+        {/* QR Section — only for active tickets */}
+        {isActive ? (
+          <View style={styles.qrSection}>
+            <View style={styles.qrBox}>
+              <QRCode
+                value={ticket.ticketCode}
+                size={120}
+                color="#FFFFFF"
+                backgroundColor="transparent"
+                level="M"
+              />
+              <View style={[styles.qrCorner, styles.qrCornerTL]} />
+              <View style={[styles.qrCorner, styles.qrCornerTR]} />
+              <View style={[styles.qrCorner, styles.qrCornerBL]} />
+              <View style={[styles.qrCorner, styles.qrCornerBR]} />
+            </View>
+            <Text style={styles.ticketCode}>{ticket.ticketCode}</Text>
+            <Text style={styles.qrHint}>Show this QR at the entry gate</Text>
+          </View>
+        ) : (
+          <View style={styles.qrSection}>
+            <View style={styles.qrPlaceholder}>
+              <Text style={styles.qrPlaceholderText}>
+                {displayStatus === 'used'
+                  ? 'This ticket has been scanned'
+                  : ticket.refund?.status === 'processing'
+                    ? `Refunding — ETA ${new Date(ticket.refund.estimatedSettlementDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+                    : 'Match cancelled — refund issued'}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Status Badge */}
+        <View style={[styles.statusBanner, { backgroundColor: statusCfg.bg }]}>
+          <Text style={[styles.statusBannerText, { color: statusCfg.color }]}>{statusCfg.label}</Text>
+        </View>
+      </LinearGradient>
+
+      <View style={[styles.notch, styles.notchLeft]} />
+      <View style={[styles.notch, styles.notchRight]} />
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  ticketWrapper: { marginHorizontal: spacing.xl, marginBottom: spacing.xl, position: 'relative' },
+  ticketDimmed: { opacity: 0.5 },
+  accentStripe: { height: 4, borderTopLeftRadius: radii.xxl, borderTopRightRadius: radii.xxl },
+  ticketCard: {
+    borderTopLeftRadius: 1, borderTopRightRadius: 1,
+    borderBottomLeftRadius: radii.xxl, borderBottomRightRadius: radii.xxl,
+    padding: spacing.xxl, ...shadows.lg,
+  },
+  notch: {
+    position: 'absolute', width: 24, height: 24, borderRadius: 12,
+    backgroundColor: colors.background, top: '50%', marginTop: -12,
+  },
+  notchLeft: { left: -12 },
+  notchRight: { right: -12 },
+
+  ticketTop: { marginBottom: spacing.lg },
+  ticketBrandRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  ticketBrandText: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: '800', letterSpacing: 2 },
+  catBadge: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radii.full },
+  catText: { fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+
+  matchTitle: { color: '#FFF', fontSize: typography.h3.fontSize, fontWeight: '800', marginBottom: spacing.sm },
+
+  teamsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.lg },
+  teamText: { color: 'rgba(255,255,255,0.85)', fontSize: typography.bodyMedium.fontSize, fontWeight: '600' },
+  vsBadge: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radii.full },
+  vsText: { color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: '800', letterSpacing: 2 },
+
+  dateTimeRow: { flexDirection: 'row', gap: spacing.lg, marginBottom: spacing.lg },
+  dateTimeText: { color: 'rgba(255,255,255,0.6)', fontSize: typography.small.fontSize, fontWeight: '500' },
+
+  perforatedContainer: { marginVertical: spacing.md, marginHorizontal: -spacing.xxl },
+  perforatedLine: {
+    height: 0, borderWidth: 1, borderStyle: 'dashed',
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+
+  detailsGrid: { flexDirection: 'row', justifyContent: 'space-between' },
+  detailCell: { flex: 1 },
+  detailLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.xs },
+  detailValue: { color: '#FFF', fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
+
+  // QR
+  qrSection: { alignItems: 'center', marginVertical: spacing.lg },
+  qrBox: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.sm,
+    position: 'relative',
+  },
+  qrCorner: { position: 'absolute', width: 12, height: 12, borderColor: 'rgba(255,255,255,0.3)' },
+  qrCornerTL: { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 4 },
+  qrCornerTR: { top: -1, right: -1, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 4 },
+  qrCornerBL: { bottom: -1, left: -1, borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 4 },
+  qrCornerBR: { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: 4 },
+  ticketCode: { color: 'rgba(255,255,255,0.7)', fontSize: typography.small.fontSize, fontWeight: '800', letterSpacing: 2, marginBottom: spacing.xs, fontFamily: 'Courier' },
+  qrHint: { color: 'rgba(255,255,255,0.5)', fontSize: typography.small.fontSize, fontWeight: '500' },
+  qrPlaceholder: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: radii.lg, paddingVertical: spacing.xxl, paddingHorizontal: spacing.xl,
+    width: '100%', alignItems: 'center',
+  },
+  qrPlaceholderText: {
+    color: 'rgba(255,255,255,0.4)', fontSize: typography.caption.fontSize,
+    fontWeight: '600', textAlign: 'center',
+  },
+
+  // Status
+  statusBanner: { borderRadius: radii.md, paddingVertical: spacing.sm, alignItems: 'center' },
+  statusBannerText: { fontSize: typography.tiny.fontSize, fontWeight: '800', letterSpacing: 1 },
+});

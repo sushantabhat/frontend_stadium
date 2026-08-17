@@ -85,7 +85,14 @@ export default function MyShiftsScreen({ navigation }) {
                       <Text style={styles.heroTime}>{formatTime(activeShift.match?.matchDate)}</Text>
                     </View>
                     <Text style={styles.heroMatch}>{activeShift.match?.title || 'Today\'s Match'}</Text>
-                    <Text style={styles.heroGate}>{activeShift.gate}</Text>
+                    {activeShift.match?.teamA && activeShift.match?.teamB && (
+                      <Text style={styles.heroSubtext}>
+                        {activeShift.match.teamA} vs {activeShift.match.teamB} • {activeShift.match.venue}
+                      </Text>
+                    )}
+                    <Text style={styles.heroGate}>
+                      {activeShift.gate?.toLowerCase().includes('gate') ? activeShift.gate : `Gate ${activeShift.gate}`}
+                    </Text>
                     <TouchableOpacity style={styles.checkInBtn} activeOpacity={0.85}>
                       <Text style={styles.checkInText}>✓ Checked In</Text>
                     </TouchableOpacity>
@@ -107,8 +114,18 @@ export default function MyShiftsScreen({ navigation }) {
                         </View>
                         <View style={styles.shiftCenter}>
                           <Text style={styles.shiftMatch}>{shift.match?.title || 'Unknown Match'}</Text>
-                          <Text style={styles.shiftTime}>{shift.match?.matchDate ? formatTime(shift.match.matchDate) : '—'}</Text>
-                          <Text style={styles.shiftGate}>{shift.gate}</Text>
+                          {shift.match?.teamA && shift.match?.teamB && (
+                            <Text style={styles.shiftSubtext}>
+                              {shift.match.teamA} vs {shift.match.teamB}
+                            </Text>
+                          )}
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 }}>
+                            <Text style={styles.shiftTime}>{shift.match?.matchDate ? formatTime(shift.match.matchDate) : '—'}</Text>
+                            <Text style={styles.shiftTime}>•</Text>
+                            <Text style={styles.shiftGate}>
+                              {shift.gate?.toLowerCase().includes('gate') ? shift.gate : `Gate ${shift.gate}`}
+                            </Text>
+                          </View>
                         </View>
                         <View style={styles.shiftRight}>
                           <View style={styles.upcomingPill}>
@@ -149,7 +166,8 @@ const styles = StyleSheet.create({
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFF' },
   liveText: { color: '#FFF', fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
   heroTime: { color: 'rgba(255,255,255,0.8)', fontSize: typography.small.fontSize },
-  heroMatch: { color: '#FFF', fontSize: typography.h2.fontSize, fontWeight: '900', marginBottom: spacing.xs },
+  heroMatch: { color: '#FFF', fontSize: typography.h2.fontSize, fontWeight: '900', marginBottom: 2 },
+  heroSubtext: { color: 'rgba(255,255,255,0.85)', fontSize: typography.caption.fontSize, fontWeight: '600', marginBottom: spacing.xs },
   heroGate: { color: 'rgba(255,255,255,0.7)', fontSize: typography.caption.fontSize, marginBottom: spacing.xl },
   checkInBtn: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: radii.md, paddingVertical: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
   checkInText: { color: '#FFF', fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
@@ -165,9 +183,10 @@ const styles = StyleSheet.create({
   shiftDay: { color: colors.textMuted, fontSize: 9, fontWeight: '700' },
   shiftDateNum: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
   shiftCenter: { flex: 1 },
-  shiftMatch: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
-  shiftTime: { color: colors.textMuted, fontSize: 9, marginTop: 2 },
-  shiftGate: { color: colors.primaryLight, fontSize: 9, fontWeight: '700', marginTop: 2 },
+  shiftMatch: { color: colors.textPrimary, fontSize: typography.captionMedium.fontSize, fontWeight: '700', marginBottom: 2 },
+  shiftSubtext: { color: colors.textSecondary, fontSize: 10, fontWeight: '600' },
+  shiftTime: { color: colors.textMuted, fontSize: 10, fontWeight: '600' },
+  shiftGate: { color: colors.primaryLight, fontSize: 10, fontWeight: '800' },
   shiftRight: {},
   upcomingPill: { backgroundColor: colors.surfaceElevated, borderRadius: radii.full, paddingHorizontal: spacing.sm, paddingVertical: 3, borderWidth: 1, borderColor: colors.border },
   upcomingText: { color: colors.textMuted, fontSize: 8, fontWeight: '800', letterSpacing: 0.8 },

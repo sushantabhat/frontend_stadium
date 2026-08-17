@@ -143,22 +143,49 @@ export default function CardPaymentModal({ visible, amount, matchId, seatIds, on
               </View>
 
               <View style={styles.testCards}>
-                <Text style={styles.testCardsTitle}>Test cards</Text>
-                <View style={styles.testCardRow}>
+                <Text style={styles.testCardsTitle}>Test cards (Tap to autofill)</Text>
+                <TouchableOpacity 
+                  style={styles.testCardRow}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setCardNumber('4242424242424242');
+                    setCardHolderName('Test User');
+                    setExpiry('12/28');
+                    setCvv('123');
+                  }}
+                >
                   <Text style={styles.testCardBrand}>Visa</Text>
                   <Text style={styles.testCardNum}>4242 4242 4242 4242</Text>
                   <Text style={styles.testCardCvv}>3 CVV</Text>
-                </View>
-                <View style={styles.testCardRow}>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.testCardRow}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setCardNumber('5555555555554444');
+                    setCardHolderName('Test User');
+                    setExpiry('12/28');
+                    setCvv('123');
+                  }}
+                >
                   <Text style={styles.testCardBrand}>Mastercard</Text>
                   <Text style={styles.testCardNum}>5555 5555 5555 4444</Text>
                   <Text style={styles.testCardCvv}>3 CVV</Text>
-                </View>
-                <View style={styles.testCardRow}>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.testCardRow}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setCardNumber('371449635398431');
+                    setCardHolderName('Test User');
+                    setExpiry('12/28');
+                    setCvv('1234');
+                  }}
+                >
                   <Text style={styles.testCardBrand}>Amex</Text>
                   <Text style={styles.testCardNum}>3714 496353 98431</Text>
                   <Text style={styles.testCardCvv}>4 CVV</Text>
-                </View>
+                </TouchableOpacity>
               </View>
             </ScrollView>
 

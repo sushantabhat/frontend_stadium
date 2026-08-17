@@ -1,58 +1,58 @@
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, FlatList, RefreshControl, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
-import QRCode from 'react-native-qrcode-svg';
+import { Ticket, ChevronRight, Clock, History } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
-import { colors, spacing, radii, typography, shadows } from '../../constants/theme';
+import { colors, spacing, radii, typography } from '../../constants/theme';
 import { fetchMyTickets } from '../../services/ticketService';
 import { formatInNepal, formatTimeInNepal } from '../../utils/date';
 import DashboardHeader from '../../components/DashboardHeader';
 import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
 
-const CATEGORY_THEMES = {
-  platinum: { gradient: ['#E8E8E8', '#D0D0D0'], label: 'PLATINUM' },
-  gold: { gradient: ['#FFD700', '#E6A800'], label: 'GOLD' },
-  silver: { gradient: ['#A8A8A8', '#888888'], label: 'SILVER' },
-  bronze: { gradient: ['#CD7F32', '#A0652A'], label: 'BRONZE' },
-  general: { gradient: ['#5B9BD5', '#4A7FBA'], label: 'GENERAL' },
-  supporters: { gradient: ['#2E7D32', '#1B5E20'], label: 'SUPPORTERS' },
-  premium: { gradient: [colors.primary, '#5A4BD1'], label: 'PREMIUM' },
-  category1: { gradient: ['#FFD700', '#E6A800'], label: 'CATEGORY 1' },
-  category2: { gradient: ['#FF6B6B', '#E53935'], label: 'CATEGORY 2' },
-  category3: { gradient: ['#6C5CE7', '#4834D4'], label: 'CATEGORY 3' },
-  category4: { gradient: ['#EF5350', '#C62828'], label: 'CATEGORY 4' },
-};
-
-function getTicketDisplayStatus(ticket) {
-  if (ticket.status === 'cancelled') return 'cancelled';
-  if (ticket.status === 'used') return 'used';
-  const matchStatus = ticket.match?.status;
-  if (matchStatus === 'cancelled') return 'cancelled';
-  const matchDate = ticket.match?.matchDate ? new Date(ticket.match.matchDate) : null;
-  if (matchStatus === 'completed' || (matchDate && matchDate < new Date())) return 'invalid';
-  return 'active';
+function groupTicketsByMatch(tickets) {
+  const map = new Map();
+  for (const ticket of tickets) {
+    const match = ticket.match;
+    if (!match?._id) continue;
+    const key = match._id;
+    if (!map.has(key)) {
+      map.set(key, { match, tickets: [] });
+    }
+    map.get(key).tickets.push(ticket);
+  }
+  return Array.from(map.values()).sort((a, b) => {
+    const da = a.match?.matchDate ? new Date(a.match.matchDate) : null;
+    const db = b.match?.matchDate ? new Date(b.match.matchDate) : null;
+    return (da || 0) - (db || 0);
+  });
 }
 
-const STATUS_CONFIG = {
-  active: { label: 'VALID TICKET', bg: 'rgba(0,200,83,0.15)', color: '#69F0AE' },
-  used: { label: 'ALREADY USED', bg: 'rgba(255,59,48,0.15)', color: '#FF6B6B' },
-  cancelled: { label: 'CANCELLED', bg: 'rgba(255,59,48,0.15)', color: '#FF4757' },
-  invalid: { label: 'EXPIRED', bg: 'rgba(108,92,231,0.15)', color: '#A29BFE' },
-};
+function isActiveTicket(ticket) {
+  if (ticket.status === 'cancelled' || ticket.status === 'used') return false;
+  if (ticket.match?.status === 'cancelled') return false;
+  const matchDate = ticket.match?.matchDate ? new Date(ticket.match.matchDate) : null;
+  if (ticket.match?.status === 'completed' || (matchDate && matchDate < new Date())) return false;
+  return true;
+}
 
-function getRefundDisplay(refund) {
-  if (!refund) return null;
-  if (refund.status === 'processing') return { label: 'REFUNDING', bg: 'rgba(255,193,7,0.15)', color: '#FFD93D' };
-  return { label: 'REFUNDED', bg: 'rgba(108,92,231,0.15)', color: '#A29BFE' };
+function isPastMatch(group) {
+  const { match } = group;
+  if (match?.status === 'completed' || match?.status === 'cancelled') return true;
+  const matchDate = match?.matchDate ? new Date(match.matchDate) : null;
+  return matchDate && matchDate < new Date();
+}
+
+function hasNoActiveTickets(group) {
+  return group.tickets.every(t => !isActiveTicket(t));
 }
 
 export default function MyTicketsScreen({ navigation }) {
   const { userInfo } = useContext(AuthContext);
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('upcoming');
 
   const loadTickets = useCallback(async (isRefresh = false) => {
     if (!isRefresh) setIsLoading(true);
@@ -64,129 +64,84 @@ export default function MyTicketsScreen({ navigation }) {
   const firstName = userInfo?.name?.split(' ')[0] || 'Fan';
   const initials = (userInfo?.name || 'F').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
+  const matchGroups = useMemo(() => groupTicketsByMatch(tickets), [tickets]);
+  const filteredMatchGroups = useMemo(() => {
+    return matchGroups.filter(group => {
+      if (activeTab === 'history') return isPastMatch(group);
+      if (activeTab === 'scanned') return !isPastMatch(group) && hasNoActiveTickets(group);
+      return !isPastMatch(group) && !hasNoActiveTickets(group);
+    });
+  }, [matchGroups, activeTab]);
+  const totalTickets = tickets.length;
+
   useFocusEffect(useCallback(() => { loadTickets(); }, [loadTickets]));
 
-  const renderTicket = ({ item }) => {
-    const category = (item.seat?.category || 'general').toLowerCase();
-    const theme = CATEGORY_THEMES[category] || CATEGORY_THEMES.general;
-    const matchDate = item.match?.matchDate ? new Date(item.match.matchDate) : null;
-    const displayStatus = getTicketDisplayStatus(item);
-    const refundCfg = item.refund ? getRefundDisplay(item.refund) : null;
-    const statusCfg = refundCfg || STATUS_CONFIG[displayStatus];
-    const isActive = displayStatus === 'active';
+  const renderMatch = ({ item, index }) => {
+    const { match, tickets: matchTickets } = item;
+    const matchDate = match?.matchDate ? new Date(match.matchDate) : null;
+    const validCount = matchTickets.filter(isActiveTicket).length;
 
     return (
       <TouchableOpacity
-        style={[styles.ticketWrapper, !isActive && styles.ticketDimmed]}
-        onPress={() => {
-          if (isActive) {
-            navigation.navigate('TicketDetail', { ticket: item });
-          }
-        }}
-        activeOpacity={isActive ? 0.88 : 1}
-        disabled={!isActive}
+        style={styles.matchCard}
+        activeOpacity={0.92}
+        onPress={() => navigation.navigate('MatchTickets', { match, tickets: matchTickets })}
       >
-        <LinearGradient colors={theme.gradient} style={styles.accentStripe} />
+        <View style={styles.matchAccent} />
 
-        <LinearGradient
-          colors={[`${colors.gradientStart}F0`, `${colors.gradientEnd}F0`]}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={styles.ticketCard}
-        >
-          {/* Top Section */}
-          <View style={styles.ticketTop}>
-            <View style={styles.ticketBrandRow}>
-              <Text style={styles.ticketBrandText}>SMART STADIUM</Text>
-              <View style={[styles.catBadge, { backgroundColor: `${theme.gradient[0]}30` }]}>
-                <Text style={[styles.catText, { color: theme.gradient[0] }]}>{theme.label}</Text>
-              </View>
-            </View>
-          </View>
-
-          <Text style={styles.matchTitle} numberOfLines={1}>{item.match?.title}</Text>
-
-          <View style={styles.teamsRow}>
-            <Text style={styles.teamText}>{item.match?.teamA || 'TBA'}</Text>
-            <View style={styles.vsBadge}>
-              <Text style={styles.vsText}>VS</Text>
-            </View>
-            <Text style={styles.teamText}>{item.match?.teamB || 'TBA'}</Text>
-          </View>
-
-          {matchDate && (
-            <View style={styles.dateTimeRow}>
-              <Text style={styles.dateTimeText}>
-                {formatInNepal(matchDate, { weekday: 'short', month: 'short', day: 'numeric' })}
-              </Text>
-              <Text style={styles.dateTimeText}>
-                {formatTimeInNepal(matchDate, { hour: '2-digit', minute: '2-digit', hour12: true })}
-              </Text>
-            </View>
-          )}
-
-          <View style={styles.perforatedContainer}>
-            <View style={styles.perforatedLine} />
-          </View>
-
-          <View style={styles.detailsGrid}>
-            {[
-              { label: 'SEAT', value: item.seat?.seatLabel || 'N/A' },
-              item.seat?.gate ? { label: 'GATE', value: item.seat.gate } : null,
-              { label: 'PRICE', value: `Rs.${item.seat?.price || '—'}` },
-              { label: 'VENUE', value: item.match?.venue || '\u2014', flex: true },
-            ].filter(Boolean).map((d) => (
-              <View key={d.label} style={[styles.detailCell, d.flex && { flex: 1.5 }]}>
-                <Text style={styles.detailLabel}>{d.label}</Text>
-                <Text style={styles.detailValue} numberOfLines={1}>{d.value}</Text>
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.perforatedContainer}>
-            <View style={styles.perforatedLine} />
-          </View>
-
-          {/* QR Section — only for active tickets */}
-          {isActive ? (
-            <View style={styles.qrSection}>
-              <View style={styles.qrBox}>
-                <QRCode
-                  value={item.ticketCode}
-                  size={120}
-                  color="#FFFFFF"
-                  backgroundColor="transparent"
-                  level="M"
-                />
-                <View style={[styles.qrCorner, styles.qrCornerTL]} />
-                <View style={[styles.qrCorner, styles.qrCornerTR]} />
-                <View style={[styles.qrCorner, styles.qrCornerBL]} />
-                <View style={[styles.qrCorner, styles.qrCornerBR]} />
-              </View>
-              <Text style={styles.ticketCode}>{item.ticketCode}</Text>
-              <Text style={styles.qrHint}>Show this QR at the entry gate</Text>
-            </View>
-          ) : (
-            <View style={styles.qrSection}>
-              <View style={styles.qrPlaceholder}>
-                <Text style={styles.qrPlaceholderText}>
-                  {displayStatus === 'used'
-                    ? 'This ticket has been scanned'
-                    : item.refund?.status === 'processing'
-                      ? `Refunding — ETA ${new Date(item.refund.estimatedSettlementDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
-                      : 'Match cancelled — refund issued'}
+        <View style={styles.matchBody}>
+          <View style={styles.matchTopRow}>
+            {matchDate ? (
+              <View style={styles.matchDateBox}>
+                <Text style={styles.matchDateDay}>{matchDate.getDate()}</Text>
+                <Text style={styles.matchDateMonth}>
+                  {formatInNepal(matchDate, { month: 'short' }).toUpperCase()}
                 </Text>
               </View>
+            ) : (
+              <View style={styles.matchDateBox}>
+                <Text style={styles.matchDateDay}>TBA</Text>
+              </View>
+            )}
+
+            <View style={styles.matchInfo}>
+              <Text style={styles.matchTitle} numberOfLines={1}>{match?.title}</Text>
+              <Text style={styles.matchTeams} numberOfLines={1}>
+                {match?.teamA || 'TBA'} <Text style={styles.matchVs}>VS</Text> {match?.teamB || 'TBA'}
+              </Text>
+              <View style={styles.matchMetaRow}>
+                {matchDate && (
+                  <Text style={styles.matchMetaText}>
+                    {formatInNepal(matchDate, { weekday: 'short', day: 'numeric', month: 'short' })}
+                    {' · '}
+                    {formatTimeInNepal(matchDate, { hour: '2-digit', minute: '2-digit', hour12: true })}
+                  </Text>
+                )}
+                {match?.venue ? (
+                  <Text style={styles.matchMetaText} numberOfLines={1}> · {match.venue}</Text>
+                ) : null}
+              </View>
             </View>
-          )}
 
-          {/* Status Badge */}
-          <View style={[styles.statusBanner, { backgroundColor: statusCfg.bg }]}>
-            <Text style={[styles.statusBannerText, { color: statusCfg.color }]}>{statusCfg.label}</Text>
+            <ChevronRight size={18} color={colors.textMuted} strokeWidth={2.5} />
           </View>
-        </LinearGradient>
 
-        <View style={[styles.notch, styles.notchLeft]} />
-        <View style={[styles.notch, styles.notchRight]} />
+          <View style={styles.matchFooter}>
+            <View style={styles.ticketPill}>
+              <Ticket size={12} color={colors.primaryLight} strokeWidth={2.5} />
+              <Text style={styles.ticketPillText}>
+                {matchTickets.length} ticket{matchTickets.length !== 1 ? 's' : ''}
+              </Text>
+            </View>
+            {validCount > 0 ? (
+              <View style={styles.validPill}>
+                <Text style={styles.validPillText}>{validCount} VALID</Text>
+              </View>
+            ) : (
+              <Text style={styles.noValidText}>No active tickets</Text>
+            )}
+          </View>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -204,15 +159,43 @@ export default function MyTicketsScreen({ navigation }) {
           onAvatarPress={() => navigation.navigate('Account')}
         />
         <FlatList
-          data={tickets}
-          renderItem={renderTicket}
-          keyExtractor={(item) => item._id || item.ticketCode}
+          data={filteredMatchGroups}
+          renderItem={renderMatch}
+          keyExtractor={(item) => item.match._id}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="transparent" colors={['transparent']} />}
           ListHeaderComponent={
             <View style={styles.header}>
-              {tickets.length > 0 && (
+              <View style={styles.toggleRow}>
+                <TouchableOpacity
+                  style={[styles.toggleBtn, activeTab === 'upcoming' && styles.toggleBtnActive]}
+                  activeOpacity={0.8}
+                  onPress={() => setActiveTab('upcoming')}
+                >
+                  <Clock size={14} color={activeTab === 'upcoming' ? '#FFF' : colors.textMuted} strokeWidth={2.5} />
+                  <Text style={[styles.toggleBtnText, activeTab === 'upcoming' && styles.toggleBtnTextActive]}>Upcoming</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.toggleBtn, activeTab === 'scanned' && styles.toggleBtnActive]}
+                  activeOpacity={0.8}
+                  onPress={() => setActiveTab('scanned')}
+                >
+                  <Ticket size={14} color={activeTab === 'scanned' ? '#FFF' : colors.textMuted} strokeWidth={2.5} />
+                  <Text style={[styles.toggleBtnText, activeTab === 'scanned' && styles.toggleBtnTextActive]}>Scanned</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.toggleBtn, activeTab === 'history' && styles.toggleBtnActive]}
+                  activeOpacity={0.8}
+                  onPress={() => setActiveTab('history')}
+                >
+                  <History size={14} color={activeTab === 'history' ? '#FFF' : colors.textMuted} strokeWidth={2.5} />
+                  <Text style={[styles.toggleBtnText, activeTab === 'history' && styles.toggleBtnTextActive]}>History</Text>
+                </TouchableOpacity>
+              </View>
+              {filteredMatchGroups.length > 0 && (
                 <View style={styles.ticketCount}>
-                  <Text style={styles.ticketCountText}>{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</Text>
+                  <Text style={styles.ticketCountText}>
+                    {filteredMatchGroups.length} match{filteredMatchGroups.length !== 1 ? 'es' : ''} · {filteredMatchGroups.reduce((sum, g) => sum + g.tickets.length, 0)} ticket{filteredMatchGroups.reduce((sum, g) => sum + g.tickets.length, 0) !== 1 ? 's' : ''}
+                  </Text>
                 </View>
               )}
             </View>
@@ -221,10 +204,14 @@ export default function MyTicketsScreen({ navigation }) {
             !isLoading ? (
               <View style={styles.emptyWrap}>
                 <View style={styles.emptyIconWrap}>
-                  <Text style={styles.emptyIcon}>{'🎫'}</Text>
+                  <Text style={styles.emptyIcon}>{activeTab === 'history' ? '📋' : activeTab === 'scanned' ? '✅' : '🎫'}</Text>
                 </View>
-                <Text style={styles.emptyTitle}>No Tickets Yet</Text>
-                <Text style={styles.emptyText}>Book a match to see your tickets here</Text>
+                <Text style={styles.emptyTitle}>
+                  {activeTab === 'history' ? 'No Past Tickets' : activeTab === 'scanned' ? 'No Scanned Matches' : 'No Upcoming Tickets'}
+                </Text>
+                <Text style={styles.emptyText}>
+                  {activeTab === 'history' ? 'Your completed matches will appear here' : activeTab === 'scanned' ? 'Matches with all tickets scanned will appear here' : 'Book a match to see your tickets here'}
+                </Text>
               </View>
             ) : null
           }
@@ -243,81 +230,114 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   listContent: { paddingBottom: spacing.xxxl },
   header: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, marginBottom: spacing.xl },
-  pageTitle: { color: colors.textPrimary, fontSize: typography.h1.fontSize, fontWeight: '900', marginBottom: spacing.xxs },
-  pageSubtitle: { color: colors.textMuted, fontSize: typography.caption.fontSize },
   ticketCount: { marginTop: spacing.md, backgroundColor: colors.primarySurface, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radii.full, alignSelf: 'flex-start', borderWidth: 1, borderColor: `${colors.primary}25` },
   ticketCountText: { color: colors.primaryLight, fontSize: 9, fontWeight: '700' },
 
-  // Ticket
-  ticketWrapper: { marginHorizontal: spacing.xl, marginBottom: spacing.xl, position: 'relative' },
-  ticketDimmed: { opacity: 0.5 },
-  accentStripe: { height: 4, borderTopLeftRadius: radii.xxl, borderTopRightRadius: radii.xxl },
-  ticketCard: {
-    borderTopLeftRadius: 1, borderTopRightRadius: 1,
-    borderBottomLeftRadius: radii.xxl, borderBottomRightRadius: radii.xxl,
-    padding: spacing.xxl, ...shadows.lg,
+  // Toggle buttons
+  toggleRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
   },
-  notch: {
-    position: 'absolute', width: 24, height: 24, borderRadius: 12,
-    backgroundColor: colors.background, top: '50%', marginTop: -12,
+  toggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radii.full,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  notchLeft: { left: -12 },
-  notchRight: { right: -12 },
-
-  ticketTop: { marginBottom: spacing.lg },
-  ticketBrandRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  ticketBrandText: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: '800', letterSpacing: 2 },
-  catBadge: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radii.full },
-  catText: { fontSize: 9, fontWeight: '800', letterSpacing: 1 },
-
-  matchTitle: { color: '#FFF', fontSize: typography.h3.fontSize, fontWeight: '800', marginBottom: spacing.sm },
-
-  teamsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.lg },
-  teamText: { color: 'rgba(255,255,255,0.85)', fontSize: typography.bodyMedium.fontSize, fontWeight: '600' },
-  vsBadge: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radii.full },
-  vsText: { color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: '800', letterSpacing: 2 },
-
-  dateTimeRow: { flexDirection: 'row', gap: spacing.lg, marginBottom: spacing.lg },
-  dateTimeText: { color: 'rgba(255,255,255,0.6)', fontSize: typography.small.fontSize, fontWeight: '500' },
-
-  perforatedContainer: { marginVertical: spacing.md, marginHorizontal: -spacing.xxl },
-  perforatedLine: {
-    height: 0, borderWidth: 1, borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.15)',
+  toggleBtnActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  toggleBtnText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  toggleBtnTextActive: {
+    color: '#FFF',
   },
 
-  detailsGrid: { flexDirection: 'row', justifyContent: 'space-between' },
-  detailCell: { flex: 1 },
-  detailLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.xs },
-  detailValue: { color: '#FFF', fontSize: typography.captionMedium.fontSize, fontWeight: '700' },
-
-  // QR
-  qrSection: { alignItems: 'center', marginVertical: spacing.lg },
-  qrBox: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.sm,
-    position: 'relative',
+  // Match card
+  matchCard: {
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: 'row',
+    overflow: 'hidden',
   },
-  qrCorner: { position: 'absolute', width: 12, height: 12, borderColor: 'rgba(255,255,255,0.3)' },
-  qrCornerTL: { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 4 },
-  qrCornerTR: { top: -1, right: -1, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 4 },
-  qrCornerBL: { bottom: -1, left: -1, borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 4 },
-  qrCornerBR: { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: 4 },
-  ticketCode: { color: 'rgba(255,255,255,0.7)', fontSize: typography.small.fontSize, fontWeight: '800', letterSpacing: 2, marginBottom: spacing.xs, fontFamily: 'Courier' },
-  qrHint: { color: 'rgba(255,255,255,0.5)', fontSize: typography.small.fontSize, fontWeight: '500' },
-  qrPlaceholder: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: radii.lg, paddingVertical: spacing.xxl, paddingHorizontal: spacing.xl,
-    width: '100%', alignItems: 'center',
+  matchAccent: {
+    width: 5,
+    backgroundColor: colors.primary,
   },
-  qrPlaceholderText: {
-    color: 'rgba(255,255,255,0.4)', fontSize: typography.caption.fontSize,
-    fontWeight: '600', textAlign: 'center',
+  matchBody: {
+    flex: 1,
+    padding: spacing.lg,
   },
-
-  // Status
-  statusBanner: { borderRadius: radii.md, paddingVertical: spacing.sm, alignItems: 'center' },
-  statusBannerText: { fontSize: typography.tiny.fontSize, fontWeight: '800', letterSpacing: 1 },
+  matchTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  matchDateBox: {
+    minWidth: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  matchDateDay: { color: colors.textPrimary, fontSize: typography.h3.fontSize, fontWeight: '900', lineHeight: 24 },
+  matchDateMonth: { color: colors.primaryLight, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  matchInfo: { flex: 1 },
+  matchTitle: { color: colors.textPrimary, fontSize: typography.bodyMedium.fontSize, fontWeight: '800' },
+  matchTeams: { color: colors.textSecondary, fontSize: typography.caption.fontSize, fontWeight: '600', marginTop: spacing.xxs },
+  matchVs: { color: colors.textMuted, fontSize: 9, fontWeight: '800' },
+  matchMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },
+  matchMetaText: { color: colors.textMuted, fontSize: typography.tiny.fontSize, fontWeight: '600' },
+  matchFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
+  },
+  ticketPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.primarySurface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: `${colors.primary}25`,
+  },
+  ticketPillText: { color: colors.primaryLight, fontSize: 10, fontWeight: '800' },
+  validPill: {
+    backgroundColor: colors.successSurface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: `${colors.success}30`,
+  },
+  validPillText: { color: colors.successLight, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
+  noValidText: { color: colors.textMuted, fontSize: 10, fontWeight: '700' },
 
   // Empty
   emptyWrap: { alignItems: 'center', paddingVertical: spacing.huge },

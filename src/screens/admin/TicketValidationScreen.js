@@ -1,5 +1,6 @@
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 import {
   ActivityIndicator,
   FlatList,
@@ -9,6 +10,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../context/AuthContext';
@@ -18,6 +20,7 @@ import { colors, spacing, radii, typography, glass } from '../../constants/theme
 import { fetchAllTickets } from '../../services/adminService';
 import RefreshBar from '../../components/RefreshBar';
 import useRefresh from '../../hooks/useRefresh';
+import { Copy } from 'lucide-react-native';
 
 const STATUS_FILTERS = [
   { key: 'all', label: 'All' },
@@ -99,7 +102,7 @@ export default function TicketValidationScreen({ navigation }) {
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter((t) =>
-        t.code?.toLowerCase() === q ||
+        t.code?.toLowerCase().includes(q) ||
         t.userName?.toLowerCase().includes(q) ||
         t.userEmail?.toLowerCase().includes(q) ||
         t.title?.toLowerCase().includes(q) ||
@@ -114,6 +117,10 @@ export default function TicketValidationScreen({ navigation }) {
     setExpandedId(prev => prev === id ? null : id);
   }, []);
 
+  const handleCopy = useCallback(async (code) => {
+    await Clipboard.setStringAsync(code);
+  }, []);
+
   const renderTicket = useCallback(({ item }) => {
     const status = STATUS_MAP[item.statusKey] || STATUS_MAP.valid;
     const tierColor = TIER_COLORS[item.category] || TIER_COLORS.general;
@@ -123,9 +130,10 @@ export default function TicketValidationScreen({ navigation }) {
       <AdminCard style={styles.ticketCard}>
         <TouchableOpacity onPress={() => toggleExpand(item.id)} activeOpacity={0.7}>
           <View style={styles.ticketHeader}>
-            <View style={styles.ticketCodeRow}>
+            <TouchableOpacity style={styles.ticketCodeRow} onPress={() => handleCopy(item.code)} activeOpacity={0.6}>
               <Text style={styles.ticketCode} numberOfLines={1}>{item.code}</Text>
-            </View>
+              <Copy size={12} color={glass.brandPurple} style={{ marginLeft: 6 }} />
+            </TouchableOpacity>
             <Text style={styles.ticketPrice}>Rs.{item.price.toLocaleString()}</Text>
           </View>
 
@@ -186,7 +194,7 @@ export default function TicketValidationScreen({ navigation }) {
       <AdminSearchBar
         value={searchQuery}
         onChangeText={setSearchQuery}
-        placeholder="Search by name, match, or seat..."
+        placeholder="Search by ticket code, name, or seat..."
         onClear={() => setSearchQuery('')}
       />
       <AdminFilterPills options={STATUS_FILTERS} value={activeFilter} onChange={setActiveFilter} />
@@ -245,7 +253,7 @@ const styles = StyleSheet.create({
 
   ticketCard: { padding: spacing.xl, marginBottom: spacing.md },
   ticketHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.xs },
-  ticketCodeRow: { flex: 1, marginRight: spacing.md },
+  ticketCodeRow: { flex: 1, marginRight: spacing.md, flexDirection: 'row', alignItems: 'center' },
   ticketCode: { color: glass.brandPurple, fontSize: typography.small.fontSize, fontWeight: '800', fontFamily: 'Courier' },
   ticketMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   statusBadge: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radii.full },

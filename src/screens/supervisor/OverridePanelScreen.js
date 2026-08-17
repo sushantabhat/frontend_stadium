@@ -54,12 +54,18 @@ export default function OverridePanelScreen({ navigation }) {
   };
 
   const handleManualEntry = async () => {
-    if (!ticketCode.trim()) {
+    let trimmedCode = ticketCode.trim().toUpperCase();
+    if (!trimmedCode) {
       Alert.alert('Required', 'Enter a valid ticket code.');
       return;
     }
+    
+    if (!trimmedCode.startsWith('TKT-')) {
+      trimmedCode = `TKT-${trimmedCode}`;
+    }
+
     try {
-      await api.post('/api/admin/tickets/manual-entry', { ticketCode: ticketCode.trim(), notes: manualNote });
+      await api.post('/api/admin/tickets/manual-entry', { ticketCode: trimmedCode, notes: manualNote });
       Alert.alert('Approved', 'Manual entry successfully logged.');
       setTicketCode('');
       setManualNote('');

@@ -203,7 +203,9 @@ export default function SupervisorDashboardScreen({ navigation }) {
         <View style={styles.section}>
           <View style={styles.sectionHead}>
             <Text style={styles.sectionTitle}>Recent Incidents</Text>
-            <View />
+            <TouchableOpacity onPress={() => navigation.navigate('IncidentHistory')} activeOpacity={0.7}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
           </View>
           {isLoading ? (
             <ActivityIndicator color={colors.primary} style={{ paddingVertical: spacing.xl }} />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, Dimensions, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography } from '../constants/theme';
 import { formatInNepal, formatTimeInNepal } from '../utils/date';
@@ -135,7 +135,19 @@ export default function TicketCard({ ticket, showQR = true }) {
         {/* Ticket code — monospace, prominent */}
         <View style={styles.codeBox}>
           <Text style={styles.codeLabel}>TICKET CODE</Text>
-          <Text style={styles.codeValue}>{ticketCode}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Text style={styles.codeValue}>{ticketCode}</Text>
+            <TouchableOpacity 
+              onPress={async () => {
+                const Clipboard = await import('expo-clipboard');
+                await Clipboard.setStringAsync(ticketCode);
+                Alert.alert('Copied', 'Ticket code copied to clipboard');
+              }}
+              style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 6, borderRadius: 6 }}
+            >
+              <Text style={{ fontSize: 16 }}>📋</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Entry instruction */}
